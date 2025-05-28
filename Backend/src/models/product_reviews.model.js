@@ -26,10 +26,10 @@ const productReviewSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v        
 });
 
 // Tạo mô hình từ schema

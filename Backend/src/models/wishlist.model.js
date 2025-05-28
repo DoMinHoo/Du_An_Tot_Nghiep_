@@ -12,10 +12,10 @@ const wishlistSchema = new mongoose.Schema({
         ref: 'Product', // Tham chiếu tới bảng "products"
         required: true
     },
-    addedAt: {
-        type: Date,
-        default: Date.now // Thời gian thêm vào danh sách yêu thích
-    }
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt trường __v
 });
 
 // Tạo model "Wishlist"

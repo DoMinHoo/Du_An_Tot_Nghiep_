@@ -15,10 +15,10 @@ const categorySchema = new mongoose.Schema({
         ref: 'Category',  // Tham chiếu đến bảng Category (self-reference)
         default: null,  // Nếu không có danh mục cha, giá trị mặc định là null
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,  // Ngày tạo mặc định là thời gian hiện tại
-    }
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v
 });
 
 // Tạo và xuất model Category
