@@ -1,26 +1,17 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-
-// Import routes
-import authRoutes from './routes/auth.routes.js';
-import productRoutes from './routes/product.routes.js';
-// Thêm các route khác nếu cần
+const express = require('express');
+const morgan = require('morgan');
+const cors = require('cors');
+const routes = require('./routes');
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev')); // Log request
+app.use(morgan('dev'));
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
+// Routes
+app.use('/uploads', express.static('uploads'));
+app.use('/api', routes);
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ message: 'Route not found' });
-});
-
-export default app;
+module.exports = app;
