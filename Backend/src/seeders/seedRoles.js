@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Role = require('../models/roles.model');
+const Role = require('../models/Role');
 require('dotenv').config();
 
 // Kết nối với MongoDB
@@ -17,6 +17,10 @@ const roles = [
     {
         name: 'admin',
         description: 'Quản trị viên hệ thống, có quyền truy cập và quản lý tất cả các chức năng.',
+    },
+    {
+        name: 'staff',
+        description: 'Nhân viên làm việc với các chức năng liên quan đến quản lý và hỗ trợ người dùng.',
     },
     {
         name: 'client',
