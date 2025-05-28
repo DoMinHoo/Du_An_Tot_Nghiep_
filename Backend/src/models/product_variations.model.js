@@ -49,10 +49,10 @@ const productVariationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,  // Mặc định là thời gian tạo
-    }
+
+}, {
+    timestamps: true,  // Tự động tạo createdAt và updatedAt
+    versionKey: false   // Tắt trường __v                 
 });
 
 // Tạo model từ schema

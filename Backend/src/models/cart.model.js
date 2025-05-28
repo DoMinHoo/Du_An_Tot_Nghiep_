@@ -17,10 +17,9 @@ const cartSchema = new mongoose.Schema({
         required: true,
         min: 1, // Số lượng ít nhất là 1
     },
-    createdAt: {
-        type: Date,
-        default: Date.now, // Thời gian tạo dòng giỏ hàng
-    },
+}, {
+    timestamps: true,
+    versionKey: false
 });
 
 // Tạo model từ schema và xuất ra

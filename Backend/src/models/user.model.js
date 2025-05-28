@@ -46,10 +46,10 @@ const userSchema = new mongoose.Schema({
         ref: 'Role', // Tên của mô hình Role
         required: true,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v                                                   
 });
 
 const User = mongoose.model('User', userSchema);

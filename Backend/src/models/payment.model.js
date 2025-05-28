@@ -21,10 +21,10 @@ const paymentSchema = new mongoose.Schema({
         enum: ['success', 'failed', 'pending'], // Trạng thái giao dịch
         default: 'pending'
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v
 });
 
 // Tạo và xuất mô hình "Payment"

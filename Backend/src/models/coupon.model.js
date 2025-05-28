@@ -36,10 +36,10 @@ const couponSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now, // Mặc định là ngày giờ hiện tại
-    },
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v
 });
 
 // Tạo và xuất mô hình

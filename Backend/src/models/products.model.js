@@ -68,14 +68,10 @@ const productSchema = new mongoose.Schema({
         enum: ['active', 'hidden', 'sold_out'], // Trạng thái sản phẩm
         default: 'active', // Mặc định là active
     },
-    createdAt: {
-        type: Date,
-        default: Date.now, // Mặc định là thời gian hiện tại
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now, // Mặc định là thời gian hiện tại
-    },
+
+}, {
+    timestamps: true, // Tự động tạo trường createdAt và updatedAt
+    versionKey: false // Tắt trường __v
 });
 
 // Tạo mô hình và xuất khẩu
