@@ -1,9 +1,9 @@
+import { Button, Input, Layout, Popconfirm, Space, Table, type PopconfirmProps } from "antd";
 import React from "react";
-import { Layout, Button, Input, Table, Space, type PopconfirmProps, Popconfirm } from "antd";
-import AdminSidebar from "../components/sidebar";
-import AdminHeader from "../components/header";
-import AddCategoryModal from "../components/addCategory";
-import EditCategoryModal from "../components/editCategory";
+import AdminSidebar from "../../components/Common/sidebar";
+import AdminHeader from "../../components/header";
+import AddCategoryModal from "./addCategory";
+import EditCategoryModal from "./editCategory";
 
 const { Content } = Layout;
 

@@ -1,14 +1,10 @@
-import './App.css'
-import { Route, Routes } from 'react-router-dom';
-import CategoryManager from './pages/category';
-import Dashboard from './pages/homeAdmin';
+import { RouterProvider } from 'react-router-dom';
+import './App.css';
+import { router } from './routes';
 function App() {
   return (
     <>
-    <Routes>
-      <Route path='admin/cate' element={<CategoryManager/>}/>
-      <Route path='admin' element={<Dashboard/>}/>
-    </Routes>
+      <RouterProvider router={router} />
     </>
   )
 }
