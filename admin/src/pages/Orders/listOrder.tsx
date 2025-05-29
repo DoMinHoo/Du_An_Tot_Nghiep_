@@ -1,28 +1,49 @@
 import React from "react";
 import { Layout, Button, Input, Table, Space, Popconfirm, type PopconfirmProps } from "antd";
-import { useNavigate } from "react-router-dom"; // ✅ Thêm hook này
+import { useNavigate } from "react-router-dom";
 
 const { Content } = Layout;
 
-// Dữ liệu mẫu đơn hàng
 const dataSource = [
   {
     key: "1",
+    _id: "orderid1",
     orderCode: "ORD001",
     customerName: "Nguyễn Văn A",
-    totalAmount: "1,500,000₫",
+    totalAmount: 1500000,
     status: "Đã thanh toán",
+    shippingAddress: "123 Đường ABC, Quận 1, TP.HCM",
+    createdAt: "2024-05-01T10:00:00Z",
+    items: [
+      { name: "Sản phẩm A", quantity: 2 },
+      { name: "Sản phẩm B", quantity: 1 },
+    ],
+    statusHistory: [
+      { status: "Đã tạo", date: "2024-05-01T09:00:00Z" },
+      { status: "Đã thanh toán", date: "2024-05-01T10:00:00Z" },
+    ],
   },
+  // Thêm dữ liệu mẫu khác nếu cần
   {
     key: "2",
+    _id: "orderid2",
     orderCode: "ORD002",
-    customerName: "Trần Thị B",
-    totalAmount: "750,000₫",
-    status: "Chưa thanh toán",
+    customerName: "Nguyễn Văn B",
+    totalAmount: 1500000,
+    status: "Đã thanh toán",
+    shippingAddress: "123 Đường ABC, Quận 1, TP.HN",
+    createdAt: "2024-05-01T10:00:00Z",
+    items: [
+      { name: "Sản phẩm A", quantity: 2 },
+      { name: "Sản phẩm B", quantity: 1 },
+    ],
+    statusHistory: [
+      { status: "Đã tạo", date: "2024-05-01T09:00:00Z" },
+      { status: "Đã thanh toán", date: "2024-05-01T10:00:00Z" },
+    ],
   },
 ];
 
-// Hàm xác nhận/xoá
 const confirm: PopconfirmProps["onConfirm"] = (e) => {
   console.log("Xóa đơn hàng");
 };
@@ -32,13 +53,12 @@ const cancel: PopconfirmProps["onCancel"] = (e) => {
 };
 
 const OrderManager: React.FC = () => {
-  const navigate = useNavigate(); // ✅ Dùng để điều hướng
+  const navigate = useNavigate();
 
   const handleViewDetail = (orderId: string) => {
-    navigate(`/admin/orders/${orderId}`); // ✅ Điều hướng đến trang chi tiết
+    navigate(`/admin/orders/${orderId}`);
   };
 
-  // ✅ Cập nhật lại phần columns để sử dụng record
   const columns = [
     {
       title: "STT",
@@ -59,6 +79,7 @@ const OrderManager: React.FC = () => {
       title: "Tổng tiền",
       dataIndex: "totalAmount",
       key: "totalAmount",
+      render: (amount: number) => amount.toLocaleString("vi-VN") + "₫",
     },
     {
       title: "Trạng thái",
@@ -66,11 +87,40 @@ const OrderManager: React.FC = () => {
       key: "status",
     },
     {
+      title: "Địa chỉ giao hàng",
+      dataIndex: "shippingAddress",
+      key: "shippingAddress",
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date: string) => new Date(date).toLocaleString("vi-VN"),
+    },
+    {
+      title: "Sản phẩm",
+      dataIndex: "items",
+      key: "items",
+      render: (items: any[]) => items.map((item, i) => (
+        <div key={i}>{item.name} x{item.quantity}</div>
+      )),
+    },
+    {
+      title: "Lịch sử trạng thái",
+      dataIndex: "statusHistory",
+      key: "statusHistory",
+      render: (history: any[]) => history.map((item, i) => (
+        <div key={i}>
+          {item.status} ({new Date(item.date).toLocaleString("vi-VN")})
+        </div>
+      )),
+    },
+    {
       title: "Hành động",
       key: "action",
       render: (_: any, record: any) => (
         <Space>
-          <Button type="primary" onClick={() => handleViewDetail(record.key)}>Chi tiết</Button>
+          <Button type="primary" onClick={() => handleViewDetail(record._id)}>Chi tiết</Button>
           <Popconfirm
             title="Xóa đơn hàng"
             description="Bạn có chắc muốn xóa đơn hàng này?"

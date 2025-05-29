@@ -16,7 +16,7 @@ import {
 const { Content } = Layout;
 const { Option } = Select;
 
-const columns = [
+const itemColumns = [
     {
         title: "Sản phẩm",
         dataIndex: "name",
@@ -34,6 +34,20 @@ const columns = [
     },
 ];
 
+const statusHistoryColumns = [
+    {
+        title: "Trạng thái",
+        dataIndex: "status",
+        key: "status",
+    },
+    {
+        title: "Thời gian",
+        dataIndex: "date",
+        key: "date",
+        render: (date: string) => new Date(date).toLocaleString("vi-VN"),
+    },
+];
+
 const OrderDetail: React.FC = () => {
     const { id } = useParams();
     const [order, setOrder] = useState<any>(null);
@@ -43,7 +57,6 @@ const OrderDetail: React.FC = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newStatus, setNewStatus] = useState("");
 
-    // Giả lập fetch API đơn hàng
     useEffect(() => {
         setLoading(true);
         setError(null);
@@ -58,28 +71,32 @@ const OrderDetail: React.FC = () => {
                     orderCode: `ORD00${id}`,
                     customerName: "Nguyễn Văn A",
                     status: "Chưa thanh toán",
-                    createdAt: "2025-05-25",
-                    totalAmount: "1,500,000₫",
+                    createdAt: "2025-05-25T14:30:00Z",
+                    totalAmount: 1500000,
+                    shippingAddress: "123 Đường ABC, Quận 1, TP.HCM",
                     items: [
                         {
                             key: "1",
                             name: "Ghế gỗ cao cấp",
                             quantity: 2,
-                            price: "500,000₫",
+                            price: 500000,
                         },
                         {
                             key: "2",
                             name: "Bàn gỗ tròn",
                             quantity: 1,
-                            price: "500,000₫",
+                            price: 500000,
                         },
+                    ],
+                    statusHistory: [
+                        { status: "Chưa thanh toán", date: "2025-05-25T14:30:00Z" },
                     ],
                 };
                 setOrder(fetchedOrder);
                 setNewStatus(fetchedOrder.status);
                 setLoading(false);
             }
-        }, 1000); // Delay để mô phỏng API
+        }, 1000);
     }, [id]);
 
     const handleOpenModal = () => {
@@ -91,7 +108,11 @@ const OrderDetail: React.FC = () => {
 
     const handleUpdateStatus = () => {
         if (order) {
-            setOrder({ ...order, status: newStatus });
+            const updatedHistory = [
+                ...order.statusHistory,
+                { status: newStatus, date: new Date().toISOString() },
+            ];
+            setOrder({ ...order, status: newStatus, statusHistory: updatedHistory });
             setIsModalVisible(false);
             message.success("Cập nhật trạng thái thành công!");
         }
@@ -140,8 +161,15 @@ const OrderDetail: React.FC = () => {
                 <Descriptions.Item label="Trạng thái">
                     <Tag color={getStatusColor(order.status)}>{order.status}</Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="Ngày tạo">{order.createdAt}</Descriptions.Item>
-                <Descriptions.Item label="Tổng tiền">{order.totalAmount}</Descriptions.Item>
+                <Descriptions.Item label="Ngày tạo">
+                    {new Date(order.createdAt).toLocaleString("vi-VN")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Tổng tiền">
+                    {order.totalAmount.toLocaleString("vi-VN")}₫
+                </Descriptions.Item>
+                <Descriptions.Item label="Địa chỉ giao hàng">
+                    {order.shippingAddress}
+                </Descriptions.Item>
             </Descriptions>
 
             <Button type="primary" onClick={handleOpenModal} style={{ marginBottom: 16 }}>
@@ -149,7 +177,16 @@ const OrderDetail: React.FC = () => {
             </Button>
 
             <h3>Danh sách sản phẩm</h3>
-            <Table dataSource={order.items} columns={columns} pagination={false} />
+            <Table dataSource={order.items} columns={itemColumns} pagination={false} rowKey="key" />
+
+            <h3 style={{ marginTop: 32 }}>Lịch sử trạng thái</h3>
+            <Table
+                dataSource={order.statusHistory}
+                columns={statusHistoryColumns}
+                pagination={false}
+                rowKey="date"
+            />
+
 
             <Button style={{ marginTop: 24 }} onClick={() => window.history.back()}>
                 Quay lại
