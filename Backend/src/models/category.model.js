@@ -6,9 +6,9 @@ const categorySchema = new mongoose.Schema({
         type: String,
         required: true,  // Tên danh mục là bắt buộc
     },
+    slug: { type: String, unique: true }, // thêm slug
     description: {
-        type: String,
-        required: true,  // Mô tả danh mục là bắt buộc
+        type: String,  // Mô tả danh mục là bắt buộc
     },
     parentId: {
         type: mongoose.Schema.Types.ObjectId,
