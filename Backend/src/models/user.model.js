@@ -46,6 +46,8 @@ const userSchema = new mongoose.Schema({
         ref: 'Role', // Tên của mô hình Role
         required: true,
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
 
 }, {
     timestamps: true, // Tự động tạo createdAt & updatedAt
