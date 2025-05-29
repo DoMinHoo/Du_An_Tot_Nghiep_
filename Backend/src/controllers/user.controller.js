@@ -1,9 +1,11 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
-
+const crypto = require('crypto');
 const { registerSchema } = require('../validators/register.validators');
 const { loginSchema } = require('../validators/login.validators');
 const { generateToken } = require('../middlewares/auth.middleware');
+const { sendEmail } = require('../untils/mailers'); // Giả sử bạn đã có hàm gửi email
+
 const jwt = require('jsonwebtoken');
 
 
@@ -100,3 +102,39 @@ exports.login = async (req, res) => {
     }
 };
 
+
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Kiểm tra xem email có tồn tại trong DB hay không
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        // Tạo token cho việc xác thực mật khẩu
+        const resetToken = crypto.randomBytes(32).toString('hex'); // Mã token tạm thời
+        const resetTokenExpiry = Date.now() + 3600000; // Token hết hạn sau 1 giờ
+
+        // Lưu token và thời gian hết hạn vào DB
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpire = resetTokenExpiry;
+        await user.save();
+
+        // Gửi email với liên kết reset mật khẩu
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const emailSubject = 'Đặt lại mật khẩu của bạn';
+        const emailText = `Xin chào, để đặt lại mật khẩu của bạn, vui lòng nhấn vào liên kết dưới đây:\n\n${resetUrl}`;
+
+        // Gửi email
+        await sendEmail(email, emailSubject, emailText);
+
+        res.status(200).json({ message: 'Email đặt lại mật khẩu đã được gửi' });
+
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ message: 'Có lỗi xảy ra khi gửi email', error: error.message });
+    }
+
+}

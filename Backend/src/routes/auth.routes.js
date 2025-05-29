@@ -6,6 +6,7 @@ const auth = require('../middlewares/auth.middleware');
 // Công khai
 router.post('/register', userCtrl.register);
 router.post('/login', userCtrl.login);
+router.post('/forgot-password', userCtrl.forgotPassword);
 
 // Cần xác thực
 // router.use(auth);
