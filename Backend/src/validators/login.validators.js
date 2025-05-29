@@ -5,4 +5,5 @@ const loginSchema = Joi.object({
     password: Joi.string().min(6).required(), // Mật khẩu tối thiểu 6 ký tự
 });
 
+
 module.exports = { loginSchema };

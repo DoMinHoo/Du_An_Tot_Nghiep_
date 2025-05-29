@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { registerSchema } = require('../validators/register.validators');
 const { loginSchema } = require('../validators/login.validators');
+const { changePasswordSchema } = require('../validators/changePass.validate');
 const { generateToken } = require('../middlewares/auth.middleware');
 const { sendEmail } = require('../untils/mailers'); // Giả sử bạn đã có hàm gửi email
 
@@ -78,27 +79,25 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Tìm người dùng trong DB
+        // Tìm người dùng theo email
         const user = await User.findOne({ email });
-
         if (!user) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
 
-        // Kiểm tra mật khẩu
-        const isMatch = await user.matchPassword(password);
-
+        // So sánh mật khẩu với mật khẩu đã mã hóa trong DB
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Mật khẩu không đúng' });
+            return res.status(400).json({ message: 'Mật khẩu không đúng' });
         }
 
-        // Tạo JWT token
-        const token = generateToken(user);
-
-        // Trả về token
+        // Tạo và trả về token nếu mật khẩu đúng
+        const token = generateToken(user);  // Hàm generateToken đã tạo ở middleware trước đó
         res.status(200).json({ token });
-    } catch (err) {
-        res.status(500).json({ message: 'Lỗi server' });
+
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.status(500).json({ message: 'Có lỗi xảy ra khi đổi mật khẩu', error: error.message });
     }
 };
 
@@ -138,3 +137,51 @@ exports.forgotPassword = async (req, res) => {
     }
 
 }
+
+exports.changePassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.userId;  // Lấy userId từ token đã xác thực
+
+    // Validate dữ liệu đầu vào
+    const { error } = changePasswordSchema.validate({ oldPassword, newPassword });
+    if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+    }
+
+    try {
+        // Tìm người dùng theo userId
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        // Kiểm tra mật khẩu cũ
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
+        }
+
+        // Kiểm tra mật khẩu cũ và mật khẩu mới có giống nhau không
+        if (oldPassword === newPassword) {
+            return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ' });
+        }
+
+        // Mã hóa mật khẩu mới
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Cập nhật mật khẩu mới vào DB
+        user.password = hashedPassword;
+        await user.save();
+
+        // Tạo lại token sau khi đổi mật khẩu
+        const token = generateToken(user);
+
+        // Trả về token mới
+        res.status(200).json({ message: 'Mật khẩu đã được cập nhật thành công', token });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Có lỗi xảy ra khi đổi mật khẩu' });
+    }
+};
