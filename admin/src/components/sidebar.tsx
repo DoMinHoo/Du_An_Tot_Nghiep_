@@ -19,7 +19,7 @@ const AdminSidebar: React.FC = () => {
             <div
                 className="logo"
                 style={{
-                    background:'white',
+                    background: 'white',
                     padding: "16px",
                     textAlign: "center",
                 }}
@@ -44,7 +44,9 @@ const AdminSidebar: React.FC = () => {
                     { key: "4", icon: <ProfileOutlined />, label: <Link to="/orders">Đơn hàng</Link> },
                     { key: "5", icon: <UserOutlined />, label: <Link to="/users">Người dùng</Link> },
                     { key: "6", icon: <GiftOutlined />, label: <Link to="/promotions">Khuyến mãi</Link> },
+                    { key: "7", icon: <ProfileOutlined />, label: <Link to="/admin/review">Bình luận & Đánh giá</Link> }, // <-- mục mới
                 ]}
+
             />
         </Sider>
     );

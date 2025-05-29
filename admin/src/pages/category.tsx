@@ -4,6 +4,7 @@ import AdminSidebar from "../components/sidebar";
 import AdminHeader from "../components/header";
 import AddCategoryModal from "../components/addCategory";
 import EditCategoryModal from "../components/editCategory";
+import { Link } from "react-router-dom";
 
 const { Content } = Layout;
 
@@ -72,7 +73,8 @@ const CategoryManager: React.FC = () => {
                             ]}
                         />
                     </div>
-                    <Input placeholder="Tìm kiếm danh mục..." style={{ width: 300, marginBottom: 16 }} />
+                    <Input placeholder="Tìm kiếm danh mục..." style={{ width: 300, marginBottom: 16,marginRight:1200 }} />
+                    <Button color="danger" variant="solid" ><Link to={'/admin/categoryTrash'}>Thùng rác</Link></Button>
                     <Table dataSource={dataSource} columns={columns} pagination={false} />
                 </Content>
             </Layout>
