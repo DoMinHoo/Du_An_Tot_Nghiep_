@@ -12,6 +12,7 @@ import RegisterAdmin from "../pages/Registers/registerAdmin";
 import LoginAdmin from "../pages/Login/loginAdmin";
 import ReviewManager from "../pages/Comment&Review/reviewManager";
 import CategoryManager from "../pages/Categories/category";
+import OrderDetail from "../pages/Orders/orderDetail";
 
 const routes: RouteObject[] = [
   {
@@ -70,10 +71,21 @@ const routes: RouteObject[] = [
           }
         ]
       },
+
       {
         path: "orders",
-        element: <ListOrder />
+        children: [
+          {
+            index: true,
+            element: <ListOrder />
+          },
+          {
+            path: ":id",
+            element: <OrderDetail />
+          }
+        ]
       },
+      
       {
         path: "users",
         element: <ListUser />
