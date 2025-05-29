@@ -1,7 +1,6 @@
 import React from "react";
 import { Table, Button, Layout, Space, message } from "antd";
-import AdminHeader from "../components/header";
-import AdminSidebar from "../components/sidebar";
+
 
 const { Content } = Layout;
 
@@ -70,16 +69,12 @@ const CategoryTrash: React.FC = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <AdminSidebar />
-      <Layout>
-        <AdminHeader />
+
         <Content style={{ margin: 24, background: "#fff", padding: 24 }}>
           <h2 style={{ marginBottom: 16 }}>Thùng rác danh mục</h2>
           <Table dataSource={trashData} columns={columns} pagination={false} />
         </Content>
-      </Layout>
-    </Layout>
+
   );
 };
 

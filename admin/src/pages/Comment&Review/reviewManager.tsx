@@ -9,8 +9,8 @@ import {
   Input,
   message,
 } from "antd";
-import AdminHeader from "../components/header";
-import AdminSidebar from "../components/sidebar";
+
+
 
 const { Content } = Layout;
 
@@ -171,10 +171,6 @@ const ReviewManager: React.FC = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <AdminSidebar />
-      <Layout>
-        <AdminHeader />
         <Content style={{ margin: 24, background: "#fff", padding: 24 }}>
           <h2 style={{ marginBottom: 16 }}>Quản lý đánh giá & phản hồi</h2>
           <Table
@@ -220,8 +216,6 @@ const ReviewManager: React.FC = () => {
             }}
           />
         </Content>
-      </Layout>
-    </Layout>
   );
 };
 
