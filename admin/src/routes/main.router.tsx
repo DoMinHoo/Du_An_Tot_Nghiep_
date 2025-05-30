@@ -14,6 +14,10 @@ import ReviewManager from "../pages/Comment&Review/reviewManager";
 import CategoryManager from "../pages/Categories/category";
 import UserDetail from "../pages/Users/detailUser";
 
+import OrderDetail from "../pages/Orders/orderDetail";
+
+
+
 const routes: RouteObject[] = [
   {
     path: "/admin",
@@ -71,12 +75,22 @@ const routes: RouteObject[] = [
           }
         ]
       },
+
       {
         path: "orders",
-        element: <ListOrder />
+        children: [
+          {
+            index: true,
+            element: <ListOrder />
+          },
+          {
+            path: ":id",
+            element: <OrderDetail />
+          }
+        ]
       },
-   
-       {
+      {
+
         path: "users",
         children: [
           {
