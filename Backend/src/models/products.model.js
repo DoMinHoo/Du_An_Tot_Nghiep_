@@ -2,77 +2,31 @@ const mongoose = require('mongoose');
 
 // Định nghĩa Schema cho bảng "products"
 const productSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true, // Tên sản phẩm là bắt buộc
-    },
-    descriptionShort: {
-        type: String,
-        required: true, // Mô tả ngắn là bắt buộc
-    },
-    descriptionLong: {
-        type: String,
-        required: true, // Mô tả chi tiết là bắt buộc
-    },
-    material: {
-        type: String,
-        required: true, // Chất liệu là bắt buộc
-    },
-    dimensions: {
-        type: String,
-        required: true, // Kích thước là bắt buộc
-    },
-    weight: {
-        type: Number,
-        required: true, // Cân nặng là bắt buộc
-    },
-    price: {
-        type: Number,
-        required: true, // Giá gốc là bắt buộc
-    },
-    importPrice: {
-        type: Number,
-        required: true, // Giá nhập là bắt buộc
-    },
-    salePrice: {
-        type: Number,
-        required: false, // Giá bán giảm giá là tùy chọn
-    },
-    categoryId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category', // Tham chiếu đến bảng Categories
-        required: true, // ID danh mục là bắt buộc
-    },
-    flashSale_discountedPrice: {
-        type: Number,
-        required: false, // Giá flash sale là tùy chọn
-    },
-    flashSale_start: {
-        type: Date,
-        required: false, // Thời gian bắt đầu flash sale là tùy chọn
-    },
-    flashSale_end: {
-        type: Date,
-        required: false, // Thời gian kết thúc flash sale là tùy chọn
-    },
-    images: {
-        type: [String], // Danh sách URL hình ảnh
-        required: true, // Hình ảnh là bắt buộc
-    },
-    totalPurchased: {
-        type: Number,
-        default: 0, // Mặc định là 0
-    },
+    name: { type: String, required: true },
+    descriptionShort: { type: String, required: true },
+    descriptionLong: { type: String, required: true },
+    material: { type: String, required: true },
+    dimensions: { type: String, required: true },
+    weight: { type: Number, required: true },
+    price: { type: Number, required: true },
+    importPrice: { type: Number, required: true },
+    salePrice: { type: Number },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    flashSale_discountedPrice: { type: Number },
+    flashSale_start: { type: Date },
+    flashSale_end: { type: Date },
+    image: { type: [String], default: [] },
+    totalPurchased: { type: Number, default: 0 },
+    stock_quantity: { type: Number, default: 0 },
+    isDeleted: { type: Boolean, default: false },
     status: {
         type: String,
-        enum: ['active', 'hidden', 'sold_out'], // Trạng thái sản phẩm
-        default: 'active', // Mặc định là active
-    },
-
+        enum: ['active', 'hidden', 'sold_out'],
+        default: 'active'
+    }
 }, {
-    timestamps: true, // Tự động tạo trường createdAt và updatedAt
-    versionKey: false // Tắt trường __v
+    timestamps: true,
+    versionKey: false
 });
 
-// Tạo mô hình và xuất khẩu
 module.exports = mongoose.model('Product', productSchema);
