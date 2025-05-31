@@ -16,6 +16,9 @@ import CategoryManager from "../pages/Categories/category";
 import UserDetail from "../pages/Users/detailUser";
 
 import OrderDetail from "../pages/Orders/orderDetail";
+import ListVariant from "../pages/Products/ProductVariants/ListVariantProduct";
+import CreateVariant from "../pages/Products/ProductVariants/CreateVariantProduct";
+import EditVariant from "../pages/Products/ProductVariants/EditVariantProduct";
 
 
 
@@ -50,7 +53,20 @@ const routes: RouteObject[] = [
           {
             path: "edit/:id",
             element: <UpdateProduct />
+          },
+          {
+            path: "variants/:id",
+            element: <ListVariant />
+          },
+          {
+            path: "variants/create",
+            element: <CreateVariant />
+          },
+          {
+            path: "variants/edit/:variantId",
+            element: <EditVariant />
           }
+
         ]
       },
       {

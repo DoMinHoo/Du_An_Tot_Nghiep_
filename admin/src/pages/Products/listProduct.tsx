@@ -195,6 +195,13 @@ const ListProduct = () => {
             <Button danger icon={<DeleteOutlined />}>
               Xoá
             </Button>
+            <Button
+              type="dashed"
+              onClick={() => navigate(`/admin/products/variants/${record.key}`)}
+            >
+              Biến thể
+            </Button>
+
           </Popconfirm>
         </Space>
       ),
