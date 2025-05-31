@@ -1,5 +1,7 @@
 import { Button, Input, Layout, Popconfirm, Space, Table, type PopconfirmProps } from "antd";
 import React from "react";
+
+
 import AddCategoryModal from "./addCategory";
 import EditCategoryModal from "./editCategory";
 
@@ -70,8 +72,6 @@ const CategoryManager: React.FC = () => {
                     <Input placeholder="Tìm kiếm danh mục..." style={{ width: 300, marginBottom: 16 }} />
                     <Table dataSource={dataSource} columns={columns} pagination={false} />
                 </Content>
-
-
 
     );
 };

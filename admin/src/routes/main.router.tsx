@@ -3,6 +3,7 @@ import Authenticated from "../components/Layout/authenticate";
 import MainLayout from "../components/Layout/mainLayoutAdmin";
 import ListCategory from "../pages/Categories/listCategory";
 import DashboardPage from "../pages/Dashboard/dashboard";
+
 import CreateProducts from "../pages/Products/createProducts";
 import ListProduct from "../pages/Products/listProduct";
 import UpdateProduct from "../pages/Products/updateProduct";
@@ -15,6 +16,7 @@ import CategoryManager from "../pages/Categories/category";
 import UserDetail from "../pages/Users/detailUser";
 
 import OrderDetail from "../pages/Orders/orderDetail";
+
 
 
 
@@ -75,7 +77,6 @@ const routes: RouteObject[] = [
           }
         ]
       },
-
       {
         path: "orders",
         children: [

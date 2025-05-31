@@ -66,11 +66,13 @@ const AdminSidebar: React.FC = () => {
             icon: <GiftOutlined />,
             label: <Link to="promotions">Khuyến mãi</Link>,
           },
+
           {
             key: "7",
             icon: <ProfileOutlined />,
             label: <Link to="comment&review">Bình luận và đánh giá</Link>,
           },
+
         ]}
       />
     </div>
