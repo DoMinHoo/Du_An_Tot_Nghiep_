@@ -3,13 +3,13 @@ import Authenticated from "../components/Layout/authenticate";
 import MainLayout from "../components/Layout/mainLayoutAdmin";
 import ListCategory from "../pages/Categories/listCategory";
 import DashboardPage from "../pages/Dashboard/dashboard";
-import CreateProducts from "../pages/Products/createProducts";
-import ListProduct from "../pages/Products/listProduct";
-import UpdateProduct from "../pages/Products/updateProduct";
-import ListOrder from "../pages/Orders/listOrder";
-import ListUser from "../pages/Users/listUser";
-import RegisterAdmin from "../pages/Registers/registerAdmin";
 import LoginAdmin from "../pages/Login/loginAdmin";
+import ListOrder from "../pages/Orders/listOrder";
+import AddProductPage from "../pages/Products/createProducts";
+import ListProduct from "../pages/Products/listProduct";
+import EditProductPage from "../pages/Products/updateProduct";
+import RegisterAdmin from "../pages/Registers/registerAdmin";
+import ListUser from "../pages/Users/listUser";
 
 const routes: RouteObject[] = [
   {
@@ -36,11 +36,11 @@ const routes: RouteObject[] = [
           },
           {
             path: "create",
-            element:<CreateProducts/>
+            element:<AddProductPage/>
           },
           {
             path: "edit/:id",
-            element:<UpdateProduct/>
+            element:<EditProductPage/>
           }
         ]
       },
