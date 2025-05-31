@@ -32,10 +32,10 @@ const postSchema = new mongoose.Schema({
         type: Boolean,
         default: false,  // Mặc định là chưa xuất bản
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,  // Mặc định là ngày giờ hiện tại
-    },
+
+}, {
+    timestamps: true,  // Tự động tạo createdAt và updatedAt
+    versionKey: false,  // Tắt trường __v
 });
 
 // Tạo mô hình "Post" từ schema

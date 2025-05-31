@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -151,3 +152,4 @@ const AddProductPage: React.FC = () => {
 };
 
 export default AddProductPage;
+

@@ -67,10 +67,10 @@ const orderSchema = new mongoose.Schema({
     },
     items: [itemSchema], // Danh sách sản phẩm đã đặt hàng
     statusHistory: [statusHistorySchema], // Lịch sử trạng thái của đơn hàng
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v
 });
 
 // Tạo model và xuất ra ngoài

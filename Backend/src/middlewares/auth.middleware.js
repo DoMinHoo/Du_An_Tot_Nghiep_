@@ -1,18 +1,47 @@
-    const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 
-    module.exports = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+// Load biến môi trường từ .env
+dotenv.config();
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Token không tồn tại hoặc sai định dạng' });
+// Hàm tạo JWT token
+const generateToken = (user) => {
+    return jwt.sign(
+        { userId: user._id, role: user.roleId },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+};
+
+// Middleware để bảo vệ route bằng token
+const protect = (req, res, next) => {
+    const token = req.header('Authorization')?.split(' ')[1];  // Lấy token từ header Authorization
+
+    if (!token) {
+        return res.status(401).json({ message: 'Không có token, không thể xác thực' });
     }
 
-    const token = authHeader.split(" ")[1];
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
+        req.user = decoded;  // Thêm thông tin user vào request object
+        next();  // Tiến hành tiếp tục xử lý request
     } catch (err) {
-        return res.status(403).json({ message: 'Token không hợp lệ hoặc đã hết hạn' });
+        res.status(401).json({ message: 'Token không hợp lệ' });
     }
-    };
+};
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "Không có token" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(403).json({ message: "Token không hợp lệ" });
+  }
+};
+  
+
+// Export các hàm ra ngoài
+module.exports = { generateToken, protect, verifyToken };

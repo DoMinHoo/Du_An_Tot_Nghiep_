@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const userCtrl = require('../controllers/user.controller');
-const auth = require('../middlewares/auth.middleware');
+const userCtrl = require('../controllers/auth.controller');
+const { protect } = require('../middlewares/auth.middleware');
 
 // Công khai
 router.post('/register', userCtrl.register);
 router.post('/login', userCtrl.login);
+router.post('/forgot-password', userCtrl.forgotPassword);
+router.put('/change-password', protect, userCtrl.changePassword);
 
 // Cần xác thực
 // router.use(auth);

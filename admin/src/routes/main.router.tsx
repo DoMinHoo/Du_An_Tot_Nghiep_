@@ -3,13 +3,22 @@ import Authenticated from "../components/Layout/authenticate";
 import MainLayout from "../components/Layout/mainLayoutAdmin";
 import ListCategory from "../pages/Categories/listCategory";
 import DashboardPage from "../pages/Dashboard/dashboard";
-import LoginAdmin from "../pages/Login/loginAdmin";
-import ListOrder from "../pages/Orders/listOrder";
-import AddProductPage from "../pages/Products/createProducts";
+
+import CreateProducts from "../pages/Products/createProducts";
 import ListProduct from "../pages/Products/listProduct";
-import EditProductPage from "../pages/Products/updateProduct";
-import RegisterAdmin from "../pages/Registers/registerAdmin";
+import UpdateProduct from "../pages/Products/updateProduct";
+import ListOrder from "../pages/Orders/listOrder";
 import ListUser from "../pages/Users/listUser";
+import RegisterAdmin from "../pages/Registers/registerAdmin";
+import LoginAdmin from "../pages/Login/loginAdmin";
+import ReviewManager from "../pages/Comment&Review/reviewManager";
+import CategoryManager from "../pages/Categories/category";
+import UserDetail from "../pages/Users/detailUser";
+
+import OrderDetail from "../pages/Orders/orderDetail";
+
+
+
 
 const routes: RouteObject[] = [
   {
@@ -36,11 +45,11 @@ const routes: RouteObject[] = [
           },
           {
             path: "create",
-            element:<AddProductPage/>
+            element: <CreateProducts />
           },
           {
             path: "edit/:id",
-            element:<EditProductPage/>
+            element: <UpdateProduct />
           }
         ]
       },
@@ -49,7 +58,19 @@ const routes: RouteObject[] = [
         children: [
           {
             index: true,
-            element: <ListCategory/>
+            element: <CategoryManager />
+          },
+          {
+            path: "create",
+          }
+        ]
+      },
+      {
+        path: "comment&review",
+        children: [
+          {
+            index: true,
+            element: <ReviewManager />
           },
           {
             path: "create",
@@ -58,21 +79,40 @@ const routes: RouteObject[] = [
       },
       {
         path: "orders",
-        element: <ListOrder/>
+        children: [
+          {
+            index: true,
+            element: <ListOrder />
+          },
+          {
+            path: ":id",
+            element: <OrderDetail />
+          }
+        ]
       },
       {
+
         path: "users",
-        element: <ListUser/>
-      }
+        children: [
+          {
+            index: true,
+            element: <ListUser />
+          },
+          {
+            path: ":id",
+            element: <UserDetail/>
+          }
+        ]
+      },
     ],
   },
   {
     path: "signin",
-    element: <RegisterAdmin/>
+    element: <RegisterAdmin />
   },
   {
     path: "login",
-    element: <LoginAdmin/>
+    element: <LoginAdmin />
   },
   {
     path: "*",

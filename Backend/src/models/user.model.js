@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const bcrypt = require('bcryptjs');
 // Định nghĩa Schema cho bảng "users"
 const userSchema = new mongoose.Schema({
     name: {
@@ -46,11 +46,17 @@ const userSchema = new mongoose.Schema({
         ref: 'Role', // Tên của mô hình Role
         required: true,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
+
+}, {
+    timestamps: true, // Tự động tạo createdAt & updatedAt
+    versionKey: false // Tắt __v                                                   
 });
+
+userSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
