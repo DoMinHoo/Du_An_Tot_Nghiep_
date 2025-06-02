@@ -1,9 +1,9 @@
+import { Button, Input, Layout, Popconfirm, Space, Table, type PopconfirmProps } from "antd";
 import React from "react";
-import { Layout, Button, Input, Table, Space, type PopconfirmProps, Popconfirm } from "antd";
-import AdminSidebar from "../components/sidebar";
-import AdminHeader from "../components/header";
-import AddCategoryModal from "../components/addCategory";
-import EditCategoryModal from "../components/editCategory";
+
+
+import AddCategoryModal from "./addCategory";
+import EditCategoryModal from "./editCategory";
 
 const { Content } = Layout;
 
@@ -59,10 +59,7 @@ const cancel: PopconfirmProps['onCancel'] = (e) => {
 
 const CategoryManager: React.FC = () => {
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <AdminSidebar />
-            <Layout>
-                <AdminHeader />
+
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     <div style={{ marginBottom: 16 }}>
                         <AddCategoryModal
@@ -75,10 +72,6 @@ const CategoryManager: React.FC = () => {
                     <Input placeholder="Tìm kiếm danh mục..." style={{ width: 300, marginBottom: 16 }} />
                     <Table dataSource={dataSource} columns={columns} pagination={false} />
                 </Content>
-            </Layout>
-
-        </Layout>
-
 
     );
 };
