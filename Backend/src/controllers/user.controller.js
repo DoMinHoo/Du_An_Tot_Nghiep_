@@ -53,3 +53,22 @@ exports.toggleUserStatus = async (req, res) => {
     res.status(500).json({ message: "Lỗi cập nhật trạng thái", error });
   }
 };
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate(
+      "roleId",
+      "name"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy profile:", error);
+    res.status(500).json({
+      message: "Lỗi lấy thông tin người dùng",
+      error: error.message || "Lỗi không xác định",
+    });
+  }
+};
