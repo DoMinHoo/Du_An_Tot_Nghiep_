@@ -1,13 +1,9 @@
 import React from "react";
+import { Navigate } from "react-router-dom";
 
-type Props = {
-    children: React.ReactNode;
-    fallback: React.ReactNode;
+const PrivateRoute = ({ children }: any) => {
+    const isLoggedIn = !!localStorage.getItem("token"); // hoặc dùng context/auth state
+    return isLoggedIn ? children : <Navigate to="/login" replace />;
 };
 
-const Authenticated = ({ children, fallback }: Props) => {
-    const isAuthenticated = true;
-    return <>{isAuthenticated ? children : fallback}</>;
-};
-
-export default Authenticated;
+export default PrivateRoute;
