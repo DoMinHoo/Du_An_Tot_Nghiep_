@@ -4,12 +4,11 @@ const path = require('path');
 // Cấu hình lưu trữ
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // lưu trong thư mục uploads
+        cb(null, path.join(__dirname, '..', 'uploads', 'img'));
     },
     filename: function (req, file, cb) {
         const ext = path.extname(file.originalname);
-        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
-        cb(null, filename);
+        cb(null, `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`);
     }
 });
 

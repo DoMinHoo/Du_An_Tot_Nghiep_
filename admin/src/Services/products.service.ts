@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Product, UpdateProductDto } from '../Types/product.interface';
+
 export interface Category {
   _id: string;
   name: string;
@@ -21,32 +22,21 @@ export const deleteProduct = async (id: string): Promise<void> => {
   await axios.delete(`${API_BASE}/${id}`);
 };
 
-interface CreateProductDto {
-  name: string;
-  price: number;
-  description?: string;
-  images?: Array<{ url?: string; thumbUrl?: string }>;
-}
-
-export const createProduct = async (data: CreateProductDto): Promise<Product> => {
-  const images = data.images?.map((file: { url?: string; thumbUrl?: string }) => file.url || file.thumbUrl || '') || [];
-
-  const payload = {
-    ...data,
-    images,
-  };
-
-  const response = await axios.post(API_BASE, payload);
-  return response.data.data;
+export const createProduct = async (data: FormData): Promise<Product> => {
+  const response = await axios.post(API_BASE, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
+
 export const updateProduct = async (data: UpdateProductDto): Promise<Product> => {
-  const response = await axios.put(`http://localhost:5000/api/products/${data.id}`, data);
+  const response = await axios.put(`${API_BASE}/${data.id}`, data);
   return response.data.data;
 };
 
 export const getProductById = async (id: string): Promise<Product> => {
-  const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+  const response = await axios.get(`${API_BASE}/${id}`);
   return response.data.data;
 };
-
-

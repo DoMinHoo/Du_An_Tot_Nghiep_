@@ -1,7 +1,22 @@
-import { Table, Tag, Image, Space, Button, Popconfirm, Card, Tooltip, message } from 'antd';
+import {
+  Table,
+  Tag,
+  Image,
+  Space,
+  Button,
+  Popconfirm,
+  Card,
+  Tooltip,
+  message,
+} from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { EditOutlined, DeleteOutlined, PlusOutlined, BranchesOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  BranchesOutlined,
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../Types/product.interface';
 import { deleteProduct, getProducts } from '../../Services/products.service';
@@ -23,18 +38,16 @@ const ProductList = () => {
   const { mutate: deleteMutate } = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
     onSuccess: () => {
-    message.success('Xoá sản phẩm thành công');
-    queryClient.invalidateQueries({ queryKey: ['products'] });
+      message.success('Xoá sản phẩm thành công');
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     onError: () => {
       message.error('Xoá sản phẩm thất bại');
     },
-    });
-    const handleDelete = (product: Product) => {
-      deleteMutate(product._id);
+  });
+  const handleDelete = (product: Product) => {
+    deleteMutate(product._id);
   };
-
-
 
   const formatPercent = (original: number, discounted?: number) => {
     if (!original || !discounted || discounted >= original) return '';
@@ -47,16 +60,25 @@ const ProductList = () => {
       title: 'Ảnh',
       dataIndex: 'image',
       key: 'image',
-      render: (images: string[]) => (
-        <Image
-          width={60}
-          height={60}
-          style={{ objectFit: 'cover', borderRadius: 8 }}
-          src={images[0] || ''}
-          alt="Product"
-          placeholder
-        />
-      ),
+      render: (images: string[]) => {
+        const imageUrl =
+          images && images.length > 0
+            ? `http://localhost:5000${images[0]}`
+            : '';
+        console.log('Image URL:', imageUrl); // Log để kiểm tra
+        return (
+          <Image
+            width={60}
+            height={60}
+            style={{ objectFit: 'cover', borderRadius: 8 }}
+            src={imageUrl}
+            alt="Product"
+            placeholder
+            fallback="https://via.placeholder.com/60" // Ảnh dự phòng từ URL công khai
+            onError={() => console.error('Failed to load image:', imageUrl)} // Log lỗi tải ảnh
+          />
+        );
+      },
     },
     {
       title: 'Tên sản phẩm',
@@ -75,10 +97,18 @@ const ProductList = () => {
       key: 'info',
       render: (_: unknown, record: Product) => (
         <div style={{ lineHeight: '1.6' }}>
-          <div><strong>Chất liệu:</strong> {record.material}</div>
-          <div><strong>Kích thước:</strong> {record.dimensions}</div>
-          <div><strong>Khối lượng:</strong> {record.weight} kg</div>
-          <div><strong>Kho:</strong> {record.stock_quantity}</div>
+          <div>
+            <strong>Chất liệu:</strong> {record.material}
+          </div>
+          <div>
+            <strong>Kích thước:</strong> {record.dimensions}
+          </div>
+          <div>
+            <strong>Khối lượng:</strong> {record.weight} kg
+          </div>
+          <div>
+            <strong>Kho:</strong> {record.stock_quantity}
+          </div>
         </div>
       ),
     },
@@ -103,7 +133,10 @@ const ProductList = () => {
           </div>
           <div>
             <Tag color="red">
-              Flash: {record.flashSale_discountedPrice ? `$${record.flashSale_discountedPrice.toFixed(2)}` : '-'}{' '}
+              Flash:{' '}
+              {record.flashSale_discountedPrice
+                ? `$${record.flashSale_discountedPrice.toFixed(2)}`
+                : '-'}{' '}
               <span style={{ fontWeight: 500, color: '#cf1322' }}>
                 {formatPercent(record.price, record.flashSale_discountedPrice)}
               </span>
@@ -118,7 +151,8 @@ const ProductList = () => {
       render: (_: unknown, record: Product) =>
         record.flashSale_start && record.flashSale_end ? (
           <span style={{ fontSize: 12 }}>
-            {format(new Date(record.flashSale_start), 'PP')} - {format(new Date(record.flashSale_end), 'PP')}
+            {format(new Date(record.flashSale_start), 'PP')} -{' '}
+            {format(new Date(record.flashSale_end), 'PP')}
           </span>
         ) : (
           '-'
@@ -141,7 +175,11 @@ const ProductList = () => {
       key: 'status',
       render: (status: string) => {
         const color =
-          status === 'active' ? 'green' : status === 'hidden' ? 'orange' : 'red';
+          status === 'active'
+            ? 'green'
+            : status === 'hidden'
+            ? 'orange'
+            : 'red';
         return <Tag color={color}>{status.toUpperCase()}</Tag>;
       },
     },
@@ -157,14 +195,19 @@ const ProductList = () => {
       fixed: 'right' as const,
       render: (_: unknown, record: Product) => (
         <Space>
-         <Tooltip title="Biến thể">
-          <Button
-            icon={<BranchesOutlined />}
-            onClick={() => navigate(`/admin/products/variants/${record._id}`)}
-          />
-        </Tooltip>
+          <Tooltip title="Biến thể">
+            <Button
+              icon={<BranchesOutlined />}
+              onClick={() => navigate(`/admin/products/variants/${record._id}`)}
+            />
+          </Tooltip>
           <Tooltip title="Sửa">
-            <Button type="primary" icon={<EditOutlined />} shape="circle" onClick={() => handleEdit(record)} />
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              shape="circle"
+              onClick={() => handleEdit(record)}
+            />
           </Tooltip>
           <Tooltip title="Xoá">
             <Popconfirm
@@ -183,7 +226,11 @@ const ProductList = () => {
     <Card
       title="🛍️ Danh sách sản phẩm"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/admin/products/create')}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => navigate('/admin/products/create')}
+        >
           Thêm sản phẩm
         </Button>
       }

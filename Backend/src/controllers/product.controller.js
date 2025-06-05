@@ -90,40 +90,37 @@ exports.getProductById = async (req, res) => {
 };
 
 // Tạo sản phẩm
-exports.createProduct = async (req, res) => {
-    try {
-        const uploadedImages = Array.isArray(req.files)
-            ? req.files.map(file => file.path)
-            : [];
-
+    exports.createProduct = async (req, res) => {
+        try {
+        const uploadedImages = req.files ? req.files.map(file => `/uploads/img/${file.filename}`) : [];
         const body = req.body || {};
-        const bodyImages = Array.isArray(body.image)
-            ? body.image
-            : body.image ? [body.image] : [];
-
-        const images = [...uploadedImages, ...bodyImages];
-
+    
+        console.log('Uploaded images:', uploadedImages); // Log để kiểm tra
+    
         const productData = {
             ...body,
-            image: images,
-            price: parseFloat(body.price),
-            importPrice: parseFloat(body.importPrice),
-            salePrice: parseFloat(body.salePrice || 0),
-            flashSale_discountedPrice: parseFloat(body.flashSale_discountedPrice || 0),
-            weight: parseFloat(body.weight),
+            image: uploadedImages,
+            price: parseFloat(body.price) || 0,
+            importPrice: parseFloat(body.importPrice) || 0,
+            salePrice: parseFloat(body.salePrice) || 0,
+            flashSale_discountedPrice: parseFloat(body.flashSale_discountedPrice) || 0,
+            flashSale_start: body.flashSale_start ? new Date(body.flashSale_start) : undefined,
+            flashSale_end: body.flashSale_end ? new Date(body.flashSale_end) : undefined,
+            weight: parseFloat(body.weight) || 0,
             stock_quantity: parseInt(body.stock_quantity) || 0,
             isDeleted: body.isDeleted === 'true' || false,
-            categoryId: body.categoryId
+            categoryId: body.categoryId,
         };
-
+    
         const product = new Product(productData);
         await product.save();
-
+    
         res.status(201).json(product);
-    } catch (error) {
+        } catch (error) {
+        console.error('Error in createProduct:', error);
         res.status(400).json({ message: error.message });
-    }
-};
+        }
+    };
 
 // Cập nhật sản phẩm
 exports.updateProduct = async (req, res) => {
