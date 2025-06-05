@@ -8,7 +8,7 @@ const productRoutes = require("./product.routes");
 const orderRoutes = require("./order.routes");
 const cartRoutes = require("./cart.routes");
 const variationRoutes = require("./variation.routes");
-
+const bannerRoutes = require("./banner.routes");
 
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
@@ -18,6 +18,7 @@ router.use('/products', productRoutes);
 router.use('/orders', orderRoutes);
 router.use('/carts', cartRoutes);
 router.use('/variations', variationRoutes);
+router.use('/banners', bannerRoutes);
 
 
 
