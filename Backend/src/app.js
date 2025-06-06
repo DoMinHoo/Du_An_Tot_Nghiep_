@@ -17,10 +17,16 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Static folder for image access
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// serve ảnh từ thư mục /uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+console.log('__dirname:', __dirname);
+console.log('Serving static from:', path.join(__dirname, 'uploads'));
+
+
 
 // API routes
 app.use('/api', routes);
+
 
 module.exports = app;

@@ -56,6 +56,27 @@ exports.toggleUserStatus = async (req, res) => {
   }
 };
 
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate(
+      "roleId",
+      "name"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy profile:", error);
+    res.status(500).json({
+      message: "Lỗi lấy thông tin người dùng",
+      error: error.message || "Lỗi không xác định",
+    });
+  }
+};
+
+
 
 exports.updateProfiles = async (req, res) => {
   const { error } = updateUserSchema.validate(req.body);
@@ -105,4 +126,5 @@ exports.updateProfiles = async (req, res) => {
     return res.status(500).json({ message: 'Có lỗi xảy ra khi cập nhật thông tin tài khoản' });
   }
 };
+
 
