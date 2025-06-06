@@ -19,6 +19,10 @@ import OrderDetail from "../pages/Orders/orderDetail";
 import ListVariant from "../pages/Products/ProductVariants/ListVariantProduct";
 import CreateVariant from "../pages/Products/ProductVariants/CreateVariantProduct";
 import EditVariant from "../pages/Products/ProductVariants/EditVariantProduct";
+import BannerList from "../pages/Banners/BannerList";
+import CollectionPage from "../pages/Banners/CollectionPage";
+import CreateBanner from "../pages/Banners/CreateBaner";
+import EditBanner from "../pages/Banners/EditBanner";
 
 
 
@@ -116,7 +120,29 @@ const routes: RouteObject[] = [
           },
           {
             path: ":id",
-            element: <UserDetail/>
+            element: <UserDetail />
+          }
+        ]
+      },
+      {
+
+        path: "banners",
+        children: [
+          {
+            index: true,
+            element: <BannerList />
+          },
+          {
+            path: "collections/:slug",
+            element: <CollectionPage />
+          },
+          {
+            path: "create",
+            element: <CreateBanner />
+          },
+          {
+            path: "edit/:id",
+            element: <EditBanner />
           }
         ]
       },

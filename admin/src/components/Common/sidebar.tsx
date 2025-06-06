@@ -72,6 +72,11 @@ const AdminSidebar: React.FC = () => {
             icon: <ProfileOutlined />,
             label: <Link to="comment&review">Bình luận và đánh giá</Link>,
           },
+          {
+            key: "8",
+            icon: <ProfileOutlined />,
+            label: <Link to="banners">Banner</Link>,
+          },
 
         ]}
       />
