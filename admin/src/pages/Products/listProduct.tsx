@@ -61,11 +61,14 @@ const ProductList = () => {
       dataIndex: 'image',
       key: 'image',
       render: (images: string[]) => {
+        const isFullUrl = (url: string) => /^https?:\/\//.test(url); // Kiểm tra xem có phải URL đầy đủ không
         const imageUrl =
           images && images.length > 0
-            ? `http://localhost:5000${images[0]}`
+            ? isFullUrl(images[0])
+              ? images[0] // Sử dụng trực tiếp nếu là URL đầy đủ
+              : `http://localhost:5000${images[0]}` // Thêm tiền tố nếu là đường dẫn tương đối
             : '';
-        console.log('Image URL:', imageUrl); // Log để kiểm tra
+        // console.log('Image URL:', imageUrl); // Log để kiểm tra
         return (
           <Image
             width={60}
@@ -74,7 +77,7 @@ const ProductList = () => {
             src={imageUrl}
             alt="Product"
             placeholder
-            fallback="https://via.placeholder.com/60" // Ảnh dự phòng từ URL công khai
+            fallback="https://via.placeholder.com/60" // Ảnh dự phòng
             onError={() => console.error('Failed to load image:', imageUrl)} // Log lỗi tải ảnh
           />
         );
