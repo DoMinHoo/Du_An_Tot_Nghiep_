@@ -1,0 +1,23 @@
+    export type Product = {
+    _id: string;
+    name: string;
+    descriptionShort: string;
+    descriptionLong: string;
+    material: string;
+    dimensions: string;
+    weight: number;
+    price: number;
+    importPrice: number;
+    salePrice?: number;
+    categoryId: string;
+    flashSale_discountedPrice?: number;
+    flashSale_start?: Date | string | null;
+    flashSale_end?: Date | string | null;
+    image: string[];
+    totalPurchased: number;
+    stock_quantity: number;
+    isDeleted: boolean;
+    status: 'active' | 'hidden' | 'sold_out';
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    };

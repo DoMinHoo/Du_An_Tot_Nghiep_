@@ -19,10 +19,14 @@ import OrderDetail from "../pages/Orders/orderDetail";
 import ListVariant from "../pages/Products/ProductVariants/ListVariantProduct";
 import CreateVariant from "../pages/Products/ProductVariants/CreateVariantProduct";
 import EditVariant from "../pages/Products/ProductVariants/EditVariantProduct";
+
 import BannerList from "../pages/Banners/BannerList";
 import CollectionPage from "../pages/Banners/CollectionPage";
 import CreateBanner from "../pages/Banners/CreateBaner";
 import EditBanner from "../pages/Banners/EditBanner";
+
+import AddCategory from "../pages/Categories/addCategory";
+import EditCategory from "../pages/Categories/editCategory";
 
 
 
@@ -82,7 +86,12 @@ const routes: RouteObject[] = [
           },
           {
             path: "create",
-          }
+            element:<AddCategory/>
+          },
+          {
+            path: "edit/:id",
+            element:<EditCategory/>
+          },
         ]
       },
       {

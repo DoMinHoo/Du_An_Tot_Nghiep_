@@ -19,11 +19,11 @@ const productVariationSchema = new mongoose.Schema({
     price: {
         type: Number,
         required: true,
-    },
+    }, // Giá
     importPrice: {
         type: Number,
         required: true,
-    },
+    }, // Giá nhập
     salePrice: {
         type: Number,
         default: null,  // Có thể không có giá bán giảm
@@ -36,19 +36,19 @@ const productVariationSchema = new mongoose.Schema({
     colorName: {
         type: String,
         required: true,
-    },
+    }, //  mau sac
     colorHexCode: {
         type: String,
         required: true,
-    },
+    }, // mieu ta mau sac
     colorImageUrl: {
         type: String,
         required: true,
-    },
+    }, // anh mau sac
     materialVariation: {
         type: String,
         required: true,
-    },
+    }, // 
 
 }, {
     timestamps: true,  // Tự động tạo createdAt và updatedAt
