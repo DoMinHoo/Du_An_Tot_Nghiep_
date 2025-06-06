@@ -49,6 +49,68 @@ exports.getOrders = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
+
+// [POST] /api/orders
+exports.createOrder = async (req, res) => {
+  try {
+    const {
+      userId,
+      orderCode,
+      customerName,
+      items,
+      totalAmount,
+      shippingAddress
+    } = req.body;
+
+    if (
+      !userId ||
+      !orderCode ||
+      !customerName ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      !totalAmount ||
+      !shippingAddress
+    ) {
+      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc để tạo đơn hàng' });
+    }
+
+    const validItems = items.every(item =>
+      item.variationId &&
+      item.productId &&
+      item.name &&
+      item.quantity &&
+      item.salePrice
+    );
+
+    if (!validItems) {
+      return res.status(400).json({ message: 'Thiếu thông tin trong mục items' });
+    }
+
+    const newOrder = new Order({
+      userId,
+      orderCode,
+      customerName,
+      items,
+      totalAmount,
+      shippingAddress,
+      status: 'pending',
+      statusHistory: [
+        {
+          status: 'pending',
+          changedAt: new Date(),
+          note: 'Đơn hàng được tạo từ người dùng',
+        },
+      ],
+    });
+
+    const savedOrder = await newOrder.save();
+    res.status(201).json({ message: 'Tạo đơn hàng thành công', order: savedOrder });
+  } catch (err) {
+    console.error('Lỗi khi tạo đơn hàng:', err);
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+
 // Lấy chi tiết đơn hàng
 exports.getOrderById = async (req, res) => {
     try {
