@@ -54,7 +54,6 @@ const productVariationSchema = new mongoose.Schema({
     timestamps: true,  // Tự động tạo createdAt và updatedAt
     versionKey: false   // Tắt trường __v                 
 });
-
 // Tạo model từ schema
 const ProductVariation = mongoose.model('ProductVariation', productVariationSchema);
 
