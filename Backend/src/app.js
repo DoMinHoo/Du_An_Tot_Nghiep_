@@ -6,8 +6,14 @@ const routes = require('./routes');
 
 const app = express();
 
+// ✅ Load các model trước khi sử dụng routes
+require('./models/user.model');
+require('./models/products.model');
+require('./models/product_variations.model'); // ✅ sửa đúng tên file
+require('./models/order.model');
+
 // Middleware
-app.use(cors()); // ✅ Nếu frontend gọi từ domain khác
+app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
