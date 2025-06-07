@@ -45,6 +45,7 @@ const ProductList = () => {
       message.error('Xoá sản phẩm thất bại');
     },
   });
+
   const handleDelete = (product: Product) => {
     deleteMutate(product._id);
   };
@@ -61,14 +62,15 @@ const ProductList = () => {
       dataIndex: 'image',
       key: 'image',
       render: (images: string[]) => {
-        const isFullUrl = (url: string) => /^https?:\/\//.test(url); // Kiểm tra xem có phải URL đầy đủ không
+        const isFullUrl = (url: string) => /^https?:\/\//.test(url);
+        // Kiểm tra images là mảng và có ít nhất 1 phần tử
         const imageUrl =
-          images && images.length > 0
+          Array.isArray(images) && images.length > 0 && images[0]
             ? isFullUrl(images[0])
-              ? images[0] // Sử dụng trực tiếp nếu là URL đầy đủ
-              : `http://localhost:5000${images[0]}` // Thêm tiền tố nếu là đường dẫn tương đối
-            : '';
-        // console.log('Image URL:', imageUrl); // Log để kiểm tra
+              ? images[0]
+              : `http://localhost:5000${images[0]}`
+            : '/placeholder.png'; // Hình ảnh dự phòng cục bộ
+        console.log('Image URL:', imageUrl); // Log để kiểm tra
         return (
           <Image
             width={60}
@@ -77,8 +79,8 @@ const ProductList = () => {
             src={imageUrl}
             alt="Product"
             placeholder
-            fallback="https://via.placeholder.com/60" // Ảnh dự phòng
-            onError={() => console.error('Failed to load image:', imageUrl)} // Log lỗi tải ảnh
+            fallback="/placeholder.png" // Sử dụng hình ảnh cục bộ
+            onError={() => console.error('Failed to load image:', imageUrl)}
           />
         );
       },

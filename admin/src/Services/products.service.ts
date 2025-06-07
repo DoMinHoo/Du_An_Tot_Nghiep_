@@ -15,7 +15,7 @@ const API_BASE = 'http://localhost:5000/api/products';
 
 export const getProducts = async (): Promise<Product[]> => {
   const response = await axios.get(API_BASE);
-  // console.log(response.data);
+  console.log(response.data);
   return response.data.data;
 };
 
