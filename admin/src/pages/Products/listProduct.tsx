@@ -70,7 +70,7 @@ const ProductList = () => {
               ? images[0]
               : `http://localhost:5000${images[0]}`
             : '/placeholder.png'; // Hình ảnh dự phòng cục bộ
-        console.log('Image URL:', imageUrl); // Log để kiểm tra
+        // console.log('Image URL:', imageUrl); // Log để kiểm tra
         return (
           <Image
             width={60}
