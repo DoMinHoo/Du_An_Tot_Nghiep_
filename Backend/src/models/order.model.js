@@ -4,12 +4,12 @@ const mongoose = require('mongoose');
 const itemSchema = new mongoose.Schema({
     variationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ProductVariation', // Lượng biến thể sản phẩm
+        ref: 'ProductVariation',
         required: true
     },
     productId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product', // Sản phẩm cha
+        ref: 'Product',
         required: true
     },
     name: {
@@ -24,13 +24,13 @@ const itemSchema = new mongoose.Schema({
         type: Number,
         required: true
     }
-}, { _id: false }); // Không cần _id cho mỗi item
+}, { _id: false });
 
 // Schema cho từng mục trong statusHistory
 const statusHistorySchema = new mongoose.Schema({
     status: {
         type: String,
-        enum: ['pending', 'shipping', 'completed', 'canceled'], // Các trạng thái hợp lệ
+        enum: ['pending', 'shipping', 'completed', 'canceled'],
         required: true
     },
     changedAt: {
@@ -42,13 +42,22 @@ const statusHistorySchema = new mongoose.Schema({
         type: String,
         default: ''
     }
-}, { _id: false }); // Không cần _id cho mỗi mục trong lịch sử trạng thái
+}, { _id: false });
 
 // Schema chính cho đơn hàng
 const orderSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Liên kết đến bảng User
+        ref: 'User',
+        required: true
+    },
+    orderCode: {
+        type: String,
+        required: true,
+        unique: true // mã đơn hàng phải là duy nhất
+    },
+    customerName: {
+        type: String,
         required: true
     },
     totalAmount: {
@@ -57,7 +66,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'shipping', 'completed', 'canceled'], // Các trạng thái đơn hàng
+        enum: ['pending', 'shipping', 'completed', 'canceled'],
         default: 'pending',
         required: true
     },
@@ -65,14 +74,12 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    items: [itemSchema], // Danh sách sản phẩm đã đặt hàng
-    statusHistory: [statusHistorySchema], // Lịch sử trạng thái của đơn hàng
-
+    items: [itemSchema],
+    statusHistory: [statusHistorySchema]
 }, {
-    timestamps: true, // Tự động tạo createdAt & updatedAt
-    versionKey: false // Tắt __v
+    timestamps: true,
+    versionKey: false
 });
 
-// Tạo model và xuất ra ngoài
 const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;

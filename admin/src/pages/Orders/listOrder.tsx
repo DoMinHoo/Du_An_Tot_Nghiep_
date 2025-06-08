@@ -1,64 +1,91 @@
-
-import React from "react";
-import { Layout, Button, Input, Table, Space, Popconfirm, type PopconfirmProps } from "antd";
+import React, { useEffect, useState } from "react";
+import {
+  Layout,
+  Button,
+  Input,
+  Table,
+  Space,
+  Popconfirm,
+  message,
+  Spin,
+} from "antd";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const { Content } = Layout;
 
-const dataSource = [
-  {
-    key: "1",
-    _id: "orderid1",
-    orderCode: "ORD001",
-    customerName: "Nguyễn Văn A",
-    totalAmount: 1500000,
-    status: "Đã thanh toán",
-    shippingAddress: "123 Đường ABC, Quận 1, TP.HCM",
-    createdAt: "2024-05-01T10:00:00Z",
-    items: [
-      { name: "Sản phẩm A", quantity: 2 },
-      { name: "Sản phẩm B", quantity: 1 },
-    ],
-    statusHistory: [
-      { status: "Đã tạo", date: "2024-05-01T09:00:00Z" },
-      { status: "Đã thanh toán", date: "2024-05-01T10:00:00Z" },
-    ],
-  },
-  // Thêm dữ liệu mẫu khác nếu cần
-  {
-    key: "2",
-    _id: "orderid2",
-    orderCode: "ORD002",
-    customerName: "Nguyễn Văn B",
-    totalAmount: 1500000,
-    status: "Đã thanh toán",
-    shippingAddress: "123 Đường ABC, Quận 1, TP.HN",
-    createdAt: "2024-05-01T10:00:00Z",
-    items: [
-      { name: "Sản phẩm A", quantity: 2 },
-      { name: "Sản phẩm B", quantity: 1 },
-    ],
-    statusHistory: [
-      { status: "Đã tạo", date: "2024-05-01T09:00:00Z" },
-      { status: "Đã thanh toán", date: "2024-05-01T10:00:00Z" },
-    ],
-  },
-];
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
 
-const confirm: PopconfirmProps["onConfirm"] = (e) => {
-  console.log("Xóa đơn hàng");
-};
+interface StatusEntry {
+  status: string;
+  changedAt: string;
+}
 
-const cancel: PopconfirmProps["onCancel"] = (e) => {
-  console.log("Hủy xóa");
-};
+interface Order {
+  _id: string;
+  orderCode: string;
+  customerName: string;
+  totalAmount: number;
+  status: string;
+  shippingAddress: string;
+  createdAt: string;
+  items: OrderItem[];
+  statusHistory: StatusEntry[];
+  key: number;
+}
 
 const OrderManager: React.FC = () => {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/orders");
+      console.log("💡 API response:", res.data);
+      const ordersData = res.data.data as Order[];
+      setOrders(
+        ordersData.map((order, index) => ({
+          ...order,
+          key: index + 1,
+        }))
+      );
+    } catch (err) {
+      message.error("Lỗi khi tải danh sách đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`/api/orders/${id}`);
+      message.success("Xóa đơn hàng thành công");
+      fetchOrders();
+    } catch (err) {
+      message.error("Xóa đơn hàng thất bại");
+    }
+  };
 
   const handleViewDetail = (orderId: string) => {
     navigate(`/admin/orders/${orderId}`);
   };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const filteredOrders = orders.filter(
+    (order) =>
+      order.orderCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const columns = [
     {
@@ -80,7 +107,7 @@ const OrderManager: React.FC = () => {
       title: "Tổng tiền",
       dataIndex: "totalAmount",
       key: "totalAmount",
-      render: (amount: number) => amount.toLocaleString("vi-VN") + "₫",
+      render: (amount: number) => (amount ? amount.toLocaleString("vi-VN") + "₫" : "N/A"),
     },
     {
       title: "Trạng thái",
@@ -96,37 +123,46 @@ const OrderManager: React.FC = () => {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date: string) => new Date(date).toLocaleString("vi-VN"),
+      render: (date: string) => (date ? new Date(date).toLocaleString("vi-VN") : "N/A"),
     },
     {
       title: "Sản phẩm",
       dataIndex: "items",
       key: "items",
-      render: (items: any[]) => items.map((item, i) => (
-        <div key={i}>{item.name} x{item.quantity}</div>
-      )),
+      render: (items: OrderItem[] = []) =>
+        items.length > 0
+          ? items.map((item, i) => (
+              <div key={i}>
+                {item.name} x{item.quantity} – {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
+              </div>
+            ))
+          : "Không có sản phẩm",
     },
     {
       title: "Lịch sử trạng thái",
       dataIndex: "statusHistory",
       key: "statusHistory",
-      render: (history: any[]) => history.map((item, i) => (
-        <div key={i}>
-          {item.status} ({new Date(item.date).toLocaleString("vi-VN")})
-        </div>
-      )),
+      render: (history: StatusEntry[] = []) =>
+        history.length > 0
+          ? history.map((item, i) => (
+              <div key={i}>
+                {item.status} ({item.changedAt ? new Date(item.changedAt).toLocaleString("vi-VN") : "N/A"})
+              </div>
+            ))
+          : "Chưa có lịch sử",
     },
     {
       title: "Hành động",
       key: "action",
-      render: (_: any, record: any) => (
+      render: (_: any, record: Order) => (
         <Space>
-          <Button type="primary" onClick={() => handleViewDetail(record._id)}>Chi tiết</Button>
+          <Button type="primary" onClick={() => handleViewDetail(record._id)}>
+            Chi tiết
+          </Button>
           <Popconfirm
             title="Xóa đơn hàng"
             description="Bạn có chắc muốn xóa đơn hàng này?"
-            onConfirm={confirm}
-            onCancel={cancel}
+            onConfirm={() => handleDelete(record._id)}
             okText="Xóa"
             cancelText="Hủy"
           >
@@ -139,11 +175,24 @@ const OrderManager: React.FC = () => {
 
   return (
     <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-      <Input placeholder="Tìm kiếm đơn hàng..." style={{ width: 300, marginBottom: 16 }} />
-      <Table dataSource={dataSource} columns={columns} pagination={false} />
+      <Input
+        placeholder="Tìm kiếm đơn hàng..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{ width: 300, marginBottom: 16 }}
+      />
+      {loading ? (
+        <Spin tip="Đang tải đơn hàng..." size="large" />
+      ) : (
+        <Table
+          dataSource={filteredOrders}
+          columns={columns}
+          rowKey={(record) => record._id}
+          pagination={false}
+        />
+      )}
     </Content>
   );
 };
 
 export default OrderManager;
-
