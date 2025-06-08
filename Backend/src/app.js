@@ -19,7 +19,7 @@ app.use(express.json());
 
 // serve ảnh từ thư mục /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-console.log('Serving static files from:', path.join(__dirname, 'Uploads'));
+console.log('Serving static files from:', path.join(__dirname, 'uploads'));
 
 console.log('__dirname:', __dirname);
 console.log('Serving static from:', path.join(__dirname, 'uploads'));
