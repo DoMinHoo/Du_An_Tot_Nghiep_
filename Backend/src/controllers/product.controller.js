@@ -37,13 +37,14 @@ exports.getProducts = async (req, res) => {
     if (color) query.color = color;
     if (material) query.material = material;
 
-    // ✅ Lọc theo salePrice thay vì price
+    // ✅ Lọc theo salePrice (giá đang bán) thay vì giá gốc
     if (minPrice || maxPrice) {
       query.salePrice = {};
       if (minPrice) query.salePrice.$gte = parseFloat(minPrice);
       if (maxPrice) query.salePrice.$lte = parseFloat(maxPrice);
     }
 
+    // ✅ Lọc Flash Sale nếu cần
     if (flashSaleOnly === "true") {
       const now = new Date();
       query.flashSale_discountedPrice = { $gt: 0 };
@@ -51,23 +52,29 @@ exports.getProducts = async (req, res) => {
       query.flashSale_end = { $gte: now };
     }
 
+    // ✅ Ưu tiên filter trước nếu có
     const sortOption = {};
-    switch (sort) {
-      case "price_asc":
-        sortOption.salePrice = 1;
-        break;
-      case "price_desc":
-        sortOption.salePrice = -1;
-        break;
-      case "bestseller":
-        sortOption.totalPurchased = -1;
-        break;
-      default:
-        sortOption.createdAt = -1;
+    if (filter === "hot") {
+      sortOption.totalPurchased = -1; // bán chạy nhất
+    } else if (filter === "new") {
+      sortOption.createdAt = -1; // mới nhất theo timestamp
+    } else {
+      switch (sort) {
+        case "price_asc":
+          sortOption.salePrice = 1;
+          break;
+        case "price_desc":
+          sortOption.salePrice = -1;
+          break;
+        case "bestseller":
+          sortOption.totalPurchased = -1;
+          break;
+        case "created_at":
+        default:
+          sortOption.createdAt = -1;
+          break;
+      }
     }
-
-    if (filter === "hot") sortOption.totalPurchased = -1;
-    if (filter === "new") sortOption.createdAt = -1;
 
     const safeLimit = Math.min(parseInt(limit), 100);
     const products = await Product.find(query)
@@ -78,7 +85,7 @@ exports.getProducts = async (req, res) => {
 
     const total = await Product.countDocuments(query);
 
-    // Breadcrumb theo danh mục cha-con
+    // ✅ Breadcrumb theo danh mục
     let breadcrumb = ["Home"];
     if (category) {
       try {
@@ -103,6 +110,7 @@ exports.getProducts = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 // Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {

@@ -1,19 +1,46 @@
 import React, { useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../Components/Common/ProductCard';
 
-const CategoryPage = () => {
-  const { slug } = useParams();
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
+interface Product {
+  _id: string;
+  [key: string]: any;
+}
+
+interface Filters {
+  selectedCategory: string;
+  priceSort: string;
+  color: string;
+  size: string;
+  productFilter: string;
+  minPrice: string;
+  maxPrice: string;
+}
+
+interface APIResponse {
+  data?: Product[];
+  breadcrumb?: string[];
+}
+
+const CategoryPage: React.FC = () => {
+  const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [breadcrumb, setBreadcrumb] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     selectedCategory: '',
     priceSort: '',
     color: '',
@@ -23,14 +50,16 @@ const CategoryPage = () => {
     maxPrice: '',
   });
 
-  const [activeFilters, setActiveFilters] = useState({});
+  const [activeFilters, setActiveFilters] = useState<{ [key: string]: string }>({});
 
+  // Fetch all categories
   useEffect(() => {
     axios.get('http://localhost:5000/api/categories')
       .then(res => setCategories(res.data || []))
       .catch(err => console.error('Lỗi lấy danh mục:', err));
   }, []);
 
+  // Fetch category by slug
   useEffect(() => {
     if (!slug) {
       setFilters(prev => ({ ...prev, selectedCategory: '' }));
@@ -41,7 +70,7 @@ const CategoryPage = () => {
     const fetchCategoryBySlug = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/api/categories/slug/${slug}`);
-        const cat = res.data?.category;
+        const cat: Category = res.data?.category;
         if (cat && cat._id) {
           setFilters(prev => ({ ...prev, selectedCategory: cat._id }));
           setActiveFilters(prev => ({ ...prev, category: cat._id }));
@@ -54,12 +83,13 @@ const CategoryPage = () => {
     fetchCategoryBySlug();
   }, [slug]);
 
+  // Fetch products based on filters
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const query = new URLSearchParams(activeFilters).toString();
-        const res = await axios.get(`http://localhost:5000/api/products?${query}`);
+        const res = await axios.get<APIResponse>(`http://localhost:5000/api/products?${query}`);
         setProducts(res.data?.data || []);
         setBreadcrumb(res.data?.breadcrumb || []);
       } catch (err) {
@@ -72,7 +102,8 @@ const CategoryPage = () => {
     fetchProducts();
   }, [activeFilters]);
 
-  const handleCategoryChange = (e) => {
+  // Handle category select change
+  const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value;
 
     if (!selectedId) {
@@ -89,12 +120,13 @@ const CategoryPage = () => {
     }
   };
 
+  // Apply all filters
   const handleFilter = () => {
     const {
       selectedCategory, priceSort, color, size, productFilter, minPrice, maxPrice
     } = filters;
 
-    const query = {};
+    const query: { [key: string]: string } = {};
     if (selectedCategory) query.category = selectedCategory;
     if (priceSort === 'asc') query.sort = 'price_asc';
     if (priceSort === 'desc') query.sort = 'price_desc';
@@ -107,6 +139,7 @@ const CategoryPage = () => {
     setActiveFilters(query);
   };
 
+  // Reset filters
   const handleClearFilters = () => {
     setFilters({
       selectedCategory: '',
@@ -149,17 +182,41 @@ const CategoryPage = () => {
       </nav>
 
       <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-        <h2 className="text-2xl font-bold">{pageTitle}</h2>
-        <select
-          className="border px-3 py-1 rounded"
-          value={filters.productFilter}
-          onChange={(e) => setFilters(prev => ({ ...prev, productFilter: e.target.value }))}
-        >
-          <option value="">Sản phẩm nổi bật</option>
-          <option value="new">Mới nhất</option>
-          <option value="hot">Bán chạy</option>
-        </select>
-      </div>
+  <h2 className="text-2xl font-bold">
+    {filters.productFilter === "new"
+      ? "Sản phẩm mới nhất"
+      : filters.productFilter === "hot"
+      ? "Sản phẩm bán chạy"
+      : pageTitle}
+  </h2>
+
+  <select
+    className="border px-3 py-1 rounded"
+    value={filters.productFilter}
+    onChange={(e) => {
+      const value = e.target.value;
+      setFilters(prev => ({ ...prev, productFilter: value }));
+
+      // Tự động lọc lại khi chọn hot/new
+      const newFilters = {
+        ...activeFilters,
+        ...(value === "hot" || value === "new" ? { filter: value } : {}),
+      };
+
+      // Xóa nếu chọn lại "Sản phẩm nổi bật"
+      if (value === "") {
+        delete newFilters.filter;
+      }
+
+      setActiveFilters(newFilters);
+    }}
+  >
+    <option value="">Sản phẩm nổi bật</option>
+    <option value="new">Mới nhất</option>
+    <option value="hot">Bán chạy</option>
+  </select>
+</div>
+
 
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <span className="font-semibold">Bộ lọc</span>
@@ -175,7 +232,6 @@ const CategoryPage = () => {
           ))}
         </select>
 
-        {/* Lọc theo salePrice */}
         <input
           type="number"
           className="border px-2 py-1 w-24 rounded"
