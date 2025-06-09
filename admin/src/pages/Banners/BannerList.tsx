@@ -43,14 +43,20 @@ const BannerList: React.FC = () => {
         {
             title: 'Image',
             dataIndex: 'image',
-            render: (img: string) => (
-                <Image
-                    width={100}
-                    src={img.startsWith('http') ? img : `http://localhost:5000/${img}`}
-                    fallback="https://via.placeholder.com/100?text=No+Image"
-                    alt="banner"
-                />
-            ),
+            render: (img: string) => {
+                const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const imageUrl = img?.startsWith('http') ? img : `${baseURL}${img}`;
+
+                return (
+                    <Image
+                        width={100}
+                        src={imageUrl}
+                        alt="banner"
+                        fallback="https://via.placeholder.com/100?text=No+Image"
+                        style={{ objectFit: 'cover', borderRadius: 8 }}
+                    />
+                );
+            },
         },
         {
             title: 'Title',
