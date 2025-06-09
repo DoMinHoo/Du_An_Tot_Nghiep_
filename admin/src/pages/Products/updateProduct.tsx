@@ -3,25 +3,28 @@ import {
   Card,
   Form,
   Input,
-  InputNumber,
-  DatePicker,
-  Upload,
   Button,
   Select,
+  Upload,
   Row,
   Col,
   message,
+  Spin,
 } from 'antd';
-import { ArrowLeftOutlined, UploadOutlined } from '@ant-design/icons';
+import {
+  ArrowLeftOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   getCategories,
   updateProduct,
   getProductById,
-  type Category,
+  deleteProduct,
 } from '../../Services/products.service';
 import { useNavigate, useParams } from 'react-router-dom';
-import dayjs from 'dayjs';
+import type { Category } from '../../Types/product.interface';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -31,82 +34,86 @@ const UpdateProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [form] = Form.useForm();
 
-  // Fetch categories
+  // Kiểm tra ID hợp lệ
+  if (!id) {
+    message.error('Không tìm thấy ID sản phẩm!');
+    setTimeout(() => navigate('/admin/products'), 2000);
+    return <Spin />; // Bỏ thuộc tính tip
+  }
+
+  // Lấy danh sách danh mục
   const {
     data: categories,
     isLoading: isCategoriesLoading,
     isError: isCategoriesError,
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: getCategories,
   });
 
-  // Fetch product data by ID
+  // Lấy thông tin sản phẩm theo ID
   const {
     data: product,
     isLoading: isProductLoading,
     isError: isProductError,
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   } = useQuery({
     queryKey: ['product', id],
-    queryFn: () => getProductById(id!),
+    queryFn: () => getProductById(id),
     enabled: !!id,
   });
 
-  // Update product mutation
+  // Mutation để cập nhật sản phẩm
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { mutate: updateMutate, isPending } = useMutation({
     mutationFn: updateProduct,
     onSuccess: () => {
       message.success('Cập nhật sản phẩm thành công!');
       navigate('/admin/products');
     },
-    onError: () => {
-      message.error('Cập nhật sản phẩm thất bại!');
+    onError: (error: any) => {
+      message.error(
+        `Cập nhật sản phẩm thất bại: ${
+          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        }`
+      );
     },
   });
 
-  // Prefill form with product data
+  // Mutation để xóa sản phẩm
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { mutate: deleteMutate, isPending: isDeleting } = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      message.success('Xóa sản phẩm thành công!');
+      navigate('/admin/products');
+    },
+    onError: (error: any) => {
+      message.error(
+        `Xóa sản phẩm thất bại: ${
+          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        }`
+      );
+    },
+  });
+
+  // Điền dữ liệu sản phẩm vào form
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (product) {
-      // Parse dimensions
-      let length = 0,
-        width = 0,
-        height = 0;
-      if (product.dimensions) {
-        const matches = product.dimensions.match(
-          /Dài (\d+) x Rộng (\d+) x Cao (\d+)/
-        );
-        if (matches) {
-          length = parseInt(matches[1]);
-          width = parseInt(matches[2]);
-          height = parseInt(matches[3]);
-        }
-      }
-
       form.setFieldsValue({
         name: product.name,
-        categoryId: product.categoryId?._id || product.categoryId, // Handle populated categoryId
+        brand: product.brand,
+        categoryId: product.categoryId?._id || product.categoryId,
         material: product.material,
-        length,
-        width,
-        height,
-        weight: product.weight,
-        status: product.status,
         descriptionShort: product.descriptionShort,
         descriptionLong: product.descriptionLong,
-        price: product.price,
-        importPrice: product.importPrice,
-        salePrice: product.salePrice,
-        flashSale_discountedPrice: product.flashSale_discountedPrice,
-        flashSale_start: product.flashSale_start
-          ? dayjs(product.flashSale_start)
-          : null,
-        flashSale_end: product.flashSale_end
-          ? dayjs(product.flashSale_end)
-          : null,
+        status: product.status,
         images:
           product.image?.map((img: string, index: number) => ({
             uid: `existing-${index}`,
-            name: img.split('/').pop(),
+            name: img.split('/').pop() || `image-${index}`,
             status: 'done',
             url: img.startsWith('http') ? img : `http://localhost:5000${img}`,
           })) || [],
@@ -114,55 +121,67 @@ const UpdateProductPage: React.FC = () => {
     }
   }, [product, form]);
 
-  // Handle file upload
+  // Xử lý danh sách file ảnh
   const normFile = (e: any) => {
     if (Array.isArray(e)) {
       return e;
     }
-    return e?.fileList;
+    return e?.fileList || [];
   };
 
+  // Xử lý khi submit form
   const handleFinish = (values: any) => {
     const formData = new FormData();
-    const { length, width, height, images, ...rest } = values;
+    formData.append('name', values.name);
+    formData.append('brand', values.brand);
+    formData.append('descriptionShort', values.descriptionShort);
+    formData.append('descriptionLong', values.descriptionLong || '');
+    formData.append('material', values.material);
+    formData.append('categoryId', values.categoryId);
+    formData.append('status', values.status);
 
-    // Append dimensions
-    formData.append(
-      'dimensions',
-      `Dài ${length} x Rộng ${width} x Cao ${height} cm`
-    );
-
-    // Append flash sale dates
-    if (rest.flashSale_start) {
-      formData.append('flashSale_start', rest.flashSale_start.toISOString());
-    }
-    if (rest.flashSale_end) {
-      formData.append('flashSale_end', rest.flashSale_end.toISOString());
-    }
-
-    // Append other fields
-    Object.keys(rest).forEach((key) => {
-      if (rest[key] !== undefined && rest[key] !== null) {
-        formData.append(key, rest[key]);
-      }
-    });
-
-    // Append new images
-    if (images) {
-      images.forEach((file: any) => {
+    // Gửi ảnh mới
+    if (values.images) {
+      values.images.forEach((file: any) => {
         if (file.originFileObj) {
           formData.append('images', file.originFileObj);
         }
       });
     }
 
-    formData.append('id', id!);
+    // Gửi danh sách URL ảnh hiện có
+    if (product?.image) {
+      const existingImages = values.images
+        .filter((file: any) => !file.originFileObj)
+        .map((file: any) => file.url.replace('http://localhost:5000', ''));
+      if (existingImages.length > 0) {
+        formData.append('existingImages', JSON.stringify(existingImages));
+      }
+    }
 
-    updateMutate(formData);
+    updateMutate({ id, formData });
   };
 
+  // Xử lý lỗi khi tải sản phẩm
+  if (isProductError) {
+    return (
+      <div>
+        <Button
+          type="link"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/admin/products')}
+        >
+          Quay lại
+        </Button>
+        <Card title="Lỗi" style={{ margin: 24 }}>
+          <p>Không thể tải thông tin sản phẩm. Vui lòng thử lại.</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <React.Fragment>
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
@@ -170,207 +189,155 @@ const UpdateProductPage: React.FC = () => {
       >
         Quay lại
       </Button>
-      <Card title="✏️ Cập nhật sản phẩm" style={{ margin: 24 }}>
-        <Form
-          layout="vertical"
-          form={form}
-          onFinish={handleFinish}
-          disabled={isProductLoading || isProductError}
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Tên sản phẩm"
-                name="name"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập tên sản phẩm' },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Danh mục"
-                name="categoryId"
-                rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
-              >
-                <Select
-                  placeholder="Chọn danh mục"
-                  loading={isCategoriesLoading}
-                  disabled={isCategoriesLoading || isCategoriesError}
-                >
-                  {categories?.map((category) => (
-                    <Option key={category._id} value={category._id}>
-                      {category.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Chất liệu"
-                name="material"
-                rules={[{ required: true, message: 'Vui lòng nhập chất liệu' }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Kích thước (cm)">
-                <Input.Group compact>
+      <Card title="✏️ Cập nhật sản.roll" style={{ margin: 24 }}>
+        {isProductLoading ? (
+          <Spin /> // Bỏ thuộc tính tip
+        ) : (
+          <>
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => deleteMutate(id)}
+              disabled={isDeleting}
+              style={{ marginBottom: 16 }}
+            >
+              Xóa sản phẩm
+            </Button>
+            <Form
+              layout="vertical"
+              form={form}
+              onFinish={handleFinish}
+              disabled={isPending}
+            >
+              <Row gutter={16}>
+                <Col span={12}>
                   <Form.Item
-                    name="length"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Dài' }]}
+                    label="Tên sản phẩm"
+                    name="name"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập tên sản phẩm' },
+                    ]}
                   >
-                    <InputNumber
-                      placeholder="Dài"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
+                    <Input placeholder="Nhập tên sản phẩm" />
                   </Form.Item>
+                </Col>
+                <Col span={12}>
                   <Form.Item
-                    name="width"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Rộng' }]}
+                    label="Thương hiệu"
+                    name="brand"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập thương hiệu' },
+                    ]}
                   >
-                    <InputNumber
-                      placeholder="Rộng"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
+                    <Input placeholder="Nhập thương hiệu" />
                   </Form.Item>
+                </Col>
+                <Col span={12}>
                   <Form.Item
-                    name="height"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Cao' }]}
+                    label="Danh mục"
+                    name="categoryId"
+                    rules={[
+                      { required: true, message: 'Vui lòng chọn danh mục' },
+                    ]}
                   >
-                    <InputNumber
-                      placeholder="Cao"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
+                    <Select
+                      placeholder="Chọn danh mục"
+                      loading={isCategoriesLoading}
+                      disabled={isCategoriesLoading || isCategoriesError}
+                    >
+                      {categories?.map((category) => (
+                        <Option key={category._id} value={category._id}>
+                          {category.name}
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
-                </Input.Group>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Khối lượng (kg)"
-                name="weight"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập khối lượng' },
-                ]}
-              >
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Trạng thái"
-                name="status"
-                rules={[
-                  { required: true, message: 'Vui lòng chọn trạng thái' },
-                ]}
-              >
-                <Select>
-                  <Option value="active">Đang bán</Option>
-                  <Option value="hidden">Ẩn</Option>
-                  <Option value="sold_out">Hết hàng</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Mô tả ngắn"
-                name="descriptionShort"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mô tả ngắn' },
-                ]}
-              >
-                <TextArea rows={2} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Mô tả chi tiết" name="descriptionLong">
-                <TextArea rows={2} />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Giá gốc"
-                name="price"
-                rules={[{ required: true, message: 'Vui lòng nhập giá bán' }]}
-              >
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Giá nhập" name="importPrice">
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Giá khuyến mãi" name="salePrice">
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Giá Flash Sale"
-                name="flashSale_discountedPrice"
-              >
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Bắt đầu Flash Sale" name="flashSale_start">
-                <DatePicker style={{ width: '100%' }} showTime />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Kết thúc Flash Sale" name="flashSale_end">
-                <DatePicker style={{ width: '100%' }} showTime />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item
-                label="Hình ảnh"
-                name="images"
-                valuePropName="fileList"
-                getValueFromEvent={normFile}
-                rules={[
-                  { required: true, message: 'Vui lòng chọn ít nhất 1 ảnh' },
-                ]}
-              >
-                <Upload
-                  listType="picture-card"
-                  beforeUpload={() => false} // Prevent auto-upload
-                  multiple
-                  accept="image/*"
-                >
-                  <Button icon={<UploadOutlined />}>Tải ảnh</Button>
-                </Upload>
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  style={{ width: '100%' }}
-                  loading={isPending}
-                >
-                  💾 Cập nhật sản phẩm
-                </Button>
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Chất liệu"
+                    name="material"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập chất liệu' },
+                    ]}
+                  >
+                    <Input placeholder="Nhập chất liệu" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Mô tả ngắn"
+                    name="descriptionShort"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập mô tả ngắn' },
+                    ]}
+                  >
+                    <TextArea rows={2} placeholder="Nhập mô tả ngắn" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Mô tả chi tiết" name="descriptionLong">
+                    <TextArea rows={4} placeholder="Nhập mô tả chi tiết" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Trạng thái"
+                    name="status"
+                    rules={[
+                      { required: true, message: 'Vui lòng chọn trạng thái' },
+                    ]}
+                  >
+                    <Select placeholder="Chọn trạng thái">
+                      <Option value="active">Đang bán</Option>
+                      <Option value="hidden">Ẩn</Option>
+                      <Option value="sold_out">Hết hàng</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item
+                    label="Hình ảnh"
+                    name="images"
+                    valuePropName="fileList"
+                    getValueFromEvent={normFile}
+                    rules={[
+                      {
+                        required: true,
+                        message: 'Vui lòng chọn ít nhất 1 ảnh',
+                      },
+                    ]}
+                  >
+                    <Upload
+                      listType="picture-card"
+                      beforeUpload={() => false} // Ngăn upload tự động
+                      accept="image/jpeg,image/jpg,image/png,image/gif"
+                      multiple
+                      maxCount={5} // Giới hạn tối đa 5 ảnh
+                    >
+                      <Button icon={<UploadOutlined />}>Tải ảnh</Button>
+                    </Upload>
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      style={{ width: '100%' }}
+                      loading={isPending}
+                    >
+                      💾 Cập nhật sản phẩm
+                    </Button>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </>
+        )}
       </Card>
-    </>
+    </React.Fragment>
   );
 };
 

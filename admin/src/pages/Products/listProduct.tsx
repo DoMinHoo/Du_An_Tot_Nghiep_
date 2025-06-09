@@ -29,10 +29,6 @@ const ProductList = () => {
     queryFn: getProducts,
   });
 
-  const handleEdit = (product: Product) => {
-    navigate(`/admin/products/edit/${product._id}`);
-  };
-
   const queryClient = useQueryClient();
 
   const { mutate: deleteMutate } = useMutation({
@@ -46,14 +42,12 @@ const ProductList = () => {
     },
   });
 
-  const handleDelete = (product: Product) => {
-    deleteMutate(product._id);
+  const handleEdit = (product: Product) => {
+    navigate(`/admin/products/edit/${product._id}`);
   };
 
-  const formatPercent = (original: number, discounted?: number) => {
-    if (!original || !discounted || discounted >= original) return '';
-    const percent = Math.round(((original - discounted) / original) * 100);
-    return `(-${percent}%)`;
+  const handleDelete = (product: Product) => {
+    deleteMutate(product._id);
   };
 
   const columns = [
@@ -63,14 +57,12 @@ const ProductList = () => {
       key: 'image',
       render: (images: string[]) => {
         const isFullUrl = (url: string) => /^https?:\/\//.test(url);
-        // Kiểm tra images là mảng và có ít nhất 1 phần tử
         const imageUrl =
           Array.isArray(images) && images.length > 0 && images[0]
             ? isFullUrl(images[0])
               ? images[0]
               : `http://localhost:5000${images[0]}`
-            : '/placeholder.png'; // Hình ảnh dự phòng cục bộ
-        // console.log('Image URL:', imageUrl); // Log để kiểm tra
+            : '/placeholder.png';
         return (
           <Image
             width={60}
@@ -79,7 +71,7 @@ const ProductList = () => {
             src={imageUrl}
             alt="Product"
             placeholder
-            fallback="/placeholder.png" // Sử dụng hình ảnh cục bộ
+            fallback="/placeholder.png"
             onError={() => console.error('Failed to load image:', imageUrl)}
           />
         );
@@ -92,76 +84,20 @@ const ProductList = () => {
       render: (text: string) => <strong>{text}</strong>,
     },
     {
-      title: 'Mô tả',
+      title: 'Thương hiệu',
+      dataIndex: 'brand',
+      key: 'brand',
+    },
+    {
+      title: 'Mô tả ngắn',
       dataIndex: 'descriptionShort',
       key: 'descriptionShort',
       ellipsis: true,
     },
     {
-      title: 'Thông tin',
-      key: 'info',
-      render: (_: unknown, record: Product) => (
-        <div style={{ lineHeight: '1.6' }}>
-          <div>
-            <strong>Chất liệu:</strong> {record.material}
-          </div>
-          <div>
-            <strong>Kích thước:</strong> {record.dimensions}
-          </div>
-          <div>
-            <strong>Khối lượng:</strong> {record.weight} kg
-          </div>
-          <div>
-            <strong>Kho:</strong> {record.stock_quantity}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Giá',
-      key: 'priceGroup',
-      render: (_: unknown, record: Product) => (
-        <div style={{ lineHeight: '1.6' }}>
-          <div>
-            <Tag color="blue">Giá bán: ${record.price.toFixed(2)}</Tag>
-          </div>
-          <div>
-            <Tag color="purple">Giá nhập: ${record.importPrice.toFixed(2)}</Tag>
-          </div>
-          <div>
-            <Tag color="green">
-              KM: {record.salePrice ? `$${record.salePrice.toFixed(2)}` : '-'}{' '}
-              <span style={{ fontWeight: 500, color: '#3f8600' }}>
-                {formatPercent(record.price, record.salePrice)}
-              </span>
-            </Tag>
-          </div>
-          <div>
-            <Tag color="red">
-              Flash:{' '}
-              {record.flashSale_discountedPrice
-                ? `$${record.flashSale_discountedPrice.toFixed(2)}`
-                : '-'}{' '}
-              <span style={{ fontWeight: 500, color: '#cf1322' }}>
-                {formatPercent(record.price, record.flashSale_discountedPrice)}
-              </span>
-            </Tag>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Flash Sale',
-      key: 'flashSale',
-      render: (_: unknown, record: Product) =>
-        record.flashSale_start && record.flashSale_end ? (
-          <span style={{ fontSize: 12 }}>
-            {format(new Date(record.flashSale_start), 'PP')} -{' '}
-            {format(new Date(record.flashSale_end), 'PP')}
-          </span>
-        ) : (
-          '-'
-        ),
+      title: 'Chất liệu',
+      dataIndex: 'material',
+      key: 'material',
     },
     {
       title: 'Danh mục',

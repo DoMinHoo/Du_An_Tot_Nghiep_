@@ -1,42 +1,28 @@
+// Định nghĩa interface cho sản phẩm
 export interface Product {
   _id: string;
   name: string;
+  brand: string;
   descriptionShort: string;
   descriptionLong: string;
   material: string;
-  dimensions: string;
-  weight: number;
-  price: number;
-  importPrice: number;
-  salePrice?: number;
-  categoryId: { _id: string; name: string };
-  flashSale_discountedPrice?: number;
-  flashSale_start?: string;
-  flashSale_end?: string;
-  image: string[];
+  categoryId: { _id: string; name: string }; // Tham chiếu danh mục
+  image: string[]; // Mảng đường dẫn ảnh
   totalPurchased: number;
-  stock_quantity: number;
   isDeleted: boolean;
   status: 'active' | 'hidden' | 'sold_out';
   createdAt: string;
   updatedAt: string;
 }
+
+// Định nghĩa interface cho dữ liệu cập nhật sản phẩm
 export interface UpdateProductDto {
   id: string;
+  formData: FormData; // Sử dụng FormData để gửi dữ liệu multipart
+}
+
+// Định nghĩa interface cho danh mục
+export interface Category {
+  _id: string;
   name: string;
-  price: number;
-  description?: string;
-  images?: string[];
-  categoryId?: string;
-  material?: string;
-  dimensions?: string;
-  weight?: number;
-  status?: string;
-  descriptionShort?: string;
-  descriptionLong?: string;
-  importPrice?: number;
-  salePrice?: number;
-  flashSale_discountedPrice?: number;
-  flashSale_start?: string;
-  flashSale_end?: string;
 }

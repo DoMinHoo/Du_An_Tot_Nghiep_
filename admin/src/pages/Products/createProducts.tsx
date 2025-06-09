@@ -3,11 +3,9 @@ import {
   Card,
   Form,
   Input,
-  InputNumber,
-  DatePicker,
-  Upload,
   Button,
   Select,
+  Upload,
   Row,
   Col,
   message,
@@ -49,7 +47,6 @@ const AddProductPage: React.FC = () => {
     },
   });
 
-  // Xử lý khi file được chọn
   const normFile = (e: any) => {
     if (Array.isArray(e)) {
       return e;
@@ -58,46 +55,28 @@ const AddProductPage: React.FC = () => {
   };
 
   const handleFinish = (values: any) => {
-    const { length, width, height, images } = values;
-
     const formData = new FormData();
     formData.append('name', values.name);
+    formData.append('brand', values.brand);
     formData.append('descriptionShort', values.descriptionShort);
     formData.append('descriptionLong', values.descriptionLong || '');
     formData.append('material', values.material);
-    formData.append(
-      'dimensions',
-      `Dài ${length} x Rộng ${width} x Cao ${height} cm`
-    );
-    formData.append('weight', values.weight.toString());
-    formData.append('price', values.price.toString());
-    formData.append('importPrice', values.importPrice?.toString() || '0');
-    formData.append('salePrice', values.salePrice?.toString() || '0');
-    formData.append(
-      'flashSale_discountedPrice',
-      values.flashSale_discountedPrice?.toString() || '0'
-    );
-    if (values.flashSale_start)
-      formData.append('flashSale_start', values.flashSale_start.toISOString());
-    if (values.flashSale_end)
-      formData.append('flashSale_end', values.flashSale_end.toISOString());
     formData.append('categoryId', values.categoryId);
     formData.append('status', values.status);
-    formData.append('stock_quantity', values.stock_quantity?.toString() || '0');
 
-    // Thêm các file ảnh và log để kiểm tra
-    console.log('Images to upload:', images);
-    images?.forEach((file: any) => {
-      if (file.originFileObj) {
-        formData.append('images', file.originFileObj);
-      }
-    });
+    if (values.images) {
+      values.images.forEach((file: any) => {
+        if (file.originFileObj) {
+          formData.append('images', file.originFileObj);
+        }
+      });
+    }
 
     createMutate(formData);
   };
 
   return (
-    <>
+    <React.Fragment>
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
@@ -119,6 +98,17 @@ const AddProductPage: React.FC = () => {
                 name="name"
                 rules={[
                   { required: true, message: 'Vui lòng nhập tên sản phẩm' },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Thương hiệu"
+                name="brand"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập thương hiệu' },
                 ]}
               >
                 <Input />
@@ -153,71 +143,6 @@ const AddProductPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Kích thước (cm)">
-                <Input.Group compact>
-                  <Form.Item
-                    name="length"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Dài' }]}
-                  >
-                    <InputNumber
-                      placeholder="Dài"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="width"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Rộng' }]}
-                  >
-                    <InputNumber
-                      placeholder="Rộng"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="height"
-                    noStyle
-                    rules={[{ required: true, message: 'Nhập Cao' }]}
-                  >
-                    <InputNumber
-                      placeholder="Cao"
-                      min={0}
-                      style={{ width: '33.33%' }}
-                    />
-                  </Form.Item>
-                </Input.Group>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Khối lượng (kg)"
-                name="weight"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập khối lượng' },
-                ]}
-              >
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Trạng thái"
-                name="status"
-                rules={[
-                  { required: true, message: 'Vui lòng chọn trạng thái' },
-                ]}
-              >
-                <Select>
-                  <Option value="active">Đang bán</Option>
-                  <Option value="hidden">Ẩn</Option>
-                  <Option value="sold_out">Hết hàng</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
               <Form.Item
                 label="Mô tả ngắn"
                 name="descriptionShort"
@@ -233,52 +158,19 @@ const AddProductPage: React.FC = () => {
                 <TextArea rows={2} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item
-                label="Giá gốc"
-                name="price"
-                rules={[{ required: true, message: 'Vui lòng nhập giá bán' }]}
-              >
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Giá nhập" name="importPrice">
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Giá khuyến mãi" name="salePrice">
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Giá Flash Sale"
-                name="flashSale_discountedPrice"
-              >
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="₫" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Bắt đầu Flash Sale" name="flashSale_start">
-                <DatePicker style={{ width: '100%' }} showTime />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="Kết thúc Flash Sale" name="flashSale_end">
-                <DatePicker style={{ width: '100%' }} showTime />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Số lượng tồn kho"
-                name="stock_quantity"
+                label="Trạng thái"
+                name="status"
                 rules={[
-                  { required: true, message: 'Vui lòng nhập số lượng tồn kho' },
+                  { required: true, message: 'Vui lòng chọn trạng thái' },
                 ]}
               >
-                <InputNumber min={0} style={{ width: '100%' }} />
+                <Select>
+                  <Option value="active">Đang bán</Option>
+                  <Option value="hidden">Ẩn</Option>
+                  <Option value="sold_out">Hết hàng</Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col span={24}>
@@ -286,7 +178,7 @@ const AddProductPage: React.FC = () => {
                 label="Hình ảnh"
                 name="images"
                 valuePropName="fileList"
-                getValueFromEvent={(e) => e?.fileList}
+                getValueFromEvent={normFile}
                 rules={[
                   { required: true, message: 'Vui lòng chọn ít nhất 1 ảnh' },
                 ]}
@@ -316,7 +208,7 @@ const AddProductPage: React.FC = () => {
           </Row>
         </Form>
       </Card>
-    </>
+    </React.Fragment>
   );
 };
 

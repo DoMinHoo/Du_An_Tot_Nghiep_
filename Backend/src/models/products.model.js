@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // Tên sản phẩm, ví dụ: "Sofa", "Set Tủ Quần Áo Ubeda"
-    brand: { type: String, required: true }, // Thương hiệu, ví dụ: "moho."
-    descriptionShort: { type: String, required: true }, // Mô tả ngắn, ví dụ: "Sofa hiện đại", "Tủ quần áo tích hợp bàn trang điểm"
-    descriptionLong: { type: String, required: true }, // Mô tả dài chung, ví dụ: "Sofa làm từ gỗ MFC", "Bộ tủ quần áo Ubeda kết hợp bàn trang điểm"
+    name: { type: String, required: true }, // Tên sản phẩm, ví dụ: "Sofa", "Tủ kê TV", "Bàn trà - Bàn cafe"
+    brand: { type: String, required: true }, // Thương hiệu, ví dụ: "moho." (dựa trên hình ảnh trước)
+    descriptionShort: { type: String, required: true }, // Mô tả ngắn, ví dụ: "Sofa hiện đại"
+    descriptionLong: { type: String, required: true }, // Mô tả dài, ví dụ: "Sofa làm từ gỗ MFC, thiết kế hiện đại"
     material: { type: String, required: true }, // Chất liệu chung, ví dụ: "Gỗ MFC"
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true }, // ID danh mục
+    image: { type: [String], default: [] }, // Mảng đường dẫn hình ảnh chung
     totalPurchased: { type: Number, default: 0 }, // Tổng số lượng đã bán
     isDeleted: { type: Boolean, default: false }, // Trạng thái xóa
     status: {
