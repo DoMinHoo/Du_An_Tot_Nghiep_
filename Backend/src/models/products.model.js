@@ -1,29 +1,19 @@
 const mongoose = require('mongoose');
 
-// Định nghĩa Schema cho bảng "products"
 const productSchema = new mongoose.Schema({
-    name: { type: String, required: true },// Tên sản phẩm
-    descriptionShort: { type: String, required: true },// Miêu tả ngắn
-    descriptionLong: { type: String, required: true }, // Miêu tả dài
-    material: { type: String, required: true },// Chất liệu
-    dimensions: { type: String, required: true },// Kích thước
-    weight: { type: Number, required: true },// Khối lượng
-    price: { type: Number, required: true },// Giá
-    importPrice: { type: Number, required: true },// Giá nhập
-    salePrice: { type: Number }, // Giá khuyến mãi
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true }, // ID danh mục
-    flashSale_discountedPrice: { type: Number },// Giá khuyến mãi
-    flashSale_start: { type: Date },// Ngày bắt đầu khuyến mãi
-    flashSale_end: { type: Date },// Ngày kết thúc khuyến mãi
-    image: { type: [String], default: [] },// Mảng hình anh
-    totalPurchased: { type: Number, default: 0 },// tong so luong da ban
-    stock_quantity: { type: Number, default: 0 },// so luong trong kho
-    isDeleted: { type: Boolean, default: false },// trang thai xoa
+    name: { type: String, required: true }, // Tên sản phẩm, ví dụ: "Sofa", "Set Tủ Quần Áo Ubeda"
+    brand: { type: String, required: true }, // Thương hiệu, ví dụ: "moho."
+    descriptionShort: { type: String, required: true }, // Mô tả ngắn, ví dụ: "Sofa hiện đại", "Tủ quần áo tích hợp bàn trang điểm"
+    descriptionLong: { type: String, required: true }, // Mô tả dài chung, ví dụ: "Sofa làm từ gỗ MFC", "Bộ tủ quần áo Ubeda kết hợp bàn trang điểm"
+    material: { type: String, required: true }, // Chất liệu chung, ví dụ: "Gỗ MFC"
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true }, // ID danh mục
+    totalPurchased: { type: Number, default: 0 }, // Tổng số lượng đã bán
+    isDeleted: { type: Boolean, default: false }, // Trạng thái xóa
     status: {
         type: String,
         enum: ['active', 'hidden', 'sold_out'],
         default: 'active'
-    } // trang thai san pham
+    } // Trạng thái sản phẩm
 }, {
     timestamps: true,
     versionKey: false
