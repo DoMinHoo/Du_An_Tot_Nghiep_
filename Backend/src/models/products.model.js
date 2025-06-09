@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true }, // Tên sản phẩm, ví dụ: "Sofa", "Tủ kê TV", "Bàn trà - Bàn cafe"
-    brand: { type: String, required: true }, // Thương hiệu, ví dụ: "moho." (dựa trên hình ảnh trước)
+    brand: { type: String }, // Thương hiệu, ví dụ: "moho." (dựa trên hình ảnh trước)
     descriptionShort: { type: String, required: true }, // Mô tả ngắn, ví dụ: "Sofa hiện đại"
     descriptionLong: { type: String, required: true }, // Mô tả dài, ví dụ: "Sofa làm từ gỗ MFC, thiết kế hiện đại"
     material: { type: String, required: true }, // Chất liệu chung, ví dụ: "Gỗ MFC"

@@ -120,7 +120,24 @@ const getCategoriesWithChildren = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy danh mục', error: err.message });
     }
 };
+const getCategoryIdBySlug = async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const category = await Category.findOne({ slug }).select("_id name slug");
 
+        if (!category) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Danh mục không tồn tại" });
+        }
+
+        res.json({ success: true, categoryId: category._id, category });
+    } catch (error) {
+        res
+            .status(500)
+            .json({ success: false, message: "Lỗi server", error: error.message });
+    }
+};
 
 module.exports = {
     getAllCategories,
@@ -128,5 +145,6 @@ module.exports = {
     createCategory,
     updateCategory,
     deleteCategory,
-    getCategoriesWithChildren
+    getCategoriesWithChildren,
+    getCategoryIdBySlug
 };
