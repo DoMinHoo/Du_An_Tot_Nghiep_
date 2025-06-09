@@ -28,16 +28,24 @@ const EditBanner: React.FC = () => {
                 });
 
                 if (banner.image) {
-                    const fullImageUrl = `http://localhost:5000/${banner.image}`;
-                    setOriginalImage(fullImageUrl); // Lưu ảnh gốc
+                    const fullImageUrl = banner.image.startsWith('http')
+                        ? banner.image
+                        : `http://localhost:5000${banner.image}`;
+
+                    setOriginalImage(fullImageUrl);
+
+                    // Khi mới load, set fileList có ảnh hiện tại để upload hiển thị ảnh
                     setFileList([
                         {
                             uid: '-1',
-                            name: 'banner-image',
+                            name: 'banner-image.jpg',
                             status: 'done',
                             url: fullImageUrl,
                         },
                     ]);
+                } else {
+                    setOriginalImage(null);
+                    setFileList([]);
                 }
             } catch (err) {
                 message.error('Không lấy được thông tin banner');
@@ -47,6 +55,14 @@ const EditBanner: React.FC = () => {
         fetchBanner();
     }, [id, form]);
 
+    // Khi user xóa file trong upload, xóa luôn fileList và originalImage (nếu muốn)
+    const onFileChange = ({ fileList }: { fileList: any[] }) => {
+        setFileList(fileList);
+        if (fileList.length === 0) {
+            setOriginalImage(null); // ẩn ảnh gốc khi xóa file
+        }
+    };
+
     const onFinish = async (values: any) => {
         const formData = new FormData();
         formData.append('title', values.title);
@@ -54,13 +70,12 @@ const EditBanner: React.FC = () => {
         formData.append('position', values.position);
         formData.append('collection', values.collection);
 
-        // Kiểm tra nếu có ảnh mới
-        const newFile = fileList[0];
-        const isUpdated = newFile && newFile.originFileObj;
+        const hasNewImage = fileList[0]?.originFileObj;
 
-        if (isUpdated) {
-            formData.append('image', newFile.originFileObj);
+        if (hasNewImage) {
+            formData.append('image', fileList[0].originFileObj);
         }
+        // Nếu không có ảnh mới thì giữ nguyên ảnh cũ (backend xử lý)
 
         try {
             setLoading(true);
@@ -74,8 +89,8 @@ const EditBanner: React.FC = () => {
             const msg =
                 error?.response?.data?.message ||
                 error?.response?.data?.error ||
-                'Thêm banner thất bại!';
-            message.error(msg); // ✅ hiện lỗi cho người dùng
+                'Cập nhật banner thất bại!';
+            message.error(msg);
         } finally {
             setLoading(false);
         }
@@ -103,16 +118,26 @@ const EditBanner: React.FC = () => {
                 <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
 
-            <Form.Item label="Ảnh">
+            <Form.Item label="Ảnh (chọn nếu muốn thay)">
                 <Upload
                     beforeUpload={() => false}
                     fileList={fileList}
-                    onChange={({ fileList }) => setFileList(fileList)}
+                    onChange={onFileChange}
                     listType="picture"
                     maxCount={1}
+                    onRemove={() => setOriginalImage(null)} // Xóa ảnh gốc nếu xóa file upload
                 >
                     <Button icon={<UploadOutlined />}>Chọn ảnh mới</Button>
                 </Upload>
+
+                {/* Khi không có ảnh trong fileList, nhưng vẫn có ảnh gốc thì hiển thị */}
+                {originalImage && fileList.length === 0 && (
+                    <img
+                        src={originalImage}
+                        alt="Ảnh hiện tại"
+                        style={{ marginTop: 8, width: 120, border: '1px solid #ddd' }}
+                    />
+                )}
             </Form.Item>
 
             <Form.Item>

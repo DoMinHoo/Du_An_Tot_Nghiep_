@@ -2,15 +2,19 @@
 const Banner = require('../models/banner.model');
 const bannerSchema = require('../validators/banner.validate');
 const visibilitySchema = require('../validators/bannerVisibilityValidator');
+const fs = require('fs');
+const path = require('path');
 
 exports.createBanner = async (req, res) => {
     try {
-        const image = req.file?.path?.replace(/\\/g, '/');
-        if (!image) {
+        if (!req.file) {
             return res.status(400).json({ success: false, message: 'Image is required' });
         }
 
-        // Validate dữ liệu đầu vào (bỏ qua position vì tự sinh)
+        // ✅ Tạo đường dẫn URL công khai (FE dùng được)
+        const image = `/uploads/banners/${req.file.filename}`;
+
+        // ✅ Validate dữ liệu đầu vào
         const { error, value } = bannerSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ success: false, message: error.details[0].message });
@@ -20,17 +24,16 @@ exports.createBanner = async (req, res) => {
         const lastBanner = await Banner.findOne().sort({ position: -1 }).limit(1);
         const nextPosition = lastBanner?.position ? lastBanner.position + 1 : 1;
 
-        // ✅ Tạo object rõ ràng để tránh Joi loại bỏ position
+        // ✅ Tạo dữ liệu banner
         const bannerData = {
             title: value.title,
             link: value.link,
             collection: value.collection,
             isActive: value.isActive ?? true,
-            image: image,
+            image, // Đường dẫn ảnh công khai
             position: nextPosition,
         };
 
-        // ✅ Log kiểm tra dữ liệu được lưu
         console.log("📦 Tạo banner mới:", bannerData);
 
         const newBanner = await Banner.create(bannerData);
@@ -41,6 +44,7 @@ exports.createBanner = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
 
 
 
@@ -58,10 +62,31 @@ exports.getBanners = async (req, res) => {
 exports.deleteBanner = async (req, res) => {
     try {
         const { id } = req.params;
+        const banner = await Banner.findById(id);
+        if (!banner) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy banner để xóa' });
+        }
+
+        // Xóa file ảnh nếu có
+        if (banner.image) {
+            // banner.image = "/uploads/banners/xxx.jpg"
+            const imagePath = path.join(__dirname, '..', 'uploads', banner.image.replace('/uploads/', ''));
+
+            fs.unlink(imagePath, (err) => {
+                if (err) {
+                    console.error('Lỗi khi xóa file ảnh:', err);
+                } else {
+                    console.log('Đã xóa file ảnh:', imagePath);
+                }
+            });
+        }
+
         await Banner.findByIdAndDelete(id);
-        res.json({ success: true, message: 'Banner deleted successfully' });
+
+        res.status(200).json({ success: true, message: 'Xóa banner thành công' });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('Lỗi xóa banner:', err);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 };
 
@@ -110,48 +135,74 @@ exports.getBannersByCollection = async (req, res) => {
     }
 };
 
+// 📌 Cập nhật banner
 exports.updateBanner = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validate dữ liệu body (không validate image tại đây)
         const { error, value } = bannerSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ success: false, message: error.details[0].message });
         }
 
-        // Xử lý ảnh nếu có
-        let updatedFields = { ...value };
-        if (req.file?.path) {
-            updatedFields.image = req.file.path.replace(/\\/g, '/'); // chuẩn hóa đường dẫn
+        const existingBanner = await Banner.findById(id);
+        if (!existingBanner) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy banner để cập nhật' });
         }
-        const existing = await Banner.findOne({ position: value.position, _id: { $ne: id } });
-        if (existing) {
+
+        const duplicate = await Banner.findOne({
+            position: value.position,
+            _id: { $ne: id },
+        });
+        if (duplicate) {
             return res.status(400).json({
                 success: false,
-                message: `Vị trí ${value.position} đã được dùng bởi banner khác.`,
+                message: `Vị trí ${value.position} đã được sử dụng bởi banner khác.`,
             });
+        }
+
+        let updatedFields = {
+            title: value.title,
+            link: value.link,
+            position: value.position,
+            collection: value.collection,
+            isActive: value.isActive ?? true,
+            image: existingBanner.image,
+        };
+
+        if (req.file?.path) {
+            const fullPath = req.file.path.replace(/\\/g, '/');
+            const relativePath = fullPath.split('uploads/')[1];
+            updatedFields.image = `/uploads/${relativePath}`; // Dấu / đứng đầu đây
         }
 
         const updatedBanner = await Banner.findByIdAndUpdate(id, updatedFields, { new: true });
 
-        if (!updatedBanner) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy banner để cập nhật' });
-        }
-
         res.status(200).json({ success: true, data: updatedBanner });
     } catch (err) {
-        console.error('Lỗi cập nhật banner:', err);
+        console.error('❌ Lỗi cập nhật banner:', err);
         res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 };
+
+
+
 exports.getBannerById = async (req, res) => {
     try {
         const banner = await Banner.findById(req.params.id);
-        if (!banner) return res.status(404).json({ success: false, message: 'Không tìm thấy banner' });
+        if (!banner) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy banner' });
+        }
 
-        res.json({ success: true, data: banner });
+        // ✅ Đảm bảo đường dẫn ảnh chuẩn hóa nếu frontend cần
+        const formattedBanner = {
+            ...banner.toObject(),
+            image: banner.image?.replace(/\\/g, '/'),
+        };
+
+        res.json({ success: true, data: formattedBanner });
     } catch (err) {
+        console.error('❌ Lỗi lấy banner theo ID:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };
