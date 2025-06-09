@@ -18,7 +18,4 @@
     // Xóa mềm sản phẩm (admin)
     router.delete('/:id', productController.softDeleteProduct);
 
-    // Cập nhật số lượng tồn kho (admin)
-    router.patch('/:id/stock', productController.updateStock);
-
     module.exports = router;

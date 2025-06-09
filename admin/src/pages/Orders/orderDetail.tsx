@@ -42,11 +42,25 @@ const statusHistoryColumns = [
     },
     {
         title: "Thời gian",
-        dataIndex: "date",
-        key: "date",
+        dataIndex: "changedAt",
+        key: "changedAt",
         render: (date: string) => new Date(date).toLocaleString("vi-VN"),
     },
 ];
+
+const statusMap: Record<string, string> = {
+    pending: "Chưa thanh toán",
+    shipping: "Đang xử lý",
+    completed: "Đã thanh toán",
+    canceled: "Đã hủy",
+};
+
+const reverseStatusMap: Record<string, string> = {
+    "Chưa thanh toán": "pending",
+    "Đang xử lý": "shipping",
+    "Đã thanh toán": "completed",
+    "Đã hủy": "canceled",
+};
 
 const OrderDetail: React.FC = () => {
     const { id } = useParams();
@@ -58,45 +72,21 @@ const OrderDetail: React.FC = () => {
     const [newStatus, setNewStatus] = useState("");
 
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-
-        setTimeout(() => {
-            if (id === "error") {
-                setError("Không tìm thấy đơn hàng!");
-                setLoading(false);
-            } else {
-                const fetchedOrder = {
-                    id: id,
-                    orderCode: `ORD00${id}`,
-                    customerName: "Nguyễn Văn A",
-                    status: "Chưa thanh toán",
-                    createdAt: "2025-05-25T14:30:00Z",
-                    totalAmount: 1500000,
-                    shippingAddress: "123 Đường ABC, Quận 1, TP.HCM",
-                    items: [
-                        {
-                            key: "1",
-                            name: "Ghế gỗ cao cấp",
-                            quantity: 2,
-                            price: 500000,
-                        },
-                        {
-                            key: "2",
-                            name: "Bàn gỗ tròn",
-                            quantity: 1,
-                            price: 500000,
-                        },
-                    ],
-                    statusHistory: [
-                        { status: "Chưa thanh toán", date: "2025-05-25T14:30:00Z" },
-                    ],
-                };
-                setOrder(fetchedOrder);
-                setNewStatus(fetchedOrder.status);
+        const fetchOrder = async () => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/orders/${id}`);
+                if (!res.ok) throw new Error("Không tìm thấy đơn hàng!");
+                const data = await res.json();
+                setOrder(data);
+                setNewStatus(data.status);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
                 setLoading(false);
             }
-        }, 1000);
+        };
+
+        fetchOrder();
     }, [id]);
 
     const handleOpenModal = () => {
@@ -106,27 +96,36 @@ const OrderDetail: React.FC = () => {
         }
     };
 
-    const handleUpdateStatus = () => {
-        if (order) {
-            const updatedHistory = [
-                ...order.statusHistory,
-                { status: newStatus, date: new Date().toISOString() },
-            ];
-            setOrder({ ...order, status: newStatus, statusHistory: updatedHistory });
+    const handleUpdateStatus = async () => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/orders/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!res.ok) throw new Error("Lỗi khi cập nhật trạng thái");
+
+            const updatedOrder = await res.json();
+            setOrder(updatedOrder.order); // ✅ FIX: lấy order đúng từ object
             setIsModalVisible(false);
             message.success("Cập nhật trạng thái thành công!");
+        } catch (err: any) {
+            message.error(err.message);
         }
     };
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "Đã thanh toán":
+            case "completed":
                 return "green";
-            case "Chưa thanh toán":
+            case "pending":
                 return "red";
-            case "Đã hủy":
+            case "canceled":
                 return "volcano";
-            case "Đang xử lý":
+            case "shipping":
                 return "blue";
             default:
                 return "default";
@@ -159,7 +158,7 @@ const OrderDetail: React.FC = () => {
             <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
                 <Descriptions.Item label="Khách hàng">{order.customerName}</Descriptions.Item>
                 <Descriptions.Item label="Trạng thái">
-                    <Tag color={getStatusColor(order.status)}>{order.status}</Tag>
+                    <Tag color={getStatusColor(order.status)}>{statusMap[order.status]}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Ngày tạo">
                     {new Date(order.createdAt).toLocaleString("vi-VN")}
@@ -177,16 +176,20 @@ const OrderDetail: React.FC = () => {
             </Button>
 
             <h3>Danh sách sản phẩm</h3>
-            <Table dataSource={order.items} columns={itemColumns} pagination={false} rowKey="key" />
+            <Table
+                dataSource={order.items || []}
+                columns={itemColumns}
+                pagination={false}
+                rowKey={(record: any) => record._id || record.name}
+            />
 
             <h3 style={{ marginTop: 32 }}>Lịch sử trạng thái</h3>
             <Table
-                dataSource={order.statusHistory}
+                dataSource={order.statusHistory || []}
                 columns={statusHistoryColumns}
                 pagination={false}
-                rowKey="date"
+                rowKey={(record: any) => record.changedAt}
             />
-
 
             <Button style={{ marginTop: 24 }} onClick={() => window.history.back()}>
                 Quay lại
@@ -201,14 +204,15 @@ const OrderDetail: React.FC = () => {
                 cancelText="Hủy"
             >
                 <Select
-                    value={newStatus}
+                    value={statusMap[newStatus] || newStatus}
                     style={{ width: "100%" }}
-                    onChange={(value) => setNewStatus(value)}
+                    onChange={(value) => setNewStatus(reverseStatusMap[value])}
                 >
-                    <Option value="Chưa thanh toán">Chưa thanh toán</Option>
-                    <Option value="Đã thanh toán">Đã thanh toán</Option>
-                    <Option value="Đã hủy">Đã hủy</Option>
-                    <Option value="Đang xử lý">Đang xử lý</Option>
+                    {Object.entries(statusMap).map(([key, label]) => (
+                        <Option key={key} value={label}>
+                            {label}
+                        </Option>
+                    ))}
                 </Select>
             </Modal>
         </Content>
