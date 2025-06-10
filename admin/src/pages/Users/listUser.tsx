@@ -1,110 +1,148 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Tag, Button, Layout, message } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+import React, { useEffect, useState } from 'react';
+import { Table, Tag, Space, Button, message, Popconfirm } from 'antd';
+import axios from 'axios';
+import dayjs from 'dayjs';
 
-import { CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-
-const { Content } = Layout;
+interface Role {
+  name: string;
+}
 
 interface User {
-  key: string;
-  id: number;
+  _id: string;
   name: string;
-  phone: string;
   email: string;
-  role: string;
-  status: 'active' | 'inactive';
   address: string;
+  dateBirth: string;
+  status: string;
+  roleId: Role;
+  gender: string;
+  phone: string;
 }
 
 const ListUser: React.FC = () => {
-  const [data, setData] = useState<User[]>([]);
-  const navigate = useNavigate();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Giả sử đang đăng nhập với quyền admin
-  const currentUserRole = 'admin';
-
-  useEffect(() => {
-    const storedData = localStorage.getItem('userData');
-    if (storedData) {
-      setData(JSON.parse(storedData));
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:5000/api/users');
+      setUsers(res.data);
+    } catch (err: any) {
+      message.error('Không thể tải danh sách người dùng');
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  // Đổi trạng thái active/inactive và lưu localStorage
-  const toggleUserStatus = (id: number) => {
-    const updatedData = data.map(user => {
-      if (user.id === id) {
-        return {
-          ...user,
-          status: user.status === 'active' ? 'inactive' : 'active',
-        };
-      }
-      return user;
-    });
-    setData(updatedData);
-    localStorage.setItem('userData', JSON.stringify(updatedData));
-    message.success('Cập nhật trạng thái người dùng thành công!');
   };
 
-  const columns: ColumnsType<User> = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'SĐT', dataIndex: 'phone', key: 'phone' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Quyền', dataIndex: 'role', key: 'role' },
+  const toggleStatus = async (id: string) => {
+    try {
+      const res = await axios.patch(`http://localhost:5000/api/users/${id}/toggle-status`);
+     
+      message.success(res.data.message);
+      fetchUsers();
+    } catch (err: any) {
+      message.error('Không thể cập nhật trạng thái người dùng');
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 80,
+      render: (_: any, __: any, index: number) => index + 1,
+    },
+    {
+      title: 'Tên',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a: User, b: User) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      sorter: (a: User, b: User) => a.email.localeCompare(b.email),
+    },
+    {
+      title: 'Số điện thoại',
+      dataIndex: 'phone',
+      key: 'phone',
+      sorter: (a: User, b: User) => a.phone.localeCompare(b.phone),
+    },
+    {
+      title: 'Giới tính',
+      dataIndex: 'gender',
+      key: 'gender',
+      sorter: (a: User, b: User) => a.gender.localeCompare(b.gender),
+      render: (gender: string) =>
+        gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Khác',
+    },
+    {
+      title: 'Địa chỉ',
+      dataIndex: 'address',
+      key: 'address',
+      sorter: (a: User, b: User) => a.address.localeCompare(b.address),
+    },
+    {
+      title: 'Ngày sinh',
+      dataIndex: 'dateBirth',
+      key: 'dateBirth',
+      sorter: (a: User, b: User) =>
+        dayjs(a.dateBirth).unix() - dayjs(b.dateBirth).unix(),
+      render: (value: string) =>
+        value ? dayjs(value).format('DD/MM/YYYY') : '—',
+    },
+    {
+      title: 'Quyền',
+      dataIndex: ['roleId', 'name'],
+      key: 'role',
+      render: (role: string) => <Tag color="blue">{role}</Tag>,
+    },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (status: User['status']) => (
-        <Tag
-          icon={status === 'active' ? <CheckCircleOutlined /> : <StopOutlined />}
-          color={status === 'active' ? 'green' : 'volcano'}
-          style={{ fontWeight: 'bold', fontSize: 14, padding: '4px 12px', borderRadius: '999px' }}
-        >
-          {status === 'active' ? 'Hoạt động' : 'Khoá'}
+      render: (status: string) => (
+        <Tag color={status === 'active' ? 'green' : 'volcano'}>
+          {status === 'active' ? 'Hoạt động' : 'Đã khóa'}
         </Tag>
       ),
     },
-    { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record: User) => (
-        <>
-          <Button
-            type="link"
-            onClick={() => navigate(`/admin/users/${record.id}`)}
-            style={{ marginRight: 8 }}
-          >
-            Xem chi tiết
-          </Button>
+      render: (_: any, record: User) => (
+        <Space>
+        <Popconfirm
+  title={`Bạn có chắc chắn muốn ${record.status === 'active' ? 'khóa' : 'mở khóa'}?`}
+  onConfirm={() => toggleStatus(record._id)}
+>
+  <Button>{record.status === 'active' ? 'Khóa' : 'Mở khóa'}</Button>
+</Popconfirm>
 
-          <Button
-            type="primary"
-            style={{
-              backgroundColor: record.status === 'active' ? 'purple' : '#1677ff',
-              borderColor: record.status === 'active' ? 'purple' : '#1677ff',
-            }}
-            onClick={() => toggleUserStatus(record.id)}
-          >
-            {record.status === 'active' ? 'Khoá' : 'Kích hoạt'}
-          </Button>
-        </>
+        </Space>
       ),
     },
   ];
 
   return (
-  
-   
-        <Content style={{ margin: '16px' }}>
-          {/* Bỏ nút thêm người dùng */}
-          <Table columns={columns} dataSource={data} pagination={false} />
-        </Content>
-   
+    <div>
+      <h2 style={{ marginBottom: 20 }}>Danh sách người dùng</h2>
+      <Table
+        columns={columns}
+        dataSource={users}
+        rowKey="_id"
+        loading={loading}
+        bordered
+        scroll={{ x: 1200 }}
+      />
+    </div>
   );
 };
 

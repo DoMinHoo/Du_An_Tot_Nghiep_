@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Input, Layout, Avatar, Dropdown, Menu } from "antd";
 import {
   BellOutlined,
@@ -11,8 +12,22 @@ import {
 const { Header } = Layout;
 
 const AdminHeader: React.FC = () => {
+  const navigate = useNavigate();
+
+  // Lấy user từ localStorage (nếu đã đăng nhập)
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const displayName = currentUser.name || "Admin";
+
+  const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === "3") {
+      localStorage.removeItem("currentUser"); // Xóa thông tin đăng nhập
+      navigate("/login");
+    }
+  };
+
   const menu = (
     <Menu
+      onClick={handleMenuClick}
       items={[
         { key: "1", icon: <UserOutlined />, label: "Thông tin cá nhân" },
         { key: "2", icon: <SettingOutlined />, label: "Cài đặt" },
@@ -34,10 +49,7 @@ const AdminHeader: React.FC = () => {
         boxShadow: "0 2px 8px #f0f1f2",
       }}
     >
-      {/* Left side (empty or logo) */}
       <div style={{ width: 300 }}></div>
-
-      {/* Center (Search) */}
       <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
         <Input.Search
           placeholder="Tìm kiếm..."
@@ -45,16 +57,12 @@ const AdminHeader: React.FC = () => {
           allowClear
         />
       </div>
-
-      {/* Right side (Notification & User) */}
       <div style={{ width: 300, display: "flex", justifyContent: "flex-end", gap: 24 }}>
         <BellOutlined style={{ fontSize: 20, cursor: "pointer" }} />
         <Dropdown overlay={menu} placement="bottomRight">
-          <div
-            style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
-          >
+          <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
             <Avatar style={{ backgroundColor: "#1890ff" }} icon={<UserOutlined />} />
-            <span style={{ marginLeft: 8 }}>Admin</span>
+            <span style={{ marginLeft: 8 }}>{displayName}</span>
             <DownOutlined style={{ fontSize: 12, marginLeft: 4 }} />
           </div>
         </Dropdown>
