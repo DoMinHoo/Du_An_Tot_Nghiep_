@@ -1,19 +1,43 @@
-    const multer = require('multer');
-    const path = require('path');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'uploads/');
-        },
-        filename: function (req, file, cb) {
-            const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            cb(null, `${unique}-${file.originalname}`);
-        }
-    });
+// Đường dẫn thư mục lưu ảnh
+const uploadDir = path.join(__dirname, '..', 'uploads', 'banners');
 
-    const fileFilter = (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-        cb(null, allowedTypes.includes(file.mimetype));
-    };
+// Tạo thư mục nếu chưa tồn tại
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-    module.exports = multer({ storage, fileFilter });
+// Cấu hình lưu trữ
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname);
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
+        cb(null, uniqueName);
+    }
+});
+
+// Lọc loại file
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const isValid = allowedTypes.test(file.mimetype);
+    if (isValid) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only images are allowed (jpeg, jpg, png, gif)'));
+    }
+};
+
+// Tạo middleware
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+module.exports = upload;

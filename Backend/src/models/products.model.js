@@ -1,29 +1,20 @@
 const mongoose = require('mongoose');
 
-// Định nghĩa Schema cho bảng "products"
 const productSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    descriptionShort: { type: String, required: true },
-    descriptionLong: { type: String, required: true },
-    material: { type: String, required: true },
-    dimensions: { type: String, required: true },
-    weight: { type: Number, required: true },
-    price: { type: Number, required: true },
-    importPrice: { type: Number, required: true },
-    salePrice: { type: Number },
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    flashSale_discountedPrice: { type: Number },
-    flashSale_start: { type: Date },
-    flashSale_end: { type: Date },
-    image: { type: [String], default: [] },
-    totalPurchased: { type: Number, default: 0 },
-    stock_quantity: { type: Number, default: 0 },
-    isDeleted: { type: Boolean, default: false },
+    name: { type: String, required: true }, // Tên sản phẩm, ví dụ: "Sofa", "Tủ kê TV", "Bàn trà - Bàn cafe"
+    brand: { type: String }, // Thương hiệu, ví dụ: "moho." (dựa trên hình ảnh trước)
+    descriptionShort: { type: String, required: true }, // Mô tả ngắn, ví dụ: "Sofa hiện đại"
+    descriptionLong: { type: String, required: true }, // Mô tả dài, ví dụ: "Sofa làm từ gỗ MFC, thiết kế hiện đại"
+    material: { type: String, required: true }, // Chất liệu chung, ví dụ: "Gỗ MFC"
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true }, // ID danh mục
+    image: { type: [String], default: [] }, // Mảng đường dẫn hình ảnh chung
+    totalPurchased: { type: Number, default: 0 }, // Tổng số lượng đã bán
+    isDeleted: { type: Boolean, default: false }, // Trạng thái xóa
     status: {
         type: String,
         enum: ['active', 'hidden', 'sold_out'],
         default: 'active'
-    }
+    } // Trạng thái sản phẩm
 }, {
     timestamps: true,
     versionKey: false
