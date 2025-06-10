@@ -19,9 +19,7 @@ const productVariationSchema = new mongoose.Schema({
     finalPrice: { type: Number, required: true }, // Giá cuối cùng, tính bằng basePrice + priceAdjustment
     importPrice: { type: Number, required: true }, // Giá nhập theo biến thể
     salePrice: { type: Number, default: null }, // Giá khuyến mãi (nếu có)
-    flashSaleDiscountedPrice: { type: Number, default: null }, // Giá khuyến mãi flash sale
-    flashSaleStart: { type: Date, default: null }, // Ngày bắt đầu flash sale
-    flashSaleEnd: { type: Date, default: null }, // Ngày kết thúc flash sale
+
     stockQuantity: {
         type: Number,
         required: true,

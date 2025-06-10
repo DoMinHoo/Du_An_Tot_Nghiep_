@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
+const path = require('path');
 
 // Tạo mới một biến thể sản phẩm
 exports.createVariation = async (req, res) => {
@@ -13,7 +14,7 @@ exports.createVariation = async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
         }
 
-        // Kiểm tra sản phẩm tồn tại và không bị xóa
+        // Kiểm tra sản phẩm tồn tại
         const product = await Product.findOne({ _id: productId, isDeleted: false });
         if (!product) {
             return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
@@ -22,7 +23,7 @@ exports.createVariation = async (req, res) => {
         // Kiểm tra các trường bắt buộc
         const requiredFields = [
             'name', 'sku', 'dimensions', 'basePrice', 'importPrice', 
-            'stockQuantity', 'colorName', 'colorHexCode', 'colorImageUrl', 'materialVariation'
+            'stockQuantity', 'colorName', 'colorHexCode', 'materialVariation'
         ];
         for (const field of requiredFields) {
             if (!body[field]) {
@@ -30,8 +31,16 @@ exports.createVariation = async (req, res) => {
             }
         }
 
-        // Tính finalPrice nếu không được cung cấp
-        const finalPrice = body.finalPrice || (parseFloat(body.basePrice) + parseFloat(body.priceAdjustment || 0));
+        // Xử lý hình ảnh
+        const uploadedImages = Array.isArray(req.files)
+            ? req.files.map((file) => `/uploads/variations/${path.basename(file.path)}`)
+            : [];
+        const colorImageUrl = uploadedImages.length > 0
+            ? uploadedImages[0]
+            : body.colorImageUrl;
+        if (!colorImageUrl) {
+            return res.status(400).json({ success: false, message: 'Trường colorImageUrl là bắt buộc' });
+        }
 
         // Kiểm tra SKU duy nhất
         const existingVariation = await ProductVariation.findOne({ sku: body.sku });
@@ -39,13 +48,21 @@ exports.createVariation = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
         }
 
+        // Tính finalPrice
+        const basePrice = parseFloat(body.basePrice);
+        const priceAdjustment = parseFloat(body.priceAdjustment) || 0;
+        if (isNaN(basePrice)) {
+            return res.status(400).json({ success: false, message: 'Trường basePrice phải là số' });
+        }
+        const finalPrice = body.finalPrice || (basePrice + priceAdjustment);
+
         const variationData = {
             productId,
             name: body.name,
             sku: body.sku,
             dimensions: body.dimensions,
-            basePrice: parseFloat(body.basePrice),
-            priceAdjustment: parseFloat(body.priceAdjustment) || 0,
+            basePrice,
+            priceAdjustment,
             finalPrice,
             importPrice: parseFloat(body.importPrice),
             salePrice: body.salePrice ? parseFloat(body.salePrice) : null,
@@ -55,7 +72,7 @@ exports.createVariation = async (req, res) => {
             stockQuantity: parseInt(body.stockQuantity),
             colorName: body.colorName,
             colorHexCode: body.colorHexCode,
-            colorImageUrl: body.colorImageUrl,
+            colorImageUrl,
             materialVariation: body.materialVariation
         };
 
@@ -66,30 +83,6 @@ exports.createVariation = async (req, res) => {
     } catch (err) {
         console.error('Lỗi khi tạo biến thể:', err);
         res.status(400).json({ success: false, message: err.message });
-    }
-};
-
-// Lấy danh sách biến thể theo productId
-exports.getVariationsByProductId = async (req, res) => {
-    try {
-        const { productId } = req.params;
-
-        // Kiểm tra productId hợp lệ
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
-        }
-
-        // Kiểm tra sản phẩm tồn tại
-        const product = await Product.findOne({ _id: productId, isDeleted: false });
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
-        }
-
-        const variations = await ProductVariation.find({ productId }).lean();
-        res.json({ success: true, data: variations });
-    } catch (err) {
-        console.error('Lỗi khi truy vấn biến thể:', err);
-        res.status(500).json({ success: false, message: err.message });
     }
 };
 
@@ -118,6 +111,16 @@ exports.updateVariation = async (req, res) => {
             }
         }
 
+        // Xử lý hình ảnh
+        const uploadedImages = Array.isArray(req.files)
+            ? req.files.map((file) => `/uploads/variations/${path.basename(file.path)}`)
+            : [];
+        const colorImageUrl = uploadedImages.length > 0
+            ? uploadedImages[0]
+            : body.colorImageUrl !== undefined
+                ? body.colorImageUrl
+                : variation.colorImageUrl;
+
         // Tính lại finalPrice nếu basePrice hoặc priceAdjustment thay đổi
         const basePrice = body.basePrice ? parseFloat(body.basePrice) : variation.basePrice;
         const priceAdjustment = body.priceAdjustment ? parseFloat(body.priceAdjustment) : variation.priceAdjustment;
@@ -140,7 +143,7 @@ exports.updateVariation = async (req, res) => {
             stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
             colorName: body.colorName || variation.colorName,
             colorHexCode: body.colorHexCode || variation.colorHexCode,
-            colorImageUrl: body.colorImageUrl || variation.colorImageUrl,
+            colorImageUrl,
             materialVariation: body.materialVariation || variation.materialVariation
         };
 
@@ -150,6 +153,30 @@ exports.updateVariation = async (req, res) => {
     } catch (err) {
         console.error('Lỗi khi cập nhật biến thể:', err);
         res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// Lấy danh sách biến thể theo productId
+exports.getVariationsByProductId = async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        // Kiểm tra productId hợp lệ
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+        }
+
+        // Kiểm tra sản phẩm tồn tại
+        const product = await Product.findOne({ _id: productId, isDeleted: false });
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
+        }
+
+        const variations = await ProductVariation.find({ productId }).lean();
+        res.json({ success: true, data: variations });
+    } catch (err) {
+        console.error('Lỗi khi truy vấn biến thể:', err);
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
