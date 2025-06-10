@@ -8,6 +8,13 @@ router.post('/register', userCtrl.register);
 router.post('/login', userCtrl.login);
 router.post('/forgot-password', userCtrl.forgotPassword);
 router.put('/change-password', protect, userCtrl.changePassword);
+router.get('/login/admin', protect('admin'), (req, res) => {
+    res.json({ message: 'Chào mừng bạn đến trang Admin' });
+});
+// Route cho client
+router.get('/login/client', protect('client'), (req, res) => {
+    res.json({ message: 'Chào mừng bạn đến trang Client' });
+});
 
 // Cần xác thực
 // router.use(auth);
