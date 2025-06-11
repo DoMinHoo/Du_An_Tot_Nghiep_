@@ -9,6 +9,7 @@ const orderRoutes = require("./order.routes");
 const cartRoutes = require("./cart.routes");
 const variationRoutes = require("./variation.routes");
 const bannerRoutes = require("./banner.routes");
+const paymentRoutes = require("./payment.router");
 
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
@@ -19,6 +20,9 @@ router.use('/orders', orderRoutes);
 router.use('/carts', cartRoutes);
 router.use('/variations', variationRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/payments', paymentRoutes);
+
+
 
 
 
