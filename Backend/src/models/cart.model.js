@@ -1,26 +1,30 @@
-const mongoose = require('mongoose');
+    // models/cart.model.js
+    const mongoose = require('mongoose');
 
-// Định nghĩa Schema cho bảng "cart"
-const cartSchema = new mongoose.Schema({
-    userId: {
+    const cartItemSchema = new mongoose.Schema({
+    productId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Liên kết với bảng User
-        required: true,
-    },
-    variationId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ProductVariation', // Liên kết với bảng ProductVariation
-        required: true,
+        ref: 'Product',
+        required: true
     },
     quantity: {
         type: Number,
         required: true,
-        min: 1, // Số lượng ít nhất là 1
+        min: 1
+    }
+    }, { _id: false });
+
+    const cartSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        unique: true, // Mỗi user chỉ có 1 giỏ hàng
+        required: true
     },
-}, {
+    items: [cartItemSchema]
+    }, {
     timestamps: true,
     versionKey: false
-});
+    });
 
-// Tạo model từ schema và xuất ra
-module.exports = mongoose.model('Cart', cartSchema);
+    module.exports = mongoose.model('Cart', cartSchema);
