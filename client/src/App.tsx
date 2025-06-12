@@ -6,6 +6,7 @@ import Home from './Pages/Home';
 import About from './Pages/About';
 import ProductDetail from './Pages/ProductDetail';
 import CategoryPage from './Pages/CategoryPage';
+import CartPage from './Pages/cart';
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
         <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
       </Route>
