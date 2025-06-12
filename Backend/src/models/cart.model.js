@@ -2,9 +2,9 @@
 const mongoose = require('mongoose');
 
 const cartItemSchema = new mongoose.Schema({
-    productId: {
+    variationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
+        ref: 'ProductVariation', // Tham chiếu đến ProductVariation
         required: true
     },
     quantity: {

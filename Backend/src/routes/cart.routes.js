@@ -18,4 +18,4 @@ router.delete('/clear', protect(), cartController.clearCart);
 // Lấy thông tin giỏ hàng
 router.get('/', protect(), cartController.getCart);
 
-module.exports = router;
+module.exports = router
