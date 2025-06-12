@@ -1,11 +1,21 @@
+// src/routes/cart.route.js
 const express = require('express');
 const router = express.Router();
-const orderController = require('../controllers/order.controller');
+const cartController = require('../controllers/cart.controller');
+const { protect } = require('../middlewares/auth.middleware');
+// Thêm sản phẩm vào giỏ hàng
+router.post('/add', protect(), cartController.addToCart);
 
-router.get('/', orderController.getOrders);                      // Lọc, phân trang
-router.get('/:id', orderController.getOrderById);               // Chi tiết đơn
-router.put('/:id', orderController.updateOrder);                // Cập nhật
-router.delete('/:id', orderController.deleteOrder);             // Xoá
-router.get('/user/:userId', orderController.getOrdersByUser);   // Đơn theo user
+// Cập nhật số lượng sản phẩm
+router.put('/update', protect(), cartController.updateCartItem);
+
+// Xóa một sản phẩm khỏi giỏ hàng
+router.delete('/remove/:productId', protect(), cartController.removeCartItem);
+
+// Xóa toàn bộ giỏ hàng
+router.delete('/clear', protect(), cartController.clearCart);
+
+// Lấy thông tin giỏ hàng
+router.get('/', protect(), cartController.getCart);
 
 module.exports = router;

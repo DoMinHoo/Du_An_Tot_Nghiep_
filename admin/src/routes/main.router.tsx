@@ -1,39 +1,41 @@
-import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
-import Authenticated from "../components/Layout/authenticate";
-import MainLayout from "../components/Layout/mainLayoutAdmin";
-import ListCategory from "../pages/Categories/listCategory";
-import DashboardPage from "../pages/Dashboard/dashboard";
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  type RouteObject,
+} from 'react-router-dom';
+import Authenticated from '../components/Layout/authenticate';
+import MainLayout from '../components/Layout/mainLayoutAdmin';
+import ListCategory from '../pages/Categories/listCategory';
+import DashboardPage from '../pages/Dashboard/dashboard';
 
-import CreateProducts from "../pages/Products/createProducts";
-import ListProduct from "../pages/Products/listProduct";
-import UpdateProduct from "../pages/Products/updateProduct";
-import ListOrder from "../pages/Orders/listOrder";
-import ListUser from "../pages/Users/listUser";
-import RegisterAdmin from "../pages/Registers/registerAdmin";
-import LoginAdmin from "../pages/Login/loginAdmin";
-import ReviewManager from "../pages/Comment&Review/reviewManager";
-import CategoryManager from "../pages/Categories/category";
-import UserDetail from "../pages/Users/detailUser";
+import CreateProducts from '../pages/Products/createProducts';
+import ListProduct from '../pages/Products/listProduct';
+import UpdateProduct from '../pages/Products/updateProduct';
+import ListOrder from '../pages/Orders/listOrder';
+import ListUser from '../pages/Users/listUser';
+import RegisterAdmin from '../pages/Registers/registerAdmin';
+import LoginAdmin from '../pages/Login/loginAdmin';
+import ReviewManager from '../pages/Comment&Review/reviewManager';
+import CategoryManager from '../pages/Categories/category';
+import UserDetail from '../pages/Users/detailUser';
 
-import OrderDetail from "../pages/Orders/orderDetail";
-import ListVariant from "../pages/Products/ProductVariants/ListVariantProduct";
-import CreateVariant from "../pages/Products/ProductVariants/CreateVariantProduct";
-import EditVariant from "../pages/Products/ProductVariants/EditVariantProduct";
+import OrderDetail from '../pages/Orders/orderDetail';
+import ListVariant from '../pages/Products/ProductVariants/ListVariantProduct';
+import CreateVariant from '../pages/Products/ProductVariants/CreateVariantProduct';
+import EditVariant from '../pages/Products/ProductVariants/EditVariantProduct';
 
-import BannerList from "../pages/Banners/BannerList";
-import CollectionPage from "../pages/Banners/CollectionPage";
-import CreateBanner from "../pages/Banners/CreateBaner";
-import EditBanner from "../pages/Banners/EditBanner";
+import BannerList from '../pages/Banners/BannerList';
+import CollectionPage from '../pages/Banners/CollectionPage';
+import CreateBanner from '../pages/Banners/CreateBaner';
+import EditBanner from '../pages/Banners/EditBanner';
 
-import AddCategory from "../pages/Categories/addCategory";
-import EditCategory from "../pages/Categories/editCategory";
-
-
-
+import AddCategory from '../pages/Categories/addCategory';
+import EditCategory from '../pages/Categories/editCategory';
 
 const routes: RouteObject[] = [
   {
-    path: "/admin",
+    path: '/admin',
     element: (
       <Authenticated fallback={<Navigate to="/signin" replace />}>
         <MainLayout>
@@ -44,129 +46,126 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        path: "dashboard",
+        path: 'dashboard',
         element: <DashboardPage />,
       },
       {
-        path: "products",
+        path: 'products',
         children: [
           {
             index: true,
             element: <ListProduct />,
           },
           {
-            path: "create",
-            element: <CreateProducts />
+            path: 'create',
+            element: <CreateProducts />,
           },
           {
-            path: "edit/:id",
-            element: <UpdateProduct />
+            path: 'edit/:id',
+            element: <UpdateProduct />,
           },
           {
-            path: "variants/:id",
-            element: <ListVariant />
+            path: 'variants/:id',
+            element: <ListVariant />,
           },
           {
-            path: "variants/create",
-            element: <CreateVariant />
+            path: 'variants/create',
+            element: <CreateVariant />,
           },
           {
-            path: "variants/edit/:variantId",
-            element: <EditVariant />
-          }
-
-        ]
+            path: 'variants/edit/:variantId',
+            element: <EditVariant />,
+          },
+        ],
       },
       {
-        path: "categories",
+        path: 'categories',
         children: [
           {
             index: true,
-            element: <CategoryManager />
+            element: <CategoryManager />,
           },
           {
-            path: "create",
-            element:<AddCategory/>
+            path: 'create',
+            element: <AddCategory />,
           },
           {
-            path: "edit/:id",
-            element:<EditCategory/>
+            path: 'edit/:id',
+            element: <EditCategory />,
           },
-        ]
+        ],
       },
       {
-        path: "comment&review",
+        path: 'comment&review',
         children: [
           {
             index: true,
-            element: <ReviewManager />
+            element: <ReviewManager />,
           },
           {
-            path: "create",
-          }
-        ]
+            path: 'create',
+          },
+        ],
       },
       {
-        path: "orders",
+        path: 'orders',
         children: [
           {
             index: true,
-            element: <ListOrder />
+            element: <ListOrder />,
           },
           {
-            path: ":id",
-            element: <OrderDetail />
-          }
-        ]
+            path: ':id',
+            element: <OrderDetail />,
+          },
+        ],
       },
       {
-
-        path: "users",
+        path: 'users',
         children: [
           {
             index: true,
-            element: <ListUser />
+            element: <ListUser />,
           },
           {
-            path: ":id",
-            element: <UserDetail />
-          }
-        ]
+            path: ':id',
+            element: <UserDetail />,
+          },
+        ],
       },
       {
-
-        path: "banners",
+        path: 'banners',
         children: [
           {
             index: true,
-            element: <BannerList />
+            element: <BannerList />,
           },
           {
-            path: "collections/:slug",
-            element: <CollectionPage />
+            path: 'collections/:slug',
+            element: <CollectionPage />,
           },
           {
-            path: "create",
-            element: <CreateBanner />
+            path: 'create',
+            element: <CreateBanner />,
           },
           {
-            path: "edit/:id",
-            element: <EditBanner />
-          }
-        ]
+            path: 'edit/:id',
+            element: <EditBanner />,
+          },
+        ],
       },
     ],
   },
   {
-    path: "signin",
-    element: <RegisterAdmin />
+    path: 'signin',
+    element: <RegisterAdmin />,
   },
   {
-    path: "login",
-    element: <LoginAdmin />
+    path: 'login',
+    element: <LoginAdmin />,
   },
   {
-    path: "*",
+    path: '*',
     element: <h1>404 Not Found</h1>,
   },
 ];
