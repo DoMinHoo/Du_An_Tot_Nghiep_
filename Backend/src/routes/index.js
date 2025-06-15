@@ -20,7 +20,7 @@ router.use("/users", userRoutes);
 router.use("/reviews", reviewRoutes);
 router.use('/products', productRoutes);
 router.use('/orders', orderRoutes);
-router.use('/variations', variationRoutes);
+router.use('/', variationRoutes);
 router.use('/banners', bannerRoutes);
 router.use("/api/promotions", promotionRoutes);
 router.use('/carts', cartRoutes);

@@ -3,87 +3,97 @@ const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
 const path = require('path');
 
-// Tạo mới một biến thể sản phẩm
+
+
 exports.createVariation = async (req, res) => {
-    try {
-        const { productId } = req.params;
-        const body = req.body || {};
+  try {
+    const { productId } = req.params;
+    const body = req.body || {};
 
-        // Kiểm tra productId hợp lệ
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
-        }
-
-        // Kiểm tra sản phẩm tồn tại
-        const product = await Product.findOne({ _id: productId, isDeleted: false });
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
-        }
-
-        // Kiểm tra các trường bắt buộc
-        const requiredFields = [
-            'name', 'sku', 'dimensions', 'basePrice', 'importPrice', 
-            'stockQuantity', 'colorName', 'colorHexCode', 'materialVariation'
-        ];
-        for (const field of requiredFields) {
-            if (!body[field]) {
-                return res.status(400).json({ success: false, message: `Trường ${field} là bắt buộc` });
-            }
-        }
-
-        // Xử lý hình ảnh
-        const uploadedImages = Array.isArray(req.files)
-            ? req.files.map((file) => `/uploads/variations/${path.basename(file.path)}`)
-            : [];
-        const colorImageUrl = uploadedImages.length > 0
-            ? uploadedImages[0]
-            : body.colorImageUrl;
-        if (!colorImageUrl) {
-            return res.status(400).json({ success: false, message: 'Trường colorImageUrl là bắt buộc' });
-        }
-
-        // Kiểm tra SKU duy nhất
-        const existingVariation = await ProductVariation.findOne({ sku: body.sku });
-        if (existingVariation) {
-            return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
-        }
-
-        // Tính finalPrice
-        const basePrice = parseFloat(body.basePrice);
-        const priceAdjustment = parseFloat(body.priceAdjustment) || 0;
-        if (isNaN(basePrice)) {
-            return res.status(400).json({ success: false, message: 'Trường basePrice phải là số' });
-        }
-        const finalPrice = body.finalPrice || (basePrice + priceAdjustment);
-
-        const variationData = {
-            productId,
-            name: body.name,
-            sku: body.sku,
-            dimensions: body.dimensions,
-            basePrice,
-            priceAdjustment,
-            finalPrice,
-            importPrice: parseFloat(body.importPrice),
-            salePrice: body.salePrice ? parseFloat(body.salePrice) : null,
-            flashSaleDiscountedPrice: body.flashSaleDiscountedPrice ? parseFloat(body.flashSaleDiscountedPrice) : null,
-            flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : null,
-            flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : null,
-            stockQuantity: parseInt(body.stockQuantity),
-            colorName: body.colorName,
-            colorHexCode: body.colorHexCode,
-            colorImageUrl,
-            materialVariation: body.materialVariation
-        };
-
-        const variation = new ProductVariation(variationData);
-        await variation.save();
-
-        res.status(201).json({ success: true, data: variation });
-    } catch (err) {
-        console.error('Lỗi khi tạo biến thể:', err);
-        res.status(400).json({ success: false, message: err.message });
+    // 1. Kiểm tra productId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
     }
+
+    // 2. Kiểm tra sản phẩm tồn tại
+    const product = await Product.findOne({ _id: productId, isDeleted: false });
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
+    }
+
+    // 3. Kiểm tra các trường bắt buộc
+    const requiredFields = [
+      'name', 'sku', 'dimensions', 'basePrice', 'importPrice',
+      'stockQuantity', 'colorName', 'colorHexCode', 'materialVariation'
+    ];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return res.status(400).json({ success: false, message: `Trường ${field} là bắt buộc` });
+      }
+    }
+
+    // 4. Xử lý hình ảnh (từ cả req.files và body.colorImageUrl)
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files.map((file) => `/uploads/banners/variations/${path.basename(file.path)}`)
+      : [];
+
+    const bodyImages = Array.isArray(body.colorImageUrl)
+      ? body.colorImageUrl
+      : body.colorImageUrl
+        ? [body.colorImageUrl]
+        : [];
+
+    const colorImageUrl = [...uploadedImages, ...bodyImages][0];
+
+    if (!colorImageUrl) {
+      return res.status(400).json({ success: false, message: 'Ảnh màu (colorImageUrl) là bắt buộc' });
+    }
+
+    // 5. Kiểm tra SKU duy nhất
+    const existingVariation = await ProductVariation.findOne({ sku: body.sku });
+    if (existingVariation) {
+      return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
+    }
+
+    // 6. Tính finalPrice
+    const basePrice = parseFloat(body.basePrice);
+    const priceAdjustment = parseFloat(body.priceAdjustment || 0);
+    if (isNaN(basePrice)) {
+      return res.status(400).json({ success: false, message: 'Trường basePrice phải là số' });
+    }
+    const finalPrice = body.finalPrice
+      ? parseFloat(body.finalPrice)
+      : basePrice + priceAdjustment;
+
+    // 7. Tạo dữ liệu
+    const variationData = {
+      productId,
+      name: body.name,
+      sku: body.sku,
+      dimensions: body.dimensions,
+      basePrice,
+      priceAdjustment,
+      finalPrice,
+      importPrice: parseFloat(body.importPrice),
+      salePrice: body.salePrice ? parseFloat(body.salePrice) : null,
+      flashSaleDiscountedPrice: body.flashSaleDiscountedPrice ? parseFloat(body.flashSaleDiscountedPrice) : null,
+      flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : null,
+      flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : null,
+      stockQuantity: parseInt(body.stockQuantity),
+      colorName: body.colorName,
+      colorHexCode: body.colorHexCode,
+      colorImageUrl,
+      materialVariation: body.materialVariation
+    };
+
+    const variation = new ProductVariation(variationData);
+    await variation.save();
+
+    res.status(201).json({ success: true, data: variation });
+  } catch (err) {
+    console.error('Lỗi khi tạo biến thể:', err);
+    res.status(400).json({ success: false, message: err.message });
+  }
 };
 
 // Cập nhật một biến thể sản phẩm
@@ -200,4 +210,26 @@ exports.deleteVariation = async (req, res) => {
         console.error('Lỗi khi xóa biến thể:', err);
         res.status(500).json({ success: false, message: err.message });
     }
+};
+// Lấy chi tiết một biến thể sản phẩm
+exports.getVariationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
+    }
+
+    // Tìm biến thể theo ID
+    const variation = await ProductVariation.findById(id).lean();
+    if (!variation) {
+      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
+    }
+
+    res.json({ success: true, data: variation });
+  } catch (err) {
+    console.error('Lỗi khi lấy chi tiết biến thể:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 };

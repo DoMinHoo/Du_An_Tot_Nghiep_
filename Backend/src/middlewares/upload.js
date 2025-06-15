@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Đường dẫn thư mục lưu ảnh
-const uploadDir = path.join(__dirname, '..', 'uploads', 'banners');
+const uploadDir = path.join(__dirname, '..', 'uploads', 'banners', 'variations');
 
 // Tạo thư mục nếu chưa tồn tại
 if (!fs.existsSync(uploadDir)) {
