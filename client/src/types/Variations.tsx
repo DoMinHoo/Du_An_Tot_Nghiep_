@@ -1,19 +1,19 @@
 export interface Variation {
   _id: string;
   productId: string; // or Product if populated
-  name: string;
-  sku: string;
-  dimensions: string;
-  basePrice: number;
-  priceAdjustment: number;
-  finalPrice: number;
-  importPrice: number;
-  salePrice: number | null;
-  stockQuantity: number;
-  colorName: string;
-  colorHexCode: string;
-  colorImageUrl: string;
-  materialVariation: string;
-  createdAt: string;
+  name: string; //ten mau bien the
+  sku: string; // ma san pham
+  dimensions: string; // kich thuoc
+  basePrice: number; // gia goc
+  priceAdjustment: number; // dieu chinh gia
+  finalPrice: number; // gia cuoi cung
+  importPrice: number; // gia nhap
+  salePrice: number | null; // gia khuyen mai
+  stockQuantity: number; // so luong ton kho
+  colorName: string; // ten mau
+  colorHexCode: string; // ma mau hex
+  colorImageUrl: string; // url anh mau
+  materialVariation: string; // bien the chat lieu
+  createdAt: string; 
   updatedAt: string;
 }
