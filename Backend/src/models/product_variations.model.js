@@ -7,7 +7,7 @@ const productVariationSchema = new mongoose.Schema({
         ref: 'Product',
         required: true
     },
-    name: { type: String, required: true }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
+    name: { type: String, required: true  }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
     sku: {
         type: String,
         required: true,
@@ -28,7 +28,7 @@ const productVariationSchema = new mongoose.Schema({
     colorName: { type: String, required: true }, // Tên màu, ví dụ: "Trắng"
     colorHexCode: { type: String, required: true }, // Mã màu HEX, ví dụ: "#FFFFFF"
     colorImageUrl: { type: String, required: true }, // Đường dẫn ảnh màu
-    materialVariation: { type: String, required: true } // Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
+    materialVariation: { type: String, required: true , unique: true } // Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
 }, {
     timestamps: true,
     versionKey: false
