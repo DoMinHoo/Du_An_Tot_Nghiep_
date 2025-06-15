@@ -97,73 +97,81 @@ exports.createVariation = async (req, res) => {
 };
 
 // Cập nhật một biến thể sản phẩm
+// Cập nhật một biến thể sản phẩm
 exports.updateVariation = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const body = req.body || {};
+  try {
+      const { id } = req.params;
+      const body = req.body || {};
 
-        // Kiểm tra id hợp lệ
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
-        }
+      // Kiểm tra id hợp lệ
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
+      }
 
-        // Kiểm tra biến thể tồn tại
-        const variation = await ProductVariation.findById(id);
-        if (!variation) {
-            return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
-        }
+      // Kiểm tra biến thể tồn tại
+      const variation = await ProductVariation.findById(id);
+      if (!variation) {
+          return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
+      }
 
-        // Kiểm tra SKU duy nhất nếu được cập nhật
-        if (body.sku && body.sku !== variation.sku) {
-            const existingVariation = await ProductVariation.findOne({ sku: body.sku });
-            if (existingVariation) {
-                return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
-            }
-        }
+      // Kiểm tra SKU duy nhất nếu được cập nhật
+      if (body.sku && body.sku !== variation.sku) {
+          const existingVariation = await ProductVariation.findOne({ sku: body.sku });
+          if (existingVariation) {
+              return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
+          }
+      }
 
-        // Xử lý hình ảnh
-        const uploadedImages = Array.isArray(req.files)
-            ? req.files.map((file) => `/uploads/variations/${path.basename(file.path)}`)
-            : [];
-        const colorImageUrl = uploadedImages.length > 0
-            ? uploadedImages[0]
-            : body.colorImageUrl !== undefined
-                ? body.colorImageUrl
-                : variation.colorImageUrl;
+      // Xử lý hình ảnh (tương tự createVariation)
+      const uploadedImages = Array.isArray(req.files)
+          ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
+          : [];
 
-        // Tính lại finalPrice nếu basePrice hoặc priceAdjustment thay đổi
-        const basePrice = body.basePrice ? parseFloat(body.basePrice) : variation.basePrice;
-        const priceAdjustment = body.priceAdjustment ? parseFloat(body.priceAdjustment) : variation.priceAdjustment;
-        const finalPrice = body.finalPrice || (basePrice + priceAdjustment);
+      const bodyImages = Array.isArray(body.colorImageUrl)
+          ? body.colorImageUrl
+          : body.colorImageUrl
+              ? [body.colorImageUrl]
+              : [];
 
-        const variationData = {
-            name: body.name || variation.name,
-            sku: body.sku || variation.sku,
-            dimensions: body.dimensions || variation.dimensions,
-            basePrice,
-            priceAdjustment,
-            finalPrice,
-            importPrice: body.importPrice ? parseFloat(body.importPrice) : variation.importPrice,
-            salePrice: body.salePrice ? parseFloat(body.salePrice) : variation.salePrice,
-            flashSaleDiscountedPrice: body.flashSaleDiscountedPrice 
-                ? parseFloat(body.flashSaleDiscountedPrice) 
-                : variation.flashSaleDiscountedPrice,
-            flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : variation.flashSaleStart,
-            flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : variation.flashSaleEnd,
-            stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
-            colorName: body.colorName || variation.colorName,
-            colorHexCode: body.colorHexCode || variation.colorHexCode,
-            colorImageUrl,
-            materialVariation: body.materialVariation || variation.materialVariation
-        };
+      const colorImageUrl = [...uploadedImages, ...bodyImages][0] || variation.colorImageUrl;
 
-        const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
+      if (!colorImageUrl) {
+          return res.status(400).json({ success: false, message: 'Ảnh màu (colorImageUrl) là bắt buộc' });
+      }
 
-        res.json({ success: true, data: updatedVariation });
-    } catch (err) {
-        console.error('Lỗi khi cập nhật biến thể:', err);
-        res.status(400).json({ success: false, message: err.message });
-    }
+      // Tính lại finalPrice nếu basePrice hoặc priceAdjustment thay đổi
+      const basePrice = body.basePrice ? parseFloat(body.basePrice) : variation.basePrice;
+      const priceAdjustment = body.priceAdjustment ? parseFloat(body.priceAdjustment) : variation.priceAdjustment;
+      const finalPrice = body.finalPrice ? parseFloat(body.finalPrice) : (basePrice + priceAdjustment);
+
+      const variationData = {
+          name: body.name || variation.name,
+          sku: body.sku || variation.sku,
+          dimensions: body.dimensions || variation.dimensions,
+          basePrice,
+          priceAdjustment,
+          finalPrice,
+          importPrice: body.importPrice ? parseFloat(body.importPrice) : variation.importPrice,
+          salePrice: body.salePrice ? parseFloat(body.salePrice) : variation.salePrice,
+          flashSaleDiscountedPrice: body.flashSaleDiscountedPrice 
+              ? parseFloat(body.flashSaleDiscountedPrice) 
+              : variation.flashSaleDiscountedPrice,
+          flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : variation.flashSaleStart,
+          flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : variation.flashSaleEnd,
+          stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
+          colorName: body.colorName || variation.colorName,
+          colorHexCode: body.colorHexCode || variation.colorHexCode,
+          colorImageUrl,
+          materialVariation: body.materialVariation || variation.materialVariation
+      };
+
+      const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
+
+      res.json({ success: true, data: updatedVariation });
+  } catch (err) {
+      console.error('Lỗi khi cập nhật biến thể:', err);
+      res.status(400).json({ success: false, message: err.message });
+  }
 };
 
 // Lấy danh sách biến thể theo productId
