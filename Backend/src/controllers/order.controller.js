@@ -1,6 +1,7 @@
 // controllers/order.controller.js
 const Order = require('../models/order.model');
 const mongoose = require('mongoose');
+const Promotion = require("../models/promotion.model");
 // Lấy danh sách đơn hàng (loc, phan trang)
 exports.getOrders = async (req, res) => {
     try {
@@ -200,4 +201,33 @@ exports.getOrdersByUser = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
+};
+
+const calculateFinalPrice = async (items, promoCode) => {
+  let originalPrice = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  let finalPrice = originalPrice;
+  let discountAmount = 0;
+
+  if (promoCode) {
+    const promo = await Promotion.findOne({ code: promoCode, isActive: true });
+
+    // Áp dụng nếu mã tồn tại, chưa hết hạn và hợp lệ
+    if (promo && (!promo.expiryDate || new Date() <= promo.expiryDate)) {
+      if (promo.discountType === "percentage") {
+        discountAmount = (originalPrice * promo.discountValue) / 100;
+      } else {
+        discountAmount = promo.discountValue;
+      }
+
+      // Điều kiện áp dụng: đơn hàng > 500k
+      if (originalPrice >= 500000) {
+        finalPrice = Math.max(originalPrice - discountAmount, 0);
+      }
+    }
+  }
+
+  return { originalPrice, finalPrice, discountAmount };
 };
