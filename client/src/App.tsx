@@ -6,6 +6,11 @@ import Home from './Pages/Home';
 import About from './Pages/About';
 import ProductDetail from './Pages/ProductDetail';
 import CategoryPage from './Pages/CategoryPage';
+import Register from './Pages/Register/register';
+import Login from './Pages/Login/login';
+import SetUser from './SetUser';
+
+
 
 
 function App() {
@@ -17,7 +22,12 @@ function App() {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
+      
+       
       </Route>
+        <Route path="/signin" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/set-user" element={<SetUser />} />
     </Routes>
   );
 }

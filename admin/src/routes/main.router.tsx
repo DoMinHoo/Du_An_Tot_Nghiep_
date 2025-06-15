@@ -35,7 +35,7 @@ const routes: RouteObject[] = [
   {
     path: "/admin",
     element: (
-      <Authenticated fallback={<Navigate to="/signin" replace />}>
+      <Authenticated fallback={<Navigate to="/login" replace />}>
         <MainLayout>
           <Outlet />
         </MainLayout>

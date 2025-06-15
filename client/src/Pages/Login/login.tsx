@@ -21,44 +21,44 @@ const Login: React.FC = () => {
   };
 
   const onFinish = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
 
-    const user = res.data?.user;
-    const token = res.data?.token;
-    const role = user?.role?.trim().toLowerCase();
+      const user = res.data?.user;
+      const token = res.data?.token;
+      const role = user?.role?.trim().toLowerCase();
 
-    if (!user || !role) {
-      alert('Thông tin tài khoản không hợp lệ!');
-      setLoading(false);
-      return;
+      if (!user || !role) {
+        alert('Thông tin tài khoản không hợp lệ!');
+        setLoading(false);
+        return;
+      }
+
+      // Lưu user & token
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+
+      alert('Đăng nhập thành công!');
+
+      if (role === 'admin') {
+        // Admin: chuyển sang giao diện admin
+        setTimeout(() => {
+          window.location.href = 'http://localhost:5174/admin/dashboard';
+        }, 1000);
+      } else {
+        // Client: ở lại trang client
+        setTimeout(() => navigate('/about'), 1000);
+      }
+
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || 'Đăng nhập thất bại!');
     }
-
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    if (token) {
-      localStorage.setItem('token', token);
-    }
-
-    alert('Đăng nhập thành công!');
-
-if (role === 'admin') {
-  setTimeout(() => navigate('/admin/dashboard'), 1000);
-} else {
-  // Gửi thông tin user và token qua URL
-  const userEncoded = encodeURIComponent(JSON.stringify(user));
-  setTimeout(() => {
-    window.location.href = `http://localhost:5173/set-user?user=${userEncoded}&token=${token}`;
-  }, 1000);
-}
-
-
-  } catch (err: any) {
-    alert(err?.response?.data?.message || err?.message || 'Đăng nhập thất bại!');
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   return (
     <div className="login-container">
