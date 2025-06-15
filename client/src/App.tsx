@@ -8,7 +8,7 @@ import CategoryPage from './Pages/CategoryPage';
 import Register from './Pages/Register/register';
 import Login from './Pages/Login/login';
 import SetUser from './SetUser';
-import CartPage from './Pages/cart';
+import CartPage from './Pages/Cart/CartPage';
 
 function App() {
   return (

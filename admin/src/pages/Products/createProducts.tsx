@@ -12,12 +12,9 @@ import {
 } from 'antd';
 import { ArrowLeftOutlined, UploadOutlined } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  createProduct,
-  getCategories,
-  type Category,
-} from '../../Services/products.service';
+import { createProduct, getCategories } from '../../Services/products.service';
 import { useNavigate } from 'react-router-dom';
+import type { Category } from '../../Types/product.interface';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -60,7 +57,6 @@ const AddProductPage: React.FC = () => {
     formData.append('brand', values.brand);
     formData.append('descriptionShort', values.descriptionShort);
     formData.append('descriptionLong', values.descriptionLong || '');
-    formData.append('material', values.material);
     formData.append('categoryId', values.categoryId);
     formData.append('status', values.status);
 
@@ -131,15 +127,6 @@ const AddProductPage: React.FC = () => {
                     </Option>
                   ))}
                 </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Chất liệu"
-                name="material"
-                rules={[{ required: true, message: 'Vui lòng nhập chất liệu' }]}
-              >
-                <Input />
               </Form.Item>
             </Col>
             <Col span={12}>

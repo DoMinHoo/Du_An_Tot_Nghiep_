@@ -54,6 +54,10 @@ exports.createVariation = async (req, res) => {
     if (existingVariation) {
       return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
     }
+    const existingMaterialVariation = await ProductVariation.findOne({ materialVariation: body.materialVariation });
+    if (existingMaterialVariation) {
+      return res.status(400).json({ success: false, message: 'Biến thể chất liệu đã tồn tại' });
+    }
 
     // 6. Tính finalPrice
     const basePrice = parseFloat(body.basePrice);
@@ -96,7 +100,6 @@ exports.createVariation = async (req, res) => {
   }
 };
 
-// Cập nhật một biến thể sản phẩm
 // Cập nhật một biến thể sản phẩm
 exports.updateVariation = async (req, res) => {
   try {
