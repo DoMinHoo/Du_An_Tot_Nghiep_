@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './Components/Layout/MainLayout';
@@ -9,8 +8,8 @@ import CategoryPage from './Pages/CategoryPage';
 import Register from './Pages/Register/register';
 import Login from './Pages/Login/login';
 import SetUser from './SetUser';
-
-
+import CartPage from './Pages/cart';
+import CheckoutPage from './Pages/CheckoutPage';
 
 
 function App() {
@@ -20,10 +19,14 @@ function App() {
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
         <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
       
        
+
+        <Route path="/checkout" element={<CheckoutPage />} />
+
       </Route>
         <Route path="/signin" element={<Register />} />
         <Route path="/login" element={<Login />} />

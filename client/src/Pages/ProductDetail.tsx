@@ -1,21 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { fetchProduct, fetchVariations } from '../services/apiService';
-import {
-  formatPrice,
-  calculateDiscount,
-  isValidPrice,
-} from '../utils/priceUtils';
-import { API_BASE_URL } from '../constants/api';
+import { formatPrice, isValidPrice } from '../utils/priceUtils';
 import { getImageUrl } from '../utils/imageUtils';
 import type { Product } from '../types/Product';
 import type { Variation } from '../types/Variations';
-import axios from 'axios';
+import { MdNavigateNext } from 'react-icons/md';
 
-// Hàm lấy thông tin giá và số lượng
+// Hàm lấy thông tin giá, số lượng và phần trăm giảm giá
 const getPriceAndStockDetails = (
   product: Product | undefined,
   selectedVariation: Variation | null
@@ -23,23 +18,36 @@ const getPriceAndStockDetails = (
   const salePrice = selectedVariation?.salePrice;
   const originalPrice = selectedVariation?.finalPrice;
   const displayPrice = salePrice ?? originalPrice;
-  const stockQuantity = selectedVariation
-    ? selectedVariation.stockQuantity
-    : product?.stock_quantity ?? 0;
+  const stockQuantity = selectedVariation?.stockQuantity;
 
-  return { salePrice, originalPrice, displayPrice, stockQuantity };
-};
+  // Tính phần trăm giảm giá
+  let discountPercentage: number | null = null;
+  if (
+    isValidPrice(salePrice) &&
+    isValidPrice(originalPrice) &&
+    salePrice !== undefined &&
+    originalPrice !== undefined &&
+    salePrice !== null &&
+    originalPrice !== null &&
+    salePrice < originalPrice
+  ) {
+    discountPercentage = Math.round(
+      ((originalPrice - salePrice) / originalPrice) * 100
+    );
+  }
 
-// Hàm lấy thông tin giá hiển thị cho biến thể
-const getVariationPriceDetails = (variation: Variation) => {
-  const salePrice = variation.salePrice;
-  const originalPrice = variation.finalPrice;
-  const displayPrice = salePrice ?? originalPrice;
-  return { salePrice, originalPrice, displayPrice };
+  return {
+    salePrice,
+    originalPrice,
+    displayPrice,
+    stockQuantity,
+    discountPercentage,
+  };
 };
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(
     null
   );
@@ -47,8 +55,9 @@ const ProductDetail: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [isImageViewOpen, setIsImageViewOpen] = useState<boolean>(false);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
-  // Kiểm tra ID hợp lệ ngay từ đầu
+  // Kiểm tra ID sản phẩm hợp lệ
   if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
     return (
       <div className="max-w-screen-xl mx-auto px-4 py-10 text-center text-red-600">
@@ -63,16 +72,8 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  const getNumberValue = (value: any): number | null => {
-    return typeof value === 'number' ? value : null;
-  };
-
-  const effectiveFinalPrice =
-    selectedVariation && isValidPrice(selectedVariation.finalPrice)
-      ? getNumberValue(selectedVariation.finalPrice)
-      : null;
-
-  // Fetch product and variations using react-query
+  // Lấy dữ liệu sản phẩm và biến thể
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [productQuery, variationsQuery] = useQueries({
     queries: [
       {
@@ -101,7 +102,8 @@ const ProductDetail: React.FC = () => {
   const isLoading = productQuery.isLoading || variationsQuery.isLoading;
   const error = productQuery.error || variationsQuery.error;
 
-  // Danh sách hình ảnh kết hợp (sản phẩm + biến thể)
+  // Tạo danh sách hình ảnh từ sản phẩm và biến thể
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const allImages = useMemo(() => {
     const productImages =
       product?.image && Array.isArray(product.image) ? product.image : [];
@@ -109,13 +111,15 @@ const ProductDetail: React.FC = () => {
     return variationImage ? [variationImage, ...productImages] : productImages;
   }, [product, selectedVariation]);
 
-  // Tính toán giá và số lượng sử dụng useMemo để tối ưu hiệu suất
+  // Tính toán giá, tồn kho và phần trăm giảm giá
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const details = useMemo(
     () => getPriceAndStockDetails(product, selectedVariation),
     [product, selectedVariation]
   );
 
-  // Set initial variation and main image
+  // Khởi tạo biến thể và hình ảnh chính
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   React.useEffect(() => {
     if (variations.length > 0 && !selectedVariation) {
       setSelectedVariation(variations[0]);
@@ -136,6 +140,7 @@ const ProductDetail: React.FC = () => {
     }
   }, [variations, product, selectedVariation, variationsQuery.isLoading]);
 
+  // Chọn biến thể và cập nhật hình ảnh
   const handleVariationSelect = (variation: Variation) => {
     setSelectedVariation(variation);
     setMainImage(
@@ -145,80 +150,70 @@ const ProductDetail: React.FC = () => {
         ? getImageUrl(product.image[0])
         : getImageUrl()
     );
-    setQuantity(1); // Reset quantity when changing variation
+    setQuantity(1); // Reset số lượng
   };
 
+  // Tăng số lượng sản phẩm
   const increaseQty = () => {
-    if (quantity < details.stockQuantity) {
+    if (quantity < (details.stockQuantity || 0)) {
       setQuantity((q) => q + 1);
     } else {
       toast.warn('Đã đạt số lượng tối đa trong kho!');
     }
   };
 
+  // Giảm số lượng sản phẩm
   const decreaseQty = () => {
     setQuantity((q) => Math.max(1, q - 1));
   };
 
-  const addToCart = async () => {
-    try {
-      if (variations.length > 0 && !selectedVariation) {
-        toast.error('Vui lòng chọn một biến thể sản phẩm');
-        return;
-      }
-      if (details.stockQuantity === 0) {
-        toast.error('Sản phẩm hiện đã hết hàng');
-        return;
-      }
-      const cartItem = {
-        productId: id,
-        variationId: selectedVariation?._id,
-        quantity,
-      };
-      await axios.post(`${API_BASE_URL}/cart/add`, cartItem);
-      toast.success('Đã thêm vào giỏ hàng!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Lỗi khi thêm vào giỏ hàng.');
+  // Kiểm tra trạng thái đăng nhập
+  const checkAuth = (): boolean => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+      navigate('/login');
+      return false;
     }
-  };
-
-  const buyNow = async () => {
-    try {
-      if (variations.length > 0 && !selectedVariation) {
-        toast.error('Vui lòng chọn một biến thể sản phẩm');
-        return;
-      }
-      if (details.stockQuantity === 0) {
-        toast.error('Sản phẩm hiện đã hết hàng');
-        return;
-      }
-      const orderItem = {
-        productId: id,
-        variationId: selectedVariation?._id,
-        quantity,
-      };
-      await axios.post(`${API_BASE_URL}/order/create`, orderItem);
-      toast.success('Đã tạo đơn hàng!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Lỗi khi tạo đơn hàng.');
-    }
+    return true;
   };
 
   const openImageView = () => setIsImageViewOpen(true);
   const closeImageView = () => {
     setIsImageViewOpen(false);
     setCurrentImageIndex(0);
+    setSlideDirection(null);
   };
+
   const nextImage = () => {
     if (allImages && currentImageIndex < allImages.length - 1) {
+      setSlideDirection('left');
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
+
   const prevImage = () => {
     if (currentImageIndex > 0) {
+      setSlideDirection('right');
       setCurrentImageIndex(currentImageIndex - 1);
     }
   };
+
+  // Xử lý điều hướng bằng bàn phím
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isImageViewOpen) return;
+      if (event.key === 'ArrowRight') {
+        nextImage();
+      } else if (event.key === 'ArrowLeft') {
+        prevImage();
+      } else if (event.key === 'Escape') {
+        closeImageView();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isImageViewOpen, currentImageIndex, allImages]);
 
   if (isLoading) {
     return (
@@ -298,6 +293,7 @@ const ProductDetail: React.FC = () => {
               onClick={openImageView}
               className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow hover:bg-gray-100"
               title="Phóng to ảnh"
+              aria-label="Phóng to ảnh"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -318,33 +314,38 @@ const ProductDetail: React.FC = () => {
         </div>
 
         {/* Thông tin chi tiết */}
-        <div className="flex flex-col gap-6 text-gray-800">
+        <div className="flex flex-col gap-3 text-gray-800">
           <h2 className="text-2xl md:text-3xl font-semibold">{product.name}</h2>
 
-          {/* Hiển thị giá */}
+          {/* Hiển thị giá và phần trăm giảm giá */}
           <div className="flex items-center gap-4 flex-wrap">
             <span className="text-red-600 text-2xl font-bold">
-              {formatPrice(details.displayPrice)}
+              {formatPrice(details.displayPrice ?? null)}
             </span>
             {isValidPrice(details.salePrice) &&
               isValidPrice(details.originalPrice) &&
               details.salePrice !== undefined &&
               details.originalPrice !== undefined &&
+              details.salePrice !== null &&
+              details.originalPrice !== null &&
               details.salePrice < details.originalPrice && (
                 <>
                   <span className="line-through text-gray-500">
                     {formatPrice(details.originalPrice)}
+                  </span>
+                  <span className="bg-red-100 text-red-600 text-sm font-semibold px-2 py-1 rounded">
+                    -{details.discountPercentage}%
                   </span>
                 </>
               )}
           </div>
 
           {/* Hiển thị số lượng tồn kho */}
-          <div>
+          <div className="flex flex-row items-center gap-2">
             <h4 className="font-semibold mb-2">Số lượng tồn kho:</h4>
-            <p className="text-sm text-gray-700">
-              {details.stockQuantity > 0
-                ? `${details.stockQuantity} sản phẩm`
+            <p className="text-sm text-gray-700 pb-[6px]">
+              {(details.stockQuantity ?? 0) > 0
+                ? `${details.stockQuantity ?? 0} `
                 : 'Hết hàng'}
             </p>
           </div>
@@ -353,22 +354,19 @@ const ProductDetail: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-2">Biến thể:</h4>
               <div className="flex flex-wrap gap-2">
-                {variations.map((variation) => {
-                  const variationPrice = getVariationPriceDetails(variation);
-                  return (
-                    <button
-                      key={variation._id}
-                      onClick={() => handleVariationSelect(variation)}
-                      className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
-                        selectedVariation?._id === variation._id
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      {variation.name} ({variation.colorName})
-                    </button>
-                  );
-                })}
+                {variations.map((variation) => (
+                  <button
+                    key={variation._id}
+                    onClick={() => handleVariationSelect(variation)}
+                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
+                      selectedVariation?._id === variation._id
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {variation.dimensions}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -404,6 +402,7 @@ const ProductDetail: React.FC = () => {
                 onClick={decreaseQty}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300"
                 disabled={quantity <= 1}
+                aria-label="Giảm số lượng"
               >
                 −
               </button>
@@ -411,42 +410,46 @@ const ProductDetail: React.FC = () => {
                 type="number"
                 value={quantity}
                 readOnly
-                className="w-12 text-center border-x border-gray-300"
+                className="w-12 pl-3.5 text-center border-x border-gray-300"
+                aria-label="Số lượng"
               />
               <button
                 onClick={increaseQty}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300"
-                disabled={quantity >= details.stockQuantity}
+                disabled={quantity >= (details.stockQuantity || 0)}
+                aria-label="Tăng số lượng"
               >
                 +
               </button>
             </div>
 
             <button
-              onClick={addToCart}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition disabled:bg-gray-400"
-              disabled={details.stockQuantity === 0}
+              disabled={(details.stockQuantity || 0) === 0}
+              onClick={checkAuth}
             >
               Thêm vào giỏ
             </button>
 
             <button
-              onClick={buyNow}
               className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded transition disabled:bg-gray-400"
-              disabled={details.stockQuantity === 0}
+              disabled={(details.stockQuantity || 0) === 0}
+              onClick={checkAuth}
             >
               Mua ngay
             </button>
           </div>
 
-          <div>
-            <h4 className="font-semibold mb-2">Tình trạng:</h4>
+          <div className="flex flex-row items-center gap-2">
+            <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-semibold ${
-                details.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
+              className={`text-sm font-semibold pt-1 ${
+                (details.stockQuantity || 0) > 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
               }`}
             >
-              {details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+              {(details.stockQuantity || 0) > 0 ? 'Còn hàng' : 'Hết hàng'}
             </p>
           </div>
         </div>
@@ -454,29 +457,53 @@ const ProductDetail: React.FC = () => {
 
       {/* Image View Modal */}
       {isImageViewOpen && allImages.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300"
+          role="dialog"
+          aria-labelledby="image-modal-title"
+          aria-modal="true"
+        >
           <button
             onClick={closeImageView}
-            className="absolute top-4 right-4 text-white text-2xl"
+            className="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white rounded-full"
+            aria-label="Đóng phóng to ảnh"
           >
             ×
           </button>
+          <div className="relative w-[90%] max-h-[80vh] overflow-hidden">
+            <div
+              className="flex transition-transform duration-300 ease-in-out"
+              style={{
+                transform: `translateX(-${currentImageIndex * 100}%)`,
+              }}
+            >
+              {allImages.map((src, idx) => (
+                <img
+                  key={idx}
+                  src={getImageUrl(src)}
+                  alt={`${product.name} - Image ${idx + 1}`}
+                  className="w-full max-h-[80vh] object-contain flex-shrink-0"
+                />
+              ))}
+            </div>
+          </div>
           <button
             onClick={prevImage}
-            className="absolute left-4 text-white text-4xl disabled:opacity-50"
+            className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 text-white text-4xl md:text-5xl hover:bg-gray-800 hover:bg-opacity-50 rounded-full p-2 transition-all focus:outline-none focus:ring-2 focus:ring-white disabled:opacity-50"
             disabled={currentImageIndex === 0}
-          ></button>
-          <img
-            src={getImageUrl(allImages[currentImageIndex])}
-            alt={`${product.name} - Image ${currentImageIndex + 1}`}
-            className="max-h-[80vh] max-w-[90vw] object-contain"
-          />
+            aria-label="Ảnh trước"
+          >
+            <MdNavigateNext className="transform rotate-180" />
+          </button>
           <button
             onClick={nextImage}
-            className="absolute right-4 text-white text-4xl disabled:opacity-50"
+            className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 text-white text-4xl md:text-5xl hover:bg-gray-800 hover:bg-opacity-50 rounded-full p-2 transition-all focus:outline-none focus:ring-2 focus:ring-white disabled:opacity-50"
             disabled={currentImageIndex === allImages.length - 1}
-          ></button>
-          <p className="absolute bottom-4 text-white">
+            aria-label="Ảnh tiếp theo"
+          >
+            <MdNavigateNext />
+          </button>
+          <p className="absolute bottom-4 text-white text-lg font-semibold">
             {currentImageIndex + 1} / {allImages.length}
           </p>
         </div>

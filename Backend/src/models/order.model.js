@@ -1,3 +1,4 @@
+// src/models/order.model.js
 const mongoose = require('mongoose');
 
 // Schema cho từng mục trong items
@@ -7,26 +8,18 @@ const itemSchema = new mongoose.Schema({
         ref: 'ProductVariation',
         required: true
     },
-    productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
     quantity: {
         type: Number,
-        required: true
+        required: true,
+        min: 1
     },
     salePrice: {
         type: Number,
-        required: true
+        required: true // Lưu giá tại thời điểm tạo đơn hàng
     }
 }, { _id: false });
 
-// Schema cho từng mục trong statusHistory
+// Schema cho lịch sử trạng thái
 const statusHistorySchema = new mongoose.Schema({
     status: {
         type: String,
@@ -44,6 +37,14 @@ const statusHistorySchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+// Schema cho địa chỉ giao hàng
+const shippingAddressSchema = new mongoose.Schema({
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    zipCode: { type: String },
+    country: { type: String, default: 'Vietnam' }
+}, { _id: false });
+
 // Schema chính cho đơn hàng
 const orderSchema = new mongoose.Schema({
     userId: {
@@ -54,15 +55,24 @@ const orderSchema = new mongoose.Schema({
     orderCode: {
         type: String,
         required: true,
-        unique: true // mã đơn hàng phải là duy nhất
+        unique: true
     },
     customerName: {
         type: String,
         required: true
     },
+    phone: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
     totalAmount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     status: {
         type: String,
@@ -71,7 +81,12 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
     shippingAddress: {
+        type: shippingAddressSchema,
+        required: true
+    },
+    paymentMethod: {
         type: String,
+        enum: ['cod', 'bank_transfer', 'online_payment'],
         required: true
     },
     items: [itemSchema],
@@ -80,6 +95,10 @@ const orderSchema = new mongoose.Schema({
     timestamps: true,
     versionKey: false
 });
+
+orderSchema.index({ orderCode: 1 });
+orderSchema.index({ userId: 1 });
+orderSchema.index({ 'items.variationId': 1 });
 
 const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;

@@ -1,15 +1,17 @@
+// src/routes/order.js
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/order.controller');
+const { protect } = require('../middlewares/auth.middleware'); // Import middleware
 
-// ✅ Route tạo đơn hàng (cho người dùng)
-router.post('/', orderController.createOrder);
+// Route tạo đơn hàng (yêu cầu xác thực)
+router.post('/', protect(), orderController.createOrder);
 
-// Các route hiện tại
-router.get('/', orderController.getOrders);
-router.get('/:id', orderController.getOrderById);
-router.put('/:id', orderController.updateOrder);
-router.delete('/:id', orderController.deleteOrder);
-router.get('/user/:userId', orderController.getOrdersByUser);
+// Các route khác (thêm protect nếu cần xác thực)
+router.get('/', protect(['admin']), orderController.getOrders); // Chỉ admin
+router.get('/:id', protect(), orderController.getOrderById);
+router.put('/:id', protect(['admin']), orderController.updateOrder); // Chỉ admin
+router.delete('/:id', protect(['admin']), orderController.deleteOrder); // Chỉ admin
+router.get('/user/:userId', protect(), orderController.getOrdersByUser);
 
 module.exports = router;

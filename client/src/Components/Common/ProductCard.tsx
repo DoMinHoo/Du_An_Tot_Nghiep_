@@ -13,29 +13,24 @@ import { getImageUrl } from '../../utils/imageUtils';
 interface ProductCardProps {
   product: Product & Variation;
 }
-
+// San phẩm có thể có các biến thể, vì vậy chúng ta kết hợp kiểu Product và Variation
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  // Sử dụng useState để quản lý trạng thái của biến thể, trạng thái tải và lỗi
+  // Sử dụng useEffect để tải biến thể mặc định khi sản phẩm được cung cấp
   useEffect(() => {
     let isMounted = true;
-
     const fetchDefaultVariation = async () => {
       try {
         setLoading(true);
         const variations = await fetchVariations(product._id);
-        const defaultVariation =
-          variations[0] || product.defaultVariation || null;
+        const defaultVariation = variations[0] || null;
 
         if (isMounted) {
           setVariation(defaultVariation);
-          if (
-            !defaultVariation &&
-            !isValidPrice(product.salePrice) &&
-            !isValidPrice(product.price)
-          ) {
+          if (!defaultVariation && !isValidPrice(product.salePrice)) {
             setError(
               'Không tìm thấy biến thể hoặc giá hợp lệ cho sản phẩm này'
             );
@@ -43,10 +38,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         }
       } catch (err: any) {
         if (isMounted) {
-          setVariation(product.defaultVariation || null);
-          if (!product.defaultVariation) {
-            setError(err.message || 'Lỗi khi lấy biến thể');
-          }
+          setError(
+            err.message ||
+              'Lỗi khi tải biến thể sản phẩm. Vui lòng thử lại sau.'
+          );
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -63,7 +58,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return () => {
       isMounted = false;
     };
-  }, [product._id, product.defaultVariation]);
+  }, [product._id]);
 
   if (loading) {
     return (
@@ -87,7 +82,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
     );
   }
-
+  // Kiểm tra xem sản phẩm có ID, tên và hình ảnh hợp lệ hay không
   const getNumberValue = (value: any): number | null => {
     return typeof value === 'number' ? value : null;
   };
@@ -95,15 +90,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const effectiveSalePrice =
     variation && isValidPrice(variation.salePrice)
       ? getNumberValue(variation.salePrice)
-      : isValidPrice(product.salePrice)
-      ? getNumberValue(product.salePrice)
       : null;
 
   const effectiveFinalPrice =
     variation && isValidPrice(variation.finalPrice)
       ? getNumberValue(variation.finalPrice)
-      : isValidPrice(product.price)
-      ? getNumberValue(product.price)
       : null;
 
   if (!effectiveSalePrice && !effectiveFinalPrice) {
@@ -116,11 +107,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
     );
   }
-
+  // Nếu không có giá bán, sử dụng giá cuối cùng
   const discountPercentage = calculateDiscount(
     effectiveSalePrice,
     effectiveFinalPrice
   );
+  // Tính toán phần trăm giảm giá nếu có
   const isNew = product.createdAt
     ? new Date(product.createdAt) >
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
