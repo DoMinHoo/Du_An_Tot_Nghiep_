@@ -11,48 +11,43 @@ import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
 
 interface ProductCardProps {
-  product: Product & Variation;
+  product: Product;
 }
-// San phẩm có thể có các biến thể, vì vậy chúng ta kết hợp kiểu Product và Variation
+
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // Sử dụng useState để quản lý trạng thái của biến thể, trạng thái tải và lỗi
-  // Sử dụng useEffect để tải biến thể mặc định khi sản phẩm được cung cấp
+
+  // Sử dụng useEffect để lấy biến thể mặc định
   useEffect(() => {
     let isMounted = true;
     const fetchDefaultVariation = async () => {
       try {
         setLoading(true);
         const variations = await fetchVariations(product._id);
-        const defaultVariation = variations[0] || null;
-
-        if (isMounted) {
-          setVariation(defaultVariation);
-          if (!defaultVariation && !isValidPrice(product.salePrice)) {
-            setError(
-              'Không tìm thấy biến thể hoặc giá hợp lệ cho sản phẩm này'
-            );
-          }
+        // Kiểm tra xem variations có phải mảng và có phần tử không
+        if (isMounted && Array.isArray(variations) && variations.length > 0) {
+          setVariation(variations[0]);
+        } else if (isMounted) {
+          setVariation(null); // Không có biến thể
         }
-      } catch (err: any) {
+      } catch (err) {
         if (isMounted) {
-          setError(
-            err.message ||
-              'Lỗi khi tải biến thể sản phẩm. Vui lòng thử lại sau.'
-          );
+          setVariation(null); // Lỗi API, không hiển thị
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // Kiểm tra ID sản phẩm hợp lệ (ObjectId MongoDB)
     if (product._id && /^[0-9a-fA-F]{24}$/.test(product._id)) {
       fetchDefaultVariation();
     } else {
-      setError('ID sản phẩm không hợp lệ');
       setLoading(false);
+      setVariation(null); // ID không hợp lệ, không hiển thị
     }
 
     return () => {
@@ -60,6 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     };
   }, [product._id]);
 
+  // Nếu đang tải, hiển thị skeleton
   if (loading) {
     return (
       <div className="animate-pulse bg-gray-200 h-[300px] rounded-md">
@@ -72,47 +68,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     );
   }
 
-  if (error || !product._id || !product.name || !Array.isArray(product.image)) {
-    return (
-      <div className="text-center text-red-500 p-4">
-        {error || 'Dữ liệu sản phẩm không hợp lệ'}{' '}
-        <Link to="/contact" className="text-blue-500 underline">
-          Liên hệ
-        </Link>
-      </div>
-    );
+  // Nếu không có biến thể hoặc dữ liệu sản phẩm không hợp lệ, không hiển thị gì
+  if (
+    !variation ||
+    !product._id ||
+    !product.name ||
+    !Array.isArray(product.image)
+  ) {
+    return null;
   }
-  // Kiểm tra xem sản phẩm có ID, tên và hình ảnh hợp lệ hay không
-  const getNumberValue = (value: any): number | null => {
-    return typeof value === 'number' ? value : null;
-  };
 
-  const effectiveSalePrice =
-    variation && isValidPrice(variation.salePrice)
-      ? getNumberValue(variation.salePrice)
-      : null;
+  // Kiểm tra giá hợp lệ từ biến thể
+  const effectiveSalePrice = isValidPrice(variation.salePrice)
+    ? variation.salePrice
+    : null;
+  const effectiveFinalPrice = isValidPrice(variation.finalPrice)
+    ? variation.finalPrice
+    : null;
 
-  const effectiveFinalPrice =
-    variation && isValidPrice(variation.finalPrice)
-      ? getNumberValue(variation.finalPrice)
-      : null;
-
+  // Nếu không có giá hợp lệ, không hiển thị
   if (!effectiveSalePrice && !effectiveFinalPrice) {
-    return (
-      <div className="text-center text-red-500 p-4">
-        Không có thông tin giá hợp lệ.{' '}
-        <Link to="/contact" className="text-blue-500 underline">
-          Liên hệ
-        </Link>
-      </div>
-    );
+    return null;
   }
-  // Nếu không có giá bán, sử dụng giá cuối cùng
+
+  // Tính phần trăm giảm giá
   const discountPercentage = calculateDiscount(
     effectiveSalePrice,
     effectiveFinalPrice
   );
-  // Tính toán phần trăm giảm giá nếu có
+
+  // Kiểm tra sản phẩm có mới không (trong 7 ngày)
   const isNew = product.createdAt
     ? new Date(product.createdAt) >
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)

@@ -200,6 +200,7 @@ const ProductDetail: React.FC = () => {
   };
 
   // Xử lý điều hướng bằng bàn phím
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isImageViewOpen) return;
@@ -351,9 +352,9 @@ const ProductDetail: React.FC = () => {
           </div>
 
           {variations.length > 0 && (
-            <div>
+            <div className="flex flex-col gap-2">
               <h4 className="font-semibold mb-2">Biến thể:</h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-2 w-[300px]">
                 {variations.map((variation) => (
                   <button
                     key={variation._id}
