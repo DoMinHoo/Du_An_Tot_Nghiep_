@@ -80,9 +80,6 @@ const ProductDetail: React.FC = () => {
         queryKey: ['product', id],
         queryFn: () => fetchProduct(id),
         retry: 2,
-        onError: (err: any) => {
-          toast.error(err.message || 'Không thể tải thông tin sản phẩm');
-        },
       },
       {
         queryKey: ['variations', id],

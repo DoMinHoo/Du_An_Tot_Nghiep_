@@ -31,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         } else if (isMounted) {
           setVariation(null); // Không có biến thể
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setVariation(null); // Lỗi API, không hiển thị
         }
