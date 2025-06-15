@@ -1,68 +1,89 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Descriptions, Button, Tag, Layout } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import { Card, Col, Row, message, Spin } from 'antd';
+import dayjs from 'dayjs';
 
-
-const { Content } = Layout;
+interface Role {
+  name: string;
+}
 
 interface User {
-  key: string;
-  id: number;
+  _id: string;
   name: string;
-  phone: string;
   email: string;
-  role: string;
-  status: 'active' | 'inactive';
   address: string;
+  dateBirth: string;
+  status: string;
+  roleId: Role;
+  gender: string;
+  phone: string;
 }
 
 const UserDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { id } = useParams(); // Lấy ID người dùng từ URL
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const storedData = localStorage.getItem('userData');
-    if (storedData) {
-      const users: User[] = JSON.parse(storedData);
-      const foundUser = users.find(u => u.id === Number(id));
-      setUser(foundUser || null);
-    }
-  }, [id]);
+    const fetchUserDetail = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/users/${id}`);
+        setUser(res.data);
+      } catch (err: any) {
+        message.error('Không thể tải thông tin người dùng');
+        navigate('/'); // Quay lại trang danh sách nếu không thể lấy thông tin
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchUserDetail();
+  }, [id, navigate]);
+
+  if (loading) return <Spin size="large" />;
+
+  if (!user) return <div>Không tìm thấy người dùng.</div>;
 
   return (
-   
-        <Content style={{ margin: '24px' }}>
-          <Button onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
-            ← Quay lại
-          </Button>
-
-          {user ? (
-            <Card title={`Thông tin chi tiết người dùng: ${user.name}`} bordered={false}>
-              <Descriptions bordered column={1}>
-                <Descriptions.Item label="ID">{user.id}</Descriptions.Item>
-                <Descriptions.Item label="Họ tên">{user.name}</Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại">{user.phone}</Descriptions.Item>
-                <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
-                <Descriptions.Item label="Quyền">{user.role}</Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
-                  <Tag
-                    icon={user.status === 'active' ? <CheckCircleOutlined /> : <StopOutlined />}
-                    color={user.status === 'active' ? 'green' : 'volcano'}
-                    style={{ fontWeight: 'bold', fontSize: 14, padding: '4px 12px', borderRadius: '999px' }}
-                  >
-                    {user.status === 'active' ? 'Hoạt động' : 'Khoá'}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Địa chỉ">{user.address}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-          ) : (
-            <p>Không tìm thấy người dùng.</p>
-          )}
-        </Content>
-   
+    <div>
+      <h2>Thông tin chi tiết người dùng</h2>
+      <Card>
+        <Row>
+          <Col span={12}>
+            <strong>Tên:</strong> {user.name}
+          </Col>
+          <Col span={12}>
+            <strong>Email:</strong> {user.email}
+          </Col>
+        </Row>
+        <Row>
+          <Col span={12}>
+            <strong>Số điện thoại:</strong> {user.phone}
+          </Col>
+          <Col span={12}>
+            <strong>Giới tính:</strong> {user.gender === 'male' ? 'Nam' : user.gender === 'female' ? 'Nữ' : 'Khác'}
+          </Col>
+        </Row>
+        <Row>
+          <Col span={12}>
+            <strong>Địa chỉ:</strong> {user.address}
+          </Col>
+          <Col span={12}>
+            <strong>Ngày sinh:</strong> {dayjs(user.dateBirth).format('DD/MM/YYYY')}
+          </Col>
+        </Row>
+        <Row>
+          <Col span={12}>
+            <strong>Quyền:</strong> {user.roleId.name}
+          </Col>
+          <Col span={12}>
+            <strong>Trạng thái:</strong> {user.status === 'active' ? 'Hoạt động' : 'Đã khóa'}
+          </Col>
+        </Row>
+      </Card>
+    </div>
   );
 };
 

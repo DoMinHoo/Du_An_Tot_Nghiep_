@@ -88,11 +88,7 @@ const EditVariant = () => {
       title="✏️ Chỉnh sửa biến thể sản phẩm"
       style={{ maxWidth: 600, margin: 'auto' }}
     >
-      <Form
-        layout="vertical"
-        form={form}
-        onFinish={onFinish}
-      >
+      <Form layout="vertical" form={form} onFinish={onFinish}>
         <Form.Item label="Mã SKU" name="sku" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
@@ -105,20 +101,34 @@ const EditVariant = () => {
           <Input />
         </Form.Item>
 
-        <Form.Item label="Kho hàng" name="stock" rules={[{ required: true, type: 'number', min: 0 }]}>
+        <Form.Item
+          label="Kho hàng"
+          name="stock"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
           <InputNumber style={{ width: '100%' }} min={0} />
         </Form.Item>
 
-        <Form.Item label="Giá bán" name="price" rules={[{ required: true, type: 'number', min: 0 }]}>
+        <Form.Item
+          label="Giá bán"
+          name="price"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
           <InputNumber
             style={{ width: '100%' }}
             min={0}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            formatter={(value) =>
+              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+            }
             parser={(value) => value.replace(/\₫|\s|,/g, '')}
           />
         </Form.Item>
 
-        <Form.Item label="Trạng thái" name="status" rules={[{ required: true }]}>
+        <Form.Item
+          label="Trạng thái"
+          name="status"
+          rules={[{ required: true }]}
+        >
           <Select>
             <Option value="active">Hiển thị</Option>
             <Option value="sold_out">Hết hàng</Option>

@@ -1,5 +1,6 @@
 const Product = require("../models/products.model");
 const Category = require("../models/category.model");
+const path = require("path");
 
 // Hàm đệ quy xây dựng breadcrumb từ categoryId
 const buildCategoryBreadcrumb = async (categoryId) => {
@@ -140,7 +141,7 @@ exports.getProductById = async (req, res) => {
 exports.createProduct = async (req, res) => {
   try {
     const uploadedImages = Array.isArray(req.files)
-      ? req.files.map((file) => file.path)
+      ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
 
     const body = req.body || {};
@@ -183,7 +184,9 @@ exports.updateProduct = async (req, res) => {
     const product = await Product.findById(id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    const uploadedImages = req.files ? req.files.map((file) => file.path) : [];
+    const uploadedImages = req.files
+      ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
+      : [];
     const body = req.body || {};
     const bodyImages = Array.isArray(body.image)
       ? body.image
