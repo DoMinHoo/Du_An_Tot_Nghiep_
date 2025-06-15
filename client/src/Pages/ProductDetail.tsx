@@ -163,18 +163,6 @@ const ProductDetail: React.FC = () => {
   const decreaseQty = () => {
     setQuantity((q) => Math.max(1, q - 1));
   };
-
-  // Kiểm tra trạng thái đăng nhập
-  const checkAuth = (): boolean => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
-      navigate('/login');
-      return false;
-    }
-    return true;
-  };
-
   const openImageView = () => setIsImageViewOpen(true);
   const closeImageView = () => {
     setIsImageViewOpen(false);
@@ -424,7 +412,6 @@ const ProductDetail: React.FC = () => {
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition disabled:bg-gray-400"
               disabled={(details.stockQuantity || 0) === 0}
-              onClick={checkAuth}
             >
               Thêm vào giỏ
             </button>
@@ -432,7 +419,6 @@ const ProductDetail: React.FC = () => {
             <button
               className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded transition disabled:bg-gray-400"
               disabled={(details.stockQuantity || 0) === 0}
-              onClick={checkAuth}
             >
               Mua ngay
             </button>

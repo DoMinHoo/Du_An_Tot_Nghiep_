@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
 
 dotenv.config();
-
+// Hàm tạo token JWT cho người dùng
 const generateToken = (user) => {
     return jwt.sign(
         { userId: user._id, role: user.role },
@@ -11,7 +11,7 @@ const generateToken = (user) => {
         { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
 };
-
+ // Middleware để bảo vệ các route cần xác thực và phân quyền
 const protect = (roles = []) => {
     return (req, res, next) => {
         const authHeader = req.header('Authorization');
@@ -54,7 +54,7 @@ const protect = (roles = []) => {
         }
     };
 };
-
+// Middleware để xác thực token
 const verifyToken = (req, res, next) => {
     const authHeader = req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -79,7 +79,7 @@ const verifyToken = (req, res, next) => {
         });
     }
 };
-
+ // Middleware để bảo vệ các route cần xác thực
 const optionalProtect = (req, res, next) => {
     const authHeader = req.header('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -101,4 +101,4 @@ const optionalProtect = (req, res, next) => {
     next();
 };
 
-module.exports = { generateToken, protect, verifyToken, optionalProtect };
+module.exports = { generateToken, protect, verifyToken, optionalProtect }; //
