@@ -34,7 +34,7 @@ exports.createVariation = async (req, res) => {
 
     // 4. Xử lý hình ảnh (từ cả req.files và body.colorImageUrl)
     const uploadedImages = Array.isArray(req.files)
-      ? req.files.map((file) => `/uploads/banners/variations/${path.basename(file.path)}`)
+      ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
 
     const bodyImages = Array.isArray(body.colorImageUrl)

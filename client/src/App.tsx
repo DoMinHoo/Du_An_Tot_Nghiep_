@@ -10,7 +10,6 @@ import Login from './Pages/Login/login';
 import SetUser from './SetUser';
 import CartPage from './Pages/cart';
 
-
 function App() {
   return (
     <Routes>
@@ -21,14 +20,12 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
-      
-       
 
-
+        {/* <Route path="/checkout" element={<CheckoutPage />} /> */}
       </Route>
-        <Route path="/signin" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/set-user" element={<SetUser />} />
+      <Route path="/signin" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/set-user" element={<SetUser />} />
     </Routes>
   );
 }
