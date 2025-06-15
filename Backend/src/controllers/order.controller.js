@@ -586,5 +586,3 @@ const calculateFinalPrice = async (items, promoCode) => {
   return { originalPrice, finalPrice, discountAmount };
 };
 
-};
-
