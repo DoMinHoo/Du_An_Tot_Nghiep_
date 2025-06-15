@@ -1,29 +1,23 @@
 import {
   createBrowserRouter,
-  Navigate,
   Outlet,
-  type RouteObject,
+  type RouteObject
 } from 'react-router-dom';
-import Authenticated from '../components/Layout/authenticate';
 import MainLayout from '../components/Layout/mainLayoutAdmin';
-import ListCategory from '../pages/Categories/listCategory';
 import DashboardPage from '../pages/Dashboard/dashboard';
 
+import CategoryManager from '../pages/Categories/category';
+import ReviewManager from '../pages/Comment&Review/reviewManager';
+import LoginAdmin from '../pages/Login/loginAdmin';
+import ListOrder from '../pages/Orders/listOrder';
 import CreateProducts from '../pages/Products/createProducts';
 import ListProduct from '../pages/Products/listProduct';
 import UpdateProduct from '../pages/Products/updateProduct';
-import ListOrder from '../pages/Orders/listOrder';
-import ListUser from '../pages/Users/listUser';
 import RegisterAdmin from '../pages/Registers/registerAdmin';
-import LoginAdmin from '../pages/Login/loginAdmin';
-import ReviewManager from '../pages/Comment&Review/reviewManager';
-import CategoryManager from '../pages/Categories/category';
 import UserDetail from '../pages/Users/detailUser';
+import ListUser from '../pages/Users/listUser';
 
 import OrderDetail from '../pages/Orders/orderDetail';
-import ListVariant from '../pages/Products/ProductVariants/ListVariantProduct';
-import CreateVariant from '../pages/Products/ProductVariants/CreateVariantProduct';
-import EditVariant from '../pages/Products/ProductVariants/EditVariantProduct';
 
 import BannerList from '../pages/Banners/BannerList';
 import CollectionPage from '../pages/Banners/CollectionPage';
@@ -32,16 +26,19 @@ import EditBanner from '../pages/Banners/EditBanner';
 
 import AddCategory from '../pages/Categories/addCategory';
 import EditCategory from '../pages/Categories/editCategory';
+import CreateProductVariationPage from '../pages/Products/ProductVariants/CreateVariantProduct';
+import UpdateProductVariationPage from '../pages/Products/ProductVariants/EditVariantProduct';
+import ProductVariationList from '../pages/Products/ProductVariants/ListVariantProduct';
 
 const routes: RouteObject[] = [
   {
     path: '/admin',
     element: (
-      <Authenticated fallback={<Navigate to="/login" replace />}>
+      // <Authenticated fallback={<Navigate to="/signin" replace />}>
         <MainLayout>
           <Outlet />
         </MainLayout>
-      </Authenticated>
+      // {/* </Authenticated> */}
     ),
     children: [
       {
@@ -66,15 +63,15 @@ const routes: RouteObject[] = [
           },
           {
             path: 'variants/:id',
-            element: <ListVariant />,
+            element: <ProductVariationList />,
           },
           {
-            path: 'variants/create',
-            element: <CreateVariant />,
+            path: 'variants/:id/create',
+            element: <CreateProductVariationPage />,
           },
           {
-            path: 'variants/edit/:variantId',
-            element: <EditVariant />,
+            path: 'variants/:id/edit/:variationId',
+            element: <UpdateProductVariationPage/>,
           },
         ],
       },

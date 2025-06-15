@@ -9,7 +9,6 @@ import Register from './Pages/Register/register';
 import Login from './Pages/Login/login';
 import SetUser from './SetUser';
 import CartPage from './Pages/cart';
-import CheckoutPage from './Pages/CheckoutPage';
 
 
 function App() {
@@ -22,9 +21,9 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
-    
+      
+       
 
-        <Route path="/checkout" element={<CheckoutPage />} />
 
       </Route>
         <Route path="/signin" element={<Register />} />
