@@ -208,7 +208,6 @@ const CartPage: React.FC = () => {
             <div className="bg-white rounded-xl shadow p-6 text-center text-gray-600">
               Lỗi khi lấy giỏ hàng: {error.message}
             </div>
-            <CartNote note={note} onChange={(value) => setNote(value)} />
           </div>
           <CartSummary
             totalPrice={0}
@@ -271,7 +270,6 @@ const CartPage: React.FC = () => {
             ))
           )}
         </div>
-
         <CartSummary
           totalPrice={totalPrice}
           selectedCount={selectedItems.length}
