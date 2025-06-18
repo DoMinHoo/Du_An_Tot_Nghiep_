@@ -311,47 +311,35 @@ const CreateProductVariationPage: React.FC = () => {
 
           {/* Color & Media Section */}
           <Col span={24}>
-            <Card
-              title={
-                <Space>
-                  <span>🎨 Màu sắc & Hình ảnh</span>
-                </Space>
-              }
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-            >
+            <Card title={<span>🎨 Màu sắc & Hình ảnh</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Tên màu"
-                    name="colorName"
-                    rules={[{ required: true, message: "Vui lòng nhập tên màu" }]}
-                  >
-                    <Input size="large" placeholder="Ví dụ: Đỏ cherry, Xanh navy..." />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Mã màu HEX"
-                    name="colorHexCode"
-                    rules={[{ required: true, message: "Vui lòng chọn mã màu" }]}
-                  >
-                    <Input type="color" size="large" maxLength={7} placeholder="#RRGGBB" style={{ height: "40px" }} />
-                  </Form.Item>
-                </Col>
-
+                <Col xs={24} md={12}><Form.Item label="Tên màu" name="colorName" rules={[{ required: true }]}><Input size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}><Form.Item label="Mã màu HEX" name="colorHexCode" rules={[{ required: true }]}><Input type="color" size="large" style={{ height: "40px" }} /></Form.Item></Col>
                 <Col span={24}>
                   <Form.Item
                     label={
                       <Space>
                         <span>Ảnh màu sắc</span>
-                        <Text type="secondary">(Tối đa 5 ảnh, mỗi ảnh {"<"} 5MB)</Text>
+                        <Text type="secondary">(Chỉ 1 ảnh, &lt; 5MB)</Text>
                       </Space>
                     }
                     name="colorImage"
                     valuePropName="fileList"
                     getValueFromEvent={normFile}
-                    rules={[{ required: true, message: "Vui lòng thêm ít nhất 1 ảnh màu" }]}
+                    rules={[
+                      {
+                        validator: (_, fileList) => {
+                          const hasNewImage = fileList?.some((file) => file.originFileObj)
+                          if (!hasNewImage) {
+                            return Promise.reject(new Error("Vui lòng thêm 1 ảnh màu mới"))
+                          }
+                          if (fileList.length > 1) {
+                            return Promise.reject(new Error("Chỉ được phép chọn 1 ảnh"))
+                          }
+                          return Promise.resolve()
+                        },
+                      },
+                    ]}
                   >
                     <Upload.Dragger
                       beforeUpload={(file) => {
@@ -365,11 +353,11 @@ const CreateProductVariationPage: React.FC = () => {
                           message.error("Ảnh phải nhỏ hơn 5MB!")
                           return Upload.LIST_IGNORE
                         }
-                        return false
+                        return false // để tránh upload tự động
                       }}
                       listType="picture"
-                      multiple
-                      maxCount={5}
+                      maxCount={1}
+                      multiple={false}
                       accept="image/*"
                       style={{
                         backgroundColor: "#fafafa",
@@ -384,7 +372,7 @@ const CreateProductVariationPage: React.FC = () => {
                         Kéo thả ảnh vào đây hoặc click để chọn
                       </p>
                       <p className="ant-upload-hint" style={{ color: "#999" }}>
-                        Hỗ trợ định dạng: JPG, PNG, GIF. Tối đa 5 ảnh.
+                        Hỗ trợ JPG, PNG, GIF. Tối đa 1 ảnh.
                       </p>
                     </Upload.Dragger>
                   </Form.Item>
