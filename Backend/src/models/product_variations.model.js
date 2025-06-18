@@ -28,7 +28,11 @@ const productVariationSchema = new mongoose.Schema({
     colorName: { type: String, required: true }, // Tên màu, ví dụ: "Trắng"
     colorHexCode: { type: String, required: true }, // Mã màu HEX, ví dụ: "#FFFFFF"
     colorImageUrl: { type: String, required: true }, // Đường dẫn ảnh màu
-    materialVariation: { type: String, required: true , unique: true } // Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
+    material: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Material',
+        required: true
+    } // Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
 }, {
     timestamps: true,
     versionKey: false

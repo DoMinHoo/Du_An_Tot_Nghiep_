@@ -5,7 +5,6 @@ export interface Product {
   brand: string;
   descriptionShort: string;
   descriptionLong: string;
-  material: string;
   categoryId: { _id: string; name: string }; // Tham chiếu danh mục
   image: string[]; // Mảng đường dẫn ảnh
   totalPurchased: number;

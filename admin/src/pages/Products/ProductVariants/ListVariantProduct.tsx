@@ -77,9 +77,9 @@ const ProductVariationList = () => {
     variations?.reduce((sum, item) => sum + item.stockQuantity, 0) || 0;
   const averagePrice = variations?.length
     ? Math.round(
-        variations.reduce((sum, item) => sum + item.finalPrice, 0) /
-          variations.length
-      )
+      variations.reduce((sum, item) => sum + item.finalPrice, 0) /
+      variations.length
+    )
     : 0;
   const lowStockCount =
     variations?.filter((item) => item.stockQuantity < 10).length || 0;
@@ -158,9 +158,9 @@ const ProductVariationList = () => {
                 Kích thước:
               </Text>
               <br />
-              <Text
-                style={{ fontSize: '12px' }}
-              >{`${length}×${width}×${height} cm`}</Text>
+              <Text style={{ fontSize: '12px' }}>
+                {`${length}×${width}×${height} cm`}
+              </Text>
             </div>
             <div>
               <Text strong style={{ fontSize: '12px', color: '#666' }}>
@@ -168,7 +168,7 @@ const ProductVariationList = () => {
               </Text>
               <br />
               <Text style={{ fontSize: '12px' }}>
-                {record.materialVariation}
+                {record.material?.name || '—'}
               </Text>
             </div>
           </div>
