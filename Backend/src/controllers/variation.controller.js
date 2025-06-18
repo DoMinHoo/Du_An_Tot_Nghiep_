@@ -60,13 +60,14 @@ exports.createVariation = async (req, res) => {
     }
 
     // 6. Kiểm tra SKU duy nhất
-    const existingVariation = await ProductVariation.findOne({ sku: body.sku });
-    if (existingVariation) {
-      return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
-    }
-    const existingMaterialVariation = await ProductVariation.findOne({ materialVariation: body.materialVariation });
+    const existingMaterialVariation = await ProductVariation.findOne({
+      productId,
+      material: body.material,
+      dimensions: body.dimensions,
+      colorName: body.colorName
+    });
     if (existingMaterialVariation) {
-      return res.status(400).json({ success: false, message: 'Biến thể chất liệu đã tồn tại' });
+      return res.status(400).json({ success: false, message: 'Biến thể này đã tồn tại (cùng chất liệu, kích thước, màu)' });
     }
 
     // 7. Tính finalPrice
