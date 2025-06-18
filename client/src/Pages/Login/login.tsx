@@ -29,7 +29,9 @@ const Login: React.FC = () => {
         { guestId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(response.data.message);
+      toast.success(response.data.message, {
+        autoClose: 1000,
+      });
       localStorage.removeItem('guestId'); // Xóa guestId sau khi hợp nhất
     } catch (error: any) {
       toast.warn(

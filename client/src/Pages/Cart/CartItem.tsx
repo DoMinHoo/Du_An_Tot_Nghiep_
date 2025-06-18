@@ -32,7 +32,9 @@
 
     const handleIncrease = () => {
         if (item.quantity >= stockQuantity) {
-        toast.warn(`Số lượng tối đa trong kho là ${stockQuantity}!`);
+        toast.warn(`Số lượng tối đa trong kho là ${stockQuantity}!`, {
+          autoClose: 1000,
+        });
         return;
         }
         onUpdateQuantity(item.quantity + 1);
@@ -40,7 +42,9 @@
 
     const handleDecrease = () => {
         if (item.quantity <= 1) {
-        toast.warn('Số lượng tối thiểu là 1!');
+        toast.warn('Số lượng tối thiểu là 1!', {
+          autoClose: 1000,
+        });
         return;
         }
         onUpdateQuantity(item.quantity - 1);

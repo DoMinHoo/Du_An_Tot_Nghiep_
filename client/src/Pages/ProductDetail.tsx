@@ -23,9 +23,9 @@ const getPriceAndStockDetails = (
   product: Product | undefined,
   selectedVariation: Variation | null
 ): PriceAndStockDetails => {
-  const salePrice = selectedVariation?.salePrice;
-  const originalPrice = selectedVariation?.finalPrice;
-  const displayPrice = salePrice ?? originalPrice;
+  const salePrice = selectedVariation?.salePrice ?? undefined;
+  const originalPrice = selectedVariation?.finalPrice ?? undefined;
+  const displayPrice = salePrice !== undefined ? salePrice : originalPrice;
   const stockQuantity = selectedVariation?.stockQuantity;
 
   let discountPercentage: number | null = null;
@@ -33,7 +33,9 @@ const getPriceAndStockDetails = (
     isValidPrice(salePrice) &&
     isValidPrice(originalPrice) &&
     salePrice !== undefined &&
+    salePrice !== null &&
     originalPrice !== undefined &&
+    originalPrice !== null &&
     salePrice < originalPrice
   ) {
     discountPercentage = Math.round(
@@ -96,7 +98,10 @@ const ProductDetail: React.FC = () => {
         retry: 2,
         onError: () => {
           toast.info(
-            'Sản phẩm này không có biến thể hoặc lỗi khi tải biến thể'
+            'Sản phẩm này không có biến thể hoặc lỗi khi tải biến thể',
+            {
+              autoClose: 1000,
+            }
           );
         },
       },
@@ -107,13 +112,20 @@ const ProductDetail: React.FC = () => {
   const variations = variationsQuery.data || [];
   const isLoading = productQuery.isLoading || variationsQuery.isLoading;
   const error = productQuery.error || variationsQuery.error;
-
+  // Nếu không có biến thể, sử dụng biến thể đầu tiên hoặc ảnh sản phẩm
   const allImages = useMemo(() => {
-    const productImages =
-      product?.image && Array.isArray(product.image) ? product.image : [];
-    const variationImage = selectedVariation?.colorImageUrl;
-    return variationImage ? [variationImage, ...productImages] : productImages;
-  }, [product, selectedVariation]);
+    const productImages = Array.isArray(product?.image) ? product.image : [];
+    const variationImages = variations
+      .map((v) => v.colorImageUrl)
+      .filter((url): url is string => !!url);
+
+    // Loại bỏ trùng lặp và kết hợp ảnh biến thể với ảnh sản phẩm
+    const uniqueImages = Array.from(
+      new Set([...variationImages, ...productImages])
+    );
+
+    return uniqueImages.map(getImageUrl);
+  }, [product, variations]);
 
   const details = useMemo(
     () => getPriceAndStockDetails(product, selectedVariation),
@@ -136,7 +148,9 @@ const ProductDetail: React.FC = () => {
       );
     }
     if (variations.length === 0 && !variationsQuery.isLoading) {
-      toast.info('Sản phẩm này không có biến thể.');
+      toast.info('Sản phẩm này không có biến thể.', {
+        autoClose: 1000,
+      });
     }
   }, [variations, product, selectedVariation, variationsQuery.isLoading]);
 
@@ -156,7 +170,9 @@ const ProductDetail: React.FC = () => {
     if (quantity < (details.stockQuantity || 0)) {
       setQuantity((q) => q + 1);
     } else {
-      toast.warn('Đã đạt số lượng tối đa trong kho!');
+      toast.warn('Đã đạt số lượng tối đa trong kho!', {
+        autoClose: 1000,
+      });
     }
   };
 
@@ -210,17 +226,23 @@ const ProductDetail: React.FC = () => {
     }) => addToCart(variationId, quantity, token, guestId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Thêm vào giỏ hàng thành công!');
+      toast.success('Thêm vào giỏ hàng thành công!', {
+        autoClose: 1000,
+      });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi thêm vào giỏ hàng');
+      toast.error(err.message || 'Lỗi khi thêm vào giỏ hàng', {
+        autoClose: 1000,
+      });
       console.error('Lỗi addToCart:', err);
     },
   });
 
   const handleBuyNow = async () => {
     if (!selectedVariation) {
-      toast.error('Vui lòng chọn biến thể sản phẩm!');
+      toast.error('Vui lòng chọn biến thể sản phẩm!', {
+        autoClose: 1000,
+      });
       return;
     }
     try {
@@ -230,7 +252,9 @@ const ProductDetail: React.FC = () => {
       });
       navigate('/cart');
     } catch (err) {
-      toast.error('Lỗi khi chuyển đến giỏ hàng!');
+      toast.error('Lỗi khi chuyển đến giỏ hàng!', {
+        autoClose: 1000,
+      });
     }
   };
 
@@ -422,7 +446,9 @@ const ProductDetail: React.FC = () => {
               disabled={details.stockQuantity === 0 || !selectedVariation}
               onClick={() => {
                 if (!selectedVariation) {
-                  toast.error('Vui lòng chọn biến thể sản phẩm!');
+                  toast.error('Vui lòng chọn biến thể sản phẩm!', {
+                    autoClose: 1000,
+                  });
                   return;
                 }
                 addToCartMutation.mutate({

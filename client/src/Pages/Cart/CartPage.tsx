@@ -41,10 +41,14 @@ const CartPage: React.FC = () => {
     }) => updateCartItem(variationId, quantity, token, guestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Cập nhật số lượng thành công!');
+      toast.success('Cập nhật số lượng thành công!', {
+        autoClose: 1000,
+      });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi cập nhật số lượng');
+      toast.error(err.message || 'Lỗi khi cập nhật số lượng', {
+        autoClose: 1000,
+      });
       console.error('Lỗi updateCartItem:', err);
     },
   });
@@ -55,11 +59,15 @@ const CartPage: React.FC = () => {
     onSuccess: (data, variationId) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       setSelectedItems((prev) => prev.filter((id) => id !== variationId));
-      toast.success('Xóa sản phẩm thành công!');
+      toast.success('Xóa sản phẩm thành công!', {
+        autoClose: 1000,
+      });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi xóa sản phẩm');
-      console.error('Lỗi removeCartItem:', err);
+      toast.error(err.message || 'Lỗi khi xóa sản phẩm', {
+        autoClose: 1000,
+      });
+      // console.error('Lỗi removeCartItem:', err);
     },
   });
 
@@ -72,14 +80,18 @@ const CartPage: React.FC = () => {
       if (!data.data || !data.data.cart) {
         localStorage.removeItem('guestId');
       }
-      toast.success('Xóa các sản phẩm đã chọn thành công!');
+      toast.success('Xóa các sản phẩm đã chọn thành công!', {
+        autoClose: 1000,
+      });
     },
     onError: (err: any) => {
       const errorMessage =
         err.response?.status === 404
           ? 'Không tìm thấy endpoint /remove-multiple. Vui lòng kiểm tra cấu hình server.'
           : err.message || 'Lỗi khi xóa các sản phẩm';
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        autoClose: 1000,
+      });
       // console.error('Lỗi deleteMultipleCartItems:', err, {
       //   variationIds,
       //   token,
@@ -87,14 +99,18 @@ const CartPage: React.FC = () => {
       // });
     },
   });
-  
+
   const handleDeleteSelected = () => {
     if (!cart?.items.length) {
-      toast.warn('Giỏ hàng đang trống, không có sản phẩm để xóa!');
+      toast.warn('Giỏ hàng đang trống, không có sản phẩm để xóa!', {
+        autoClose: 1000,
+      });
       return;
     }
     if (selectedItems.length === 0) {
-      toast.warn('Vui lòng chọn ít nhất một sản phẩm để xóa!');
+      toast.warn('Vui lòng chọn ít nhất một sản phẩm để xóa!', {
+        autoClose: 1000,
+      });
       return;
     }
     // console.log('Selected variationIds:', selectedItems, {
@@ -109,7 +125,9 @@ const CartPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       setSelectedItems([]);
-      toast.success('Xóa giỏ hàng thành công!');
+      toast.success('Xóa giỏ hàng thành công!', {
+        autoClose: 1000,
+      });
     },
     onError: (err: any) => {
       toast.error(err.message || 'Lỗi khi xóa giỏ hàng');
@@ -125,22 +143,29 @@ const CartPage: React.FC = () => {
     );
   };
 
-
   const handleCheckout = () => {
     if (!cart?.items.length) {
-      toast.warn('Giỏ hàng đang trống, không thể thanh toán!');
+      toast.warn('Giỏ hàng đang trống, không thể thanh toán!', {
+        autoClose: 1000,
+      });
       return;
     }
     if (selectedItems.length === 0) {
-      toast.warn('Vui lòng chọn sản phẩm để thanh toán!');
+      toast.warn('Vui lòng chọn sản phẩm để thanh toán!', {
+        autoClose: 1000,
+      });
       return;
     }
-    toast.info('Chức năng thanh toán đang được phát triển!');
+    toast.info('Chức năng thanh toán đang được phát triển!', {
+      autoClose: 1000,
+    });
   };
 
   const handleClearCart = () => {
     if (!cart?.items.length) {
-      toast.warn('Giỏ hàng đang trống, không cần xóa!');
+      toast.warn('Giỏ hàng đang trống, không cần xóa!', {
+        autoClose: 1000,
+      });
       return;
     }
     clearMutation.mutate();
@@ -283,14 +308,18 @@ const CartPage: React.FC = () => {
                       quantity,
                     });
                   } else {
-                    toast.warn('Giỏ hàng đang trống, không thể cập nhật!');
+                    toast.warn('Giỏ hàng đang trống, không thể cập nhật!', {
+                      autoClose: 1000,
+                    });
                   }
                 }}
                 onRemove={() => {
                   if (cart?.items.length) {
                     removeMutation.mutate(item.variationId._id);
                   } else {
-                    toast.warn('Giỏ hàng đang trống, không thể xóa!');
+                    toast.warn('Giỏ hàng đang trống, không thể xóa!', {
+                      autoClose: 1000,
+                    });
                   }
                 }}
               />
