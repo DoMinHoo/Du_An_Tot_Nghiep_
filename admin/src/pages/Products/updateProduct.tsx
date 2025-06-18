@@ -46,7 +46,7 @@ const UpdateProductPage: React.FC = () => {
     data: categories,
     isLoading: isCategoriesLoading,
     isError: isCategoriesError,
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+    // eslint-disable-next-line react-hooks/rules-of-hooks
   } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: getCategories,
@@ -57,7 +57,7 @@ const UpdateProductPage: React.FC = () => {
     data: product,
     isLoading: isProductLoading,
     isError: isProductError,
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+    // eslint-disable-next-line react-hooks/rules-of-hooks
   } = useQuery({
     queryKey: ['product', id],
     queryFn: () => getProductById(id),
@@ -74,8 +74,7 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Cập nhật sản phẩm thất bại: ${
-          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Cập nhật sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -91,8 +90,7 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Xóa sản phẩm thất bại: ${
-          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Xóa sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -106,7 +104,6 @@ const UpdateProductPage: React.FC = () => {
         name: product.name,
         brand: product.brand,
         categoryId: product.categoryId?._id || product.categoryId,
-        material: product.material,
         descriptionShort: product.descriptionShort,
         descriptionLong: product.descriptionLong,
         status: product.status,
@@ -189,7 +186,7 @@ const UpdateProductPage: React.FC = () => {
       >
         Quay lại
       </Button>
-      <Card title="✏️ Cập nhật sản.roll" style={{ margin: 24 }}>
+      <Card title="✏️ Cập nhật sản phẩm" style={{ margin: 24 }}>
         {isProductLoading ? (
           <Spin /> // Bỏ thuộc tính tip
         ) : (
@@ -254,17 +251,7 @@ const UpdateProductPage: React.FC = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Chất liệu"
-                    name="material"
-                    rules={[
-                      { required: true, message: 'Vui lòng nhập chất liệu' },
-                    ]}
-                  >
-                    <Input placeholder="Nhập chất liệu" />
-                  </Form.Item>
-                </Col>
+
                 <Col span={12}>
                   <Form.Item
                     label="Mô tả ngắn"

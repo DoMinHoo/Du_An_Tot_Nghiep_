@@ -46,3 +46,11 @@ export const getProductById = async (id: string): Promise<Product> => {
 export const deleteProduct = async (id: string): Promise<void> => {
   await axios.delete(`${API_BASE}/${id}`);
 };
+
+// Lấy danh sách vật liệu của sản phẩm
+export const getProductMaterials = async (productId: string): Promise<string> => {
+  const res = await fetch(`/api/products/${productId}/materials`);
+  if (!res.ok) throw new Error("Failed to fetch materials");
+  const data = await res.json();
+  return data.materials || "N/A"; // ✅ lấy đúng field
+};

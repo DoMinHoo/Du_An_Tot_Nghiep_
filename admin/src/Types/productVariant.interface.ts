@@ -16,7 +16,10 @@ export interface ProductVariation {
   colorHexCode: string; // Mã HEX: "#FFFFFF"
   colorImageUrl: string; // Ảnh minh hoạ màu
 
-  materialVariation: string; // Ví dụ: "Gỗ MFC phủ bóng"
+  material: {
+    _id: string;
+    name: string;
+  } | null;// Ví dụ: "Gỗ MFC phủ bóng"
 
   createdAt: string;
   updatedAt: string;

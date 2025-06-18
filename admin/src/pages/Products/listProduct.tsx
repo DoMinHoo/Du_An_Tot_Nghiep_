@@ -19,21 +19,21 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../Types/product.interface';
-import type { ProductVariation } from '../../Types/productVariant.interface';
-import { deleteProduct, getProducts } from '../../Services/products.service';
-import { useMemo } from 'react';
-import { getVariations } from '../../Services/productVariation.Service';
+import { deleteProduct, getProductMaterials, getProducts } from '../../Services/products.service';
+import { useEffect, useState } from 'react';
 
-interface ProductWithVariations extends Product {
-  variations?: ProductVariation[];
-}
 
 const ProductList = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Fetch danh sách sản phẩm
-  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
+
+  const [materialsMap, setMaterialsMap] = useState<Record<string, string>>({});
+
+
+
+  const { data: products, isLoading } = useQuery<Product[]>({
+
     queryKey: ['products'],
     queryFn: getProducts,
   });
@@ -77,6 +77,29 @@ const ProductList = () => {
       message.error('Xoá sản phẩm thất bại');
     },
   });
+
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+
+    const fetchMaterials = async () => {
+      const map: Record<string, string> = {};
+
+      await Promise.all(
+        products.map(async (product) => {
+          try {
+            const materialName = await getProductMaterials(product._id);
+            map[product._id] = materialName || "Không có";
+          } catch (err) {
+            map[product._id] = "Lỗi";
+          }
+        })
+      );
+
+      setMaterialsMap(map);
+    };
+
+    fetchMaterials();
+  }, [products]);
 
   const handleEdit = (product: Product) => {
     navigate(`/admin/products/edit/${product._id}`);
@@ -132,18 +155,9 @@ const ProductList = () => {
     },
     {
       title: 'Chất liệu',
-      dataIndex: 'variations',
-      key: 'materialVariation',
-      render: (variations: ProductVariation[]) => {
-        if (!variations || variations.length === 0) {
-          return <span>N/A</span>;
-        }
-        const materials = variations
-          .map((variation) => variation.materialVariation)
-          .filter((material) => material)
-          .join(', ');
-        return <span>{materials || 'N/A'}</span>;
-      },
+      key: 'material',
+      render: (_: any, record: Product) => materialsMap[record._id] || 'Đang tải...',
+
     },
     {
       title: 'Danh mục',
@@ -165,8 +179,8 @@ const ProductList = () => {
           status === 'active'
             ? 'green'
             : status === 'hidden'
-            ? 'orange'
-            : 'red';
+              ? 'orange'
+              : 'red';
         return <Tag color={color}>{status.toUpperCase()}</Tag>;
       },
     },
