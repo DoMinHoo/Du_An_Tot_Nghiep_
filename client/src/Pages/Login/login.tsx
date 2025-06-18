@@ -34,9 +34,17 @@ const Login: React.FC = () => {
       });
       localStorage.removeItem('guestId'); // Xóa guestId sau khi hợp nhất
     } catch (error: any) {
-      toast.warn(
-        error.response?.data?.message || 'Không thể hợp nhất giỏ hàng'
-      );
+      if (error.response?.data?.errorCode === 'USER_CART_NOT_EMPTY') {
+        toast.error(
+          'Tài khoản này đã có giỏ hàng. Vui lòng đăng nhập bằng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
+          { autoClose: 5000 }
+        );
+      } else {
+        toast.warn(
+          error.response?.data?.message || 'Không thể hợp nhất giỏ hàng',
+          { autoClose: 3000 }
+        );
+      }
       console.error('Lỗi hợp nhất giỏ hàng:', error);
     }
   };
@@ -46,13 +54,17 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
+      // Lấy guestId từ localStorage
+      const guestId = localStorage.getItem('guestId');
+
+      // Gửi guestId trong request đăng nhập
       const res = await axios.post(
         'http://localhost:5000/api/auth/login',
-        formData
+        { ...formData, guestId } // Thêm guestId vào body
       );
 
-      const user = res.data?.user;
-      const token = res.data?.token;
+      const user = res.data?.data?.user;
+      const token = res.data?.data?.token;
       const role = user?.role?.trim().toLowerCase();
 
       if (!user || !role) {
@@ -68,7 +80,6 @@ const Login: React.FC = () => {
       }
 
       // Hợp nhất giỏ hàng nếu có guestId
-      const guestId = localStorage.getItem('guestId');
       if (guestId) {
         await mergeCart(token, guestId);
       }
@@ -80,10 +91,19 @@ const Login: React.FC = () => {
           window.location.href = 'http://localhost:5174/admin/dashboard';
         }, 1000);
       } else {
-        setTimeout(() => navigate('/about'), 1000);
+        setTimeout(() => navigate('/'), 1000);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Đăng nhập thất bại!');
+      if (err.response?.data?.errorCode === 'USER_CART_NOT_EMPTY') {
+        toast.error(
+          'Tài khoản này đã có giỏ hàng. Vui lòng đăng nhập bằng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
+          { autoClose: 1000 }
+        );
+      } else {
+        toast.error(err?.response?.data?.message || 'Đăng nhập thất bại!', {
+          autoClose: 1000,
+        });
+      }
     }
 
     setLoading(false);
