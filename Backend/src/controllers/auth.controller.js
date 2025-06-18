@@ -71,7 +71,6 @@ exports.register = async (req, res) => {
 };
 
 // Đăng nhập
-// Đăng nhập
 exports.login = async (req, res) => {
     const { error } = loginSchema.validate(req.body);
     if (error) {
