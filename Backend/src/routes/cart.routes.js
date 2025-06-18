@@ -12,6 +12,9 @@ router.put('/update', optionalProtect, cartController.updateCartItem);
 // Xóa một sản phẩm khỏi giỏ hàng
 router.delete('/remove/:variationId', optionalProtect, cartController.removeCartItem);
 
+// Xóa nhiều sản phẩm khỏi giỏ hàng
+router.delete('/remove-multiple', optionalProtect, cartController.deleteMultipleCartItems);
+
 // Xóa toàn bộ giỏ hàng
 router.delete('/clear', optionalProtect, cartController.clearCart);
 

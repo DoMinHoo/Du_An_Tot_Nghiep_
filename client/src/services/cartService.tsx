@@ -18,7 +18,7 @@ export const getCart = async (
         'X-Guest-Id': guestId || undefined,
       },
     });
-    console.log('getCart response:', JSON.stringify(response.data, null, 2));
+    // console.log('getCart response:', JSON.stringify(response.data, null, 2));
     if (response.data.data.guestId) {
       localStorage.setItem('guestId', response.data.data.guestId);
     }
@@ -30,7 +30,26 @@ export const getCart = async (
     throw error;
   }
 };
+export const deleteMultipleCartItems = async (
+  variationIds: string[],
+  token?: string,
+  guestId?: string
+) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(guestId && { 'x-guest-id': guestId }),
+  };
 
+  const response = await cartApi.delete('/remove-multiple', {
+    data: { variationIds },
+    headers,
+  });
+  if (!response.data.data || !response.data.data.cart) {
+    localStorage.removeItem('guestId');
+  }
+  return response.data;
+};
 export const addToCart = async (
   variationId: string,
   quantity: number,
@@ -55,7 +74,7 @@ export const addToCart = async (
         },
       }
     );
-    console.log('addToCart response:', JSON.stringify(response.data, null, 2));
+    // console.log('addToCart response:', JSON.stringify(response.data, null, 2));
     if (response.data.data.guestId) {
       localStorage.setItem('guestId', response.data.data.guestId);
     }
@@ -94,10 +113,10 @@ export const updateCartItem = async (
         },
       }
     );
-    console.log(
-      'updateCartItem response:',
-      JSON.stringify(response.data, null, 2)
-    );
+    // console.log(
+    //   'updateCartItem response:',
+    //   JSON.stringify(response.data, null, 2)
+    // );
     if (response.data.data.guestId) {
       localStorage.setItem('guestId', response.data.data.guestId);
     }
@@ -128,10 +147,10 @@ export const removeCartItem = async (
         'X-Guest-Id': guestId || undefined,
       },
     });
-    console.log(
-      'removeCartItem response:',
-      JSON.stringify(response.data, null, 2)
-    );
+    // console.log(
+    //   'removeCartItem response:',
+    //   JSON.stringify(response.data, null, 2)
+    // );
     if (response.data.data?.guestId) {
       localStorage.setItem('guestId', response.data.data.guestId);
     }
@@ -139,6 +158,48 @@ export const removeCartItem = async (
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data.message || 'Lỗi khi xóa sản phẩm');
+    }
+    throw error;
+  }
+};
+
+export const removeSelectedCartItems = async (
+  variationIds: string[],
+  token?: string,
+  guestId?: string
+): Promise<CartResponse> => {
+  if (
+    !variationIds ||
+    !Array.isArray(variationIds) ||
+    variationIds.length === 0
+  ) {
+    throw new Error('variationIds là bắt buộc và phải là một mảng không rỗng');
+  }
+
+  try {
+    const response = await cartApi.post(
+      '/remove-selected',
+      { variationIds },
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+          'X-Guest-Id': guestId || undefined,
+        },
+      }
+    );
+    // console.log(
+    //   'removeSelectedCartItems response:',
+    //   JSON.stringify(response.data, null, 2)
+    // );
+    if (response.data.data?.guestId) {
+      localStorage.setItem('guestId', response.data.data.guestId);
+    }
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data.message || 'Lỗi khi xóa các sản phẩm đã chọn'
+      );
     }
     throw error;
   }
@@ -155,7 +216,7 @@ export const clearCart = async (
         'X-Guest-Id': guestId || undefined,
       },
     });
-    console.log('clearCart response:', JSON.stringify(response.data, null, 2));
+    // console.log('clearCart response:', JSON.stringify(response.data, null, 2));
     localStorage.removeItem('guestId');
     return response.data;
   } catch (error) {

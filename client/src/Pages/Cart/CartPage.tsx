@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import {
   updateCartItem,
   removeCartItem,
+  deleteMultipleCartItems,
   clearCart,
   getCart,
 } from '../../services/cartService';
@@ -15,12 +16,10 @@ import type { Cart } from '../../types/Cart';
 const CartPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = React.useState<string[]>([]);
-  const [note, setNote] = React.useState<string>('');
 
   const token = localStorage.getItem('token') || undefined;
   const guestId = localStorage.getItem('guestId') || undefined;
 
-  // Chỉ gọi API khi có token hoặc guestId
   const shouldFetchCart = !!token || !!guestId;
   const { data, isLoading, error } = useQuery({
     queryKey: ['cart', token, guestId],
@@ -64,6 +63,47 @@ const CartPage: React.FC = () => {
     },
   });
 
+  const deleteMultipleMutation = useMutation({
+    mutationFn: (variationIds: string[]) =>
+      deleteMultipleCartItems(variationIds, token, guestId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setSelectedItems([]);
+      if (!data.data || !data.data.cart) {
+        localStorage.removeItem('guestId');
+      }
+      toast.success('Xóa các sản phẩm đã chọn thành công!');
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.status === 404
+          ? 'Không tìm thấy endpoint /remove-multiple. Vui lòng kiểm tra cấu hình server.'
+          : err.message || 'Lỗi khi xóa các sản phẩm';
+      toast.error(errorMessage);
+      // console.error('Lỗi deleteMultipleCartItems:', err, {
+      //   variationIds,
+      //   token,
+      //   guestId,
+      // });
+    },
+  });
+  
+  const handleDeleteSelected = () => {
+    if (!cart?.items.length) {
+      toast.warn('Giỏ hàng đang trống, không có sản phẩm để xóa!');
+      return;
+    }
+    if (selectedItems.length === 0) {
+      toast.warn('Vui lòng chọn ít nhất một sản phẩm để xóa!');
+      return;
+    }
+    // console.log('Selected variationIds:', selectedItems, {
+    //   token,
+    //   guestId,
+    //   cart,
+    // });
+    deleteMultipleMutation.mutate(selectedItems);
+  };
   const clearMutation = useMutation({
     mutationFn: () => clearCart(token, guestId),
     onSuccess: () => {
@@ -85,17 +125,6 @@ const CartPage: React.FC = () => {
     );
   };
 
-  const handleDeleteSelected = () => {
-    if (!cart?.items.length) {
-      toast.warn('Giỏ hàng đang trống, không có sản phẩm để xóa!');
-      return;
-    }
-    if (selectedItems.length === 0) {
-      toast.warn('Vui lòng chọn sản phẩm để xóa!');
-      return;
-    }
-    selectedItems.forEach((variationId) => removeMutation.mutate(variationId));
-  };
 
   const handleCheckout = () => {
     if (!cart?.items.length) {
@@ -117,30 +146,28 @@ const CartPage: React.FC = () => {
     clearMutation.mutate();
   };
 
-  // Giao diện trống nếu không có token hoặc guestId
   if (!shouldFetchCart) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-2 py-4">
         <ToastContainer />
-        <h2 className="text-3xl font-bold text-center mb-8">
+        <h2 className="text-2xl font-bold text-center mb-4">
           Giỏ hàng của bạn
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-md">
               <span>Có 0 sản phẩm trong giỏ hàng</span>
               <button
                 onClick={handleDeleteSelected}
                 disabled={true}
-                className="text-red-600 font-semibold hover:underline disabled:opacity-40"
+                className="text-red-500 font-medium hover:text-red-600 disabled:opacity-40 transition-colors"
               >
                 Xóa đã chọn
               </button>
             </div>
-            <div className="bg-white rounded-xl shadow p-6 text-center text-gray-600">
+            <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-600">
               Giỏ hàng của bạn đang trống hoặc chưa được khởi tạo.
             </div>
-            <CartNote note={note} onChange={(value) => setNote(value)} />
           </div>
           <CartSummary
             totalPrice={0}
@@ -155,31 +182,31 @@ const CartPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-8"></div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
+      <div className="max-w-5xl mx-auto px-2 py-4 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-3">
             {Array(3)
               .fill(0)
               .map((_, i) => (
                 <div
                   key={i}
-                  className="flex gap-4 bg-white rounded-xl shadow p-4"
+                  className="flex gap-3 bg-white rounded-lg shadow-sm p-3"
                 >
-                  <div className="w-5 h-5 bg-gray-200 rounded"></div>
-                  <div className="w-28 h-28 bg-gray-200 rounded-lg"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                  <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                  <div className="w-20 h-20 bg-gray-200 rounded-md"></div>
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-2 bg-gray-200 rounded w-1/3"></div>
                   </div>
                 </div>
               ))}
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-            <div className="h-10 bg-gray-200 rounded mb-2"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+            <div className="h-8 bg-gray-200 rounded mb-2"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
@@ -188,24 +215,24 @@ const CartPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-2 py-4">
         <ToastContainer />
-        <h2 className="text-3xl font-bold text-center mb-8">
+        <h2 className="text-2xl font-bold text-center mb-4">
           Giỏ hàng của bạn
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-md">
               <span>Có 0 sản phẩm trong giỏ hàng</span>
               <button
                 onClick={handleDeleteSelected}
                 disabled={true}
-                className="text-red-600 font-semibold hover:underline disabled:opacity-40"
+                className="text-red-500 font-medium hover:text-red-600 disabled:opacity-40 transition-colors"
               >
                 Xóa đã chọn
               </button>
             </div>
-            <div className="bg-white rounded-xl shadow p-6 text-center text-gray-600">
+            <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-600">
               Lỗi khi lấy giỏ hàng: {error.message}
             </div>
           </div>
@@ -221,25 +248,25 @@ const CartPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-2 py-4">
       <ToastContainer />
-      <h2 className="text-3xl font-bold text-center mb-8">Giỏ hàng của bạn</h2>
+      <h2 className="text-2xl font-bold text-center mb-4">Giỏ hàng của bạn</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex justify-between items-center bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-md">
             <span>Có {cart?.items.length || 0} sản phẩm trong giỏ hàng</span>
             <button
               onClick={handleDeleteSelected}
               disabled={selectedItems.length === 0 || cart?.items.length === 0}
-              className="text-red-600 font-semibold hover:underline disabled:opacity-40"
+              className="text-red-500 font-medium hover:text-red-600 disabled:opacity-40 transition-colors"
             >
               Xóa đã chọn
             </button>
           </div>
 
           {cart?.items.length === 0 ? (
-            <div className="bg-white rounded-xl shadow p-6 text-center text-gray-600">
+            <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-600">
               Giỏ hàng của bạn đang trống.
             </div>
           ) : (
