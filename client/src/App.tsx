@@ -10,7 +10,9 @@ import Login from './Pages/Login/login';
 import SetUser from './SetUser';
 
 import CartPage from './Pages/Cart/CartPage';
-import BannerSlider from './Pages/Banner';
+
+import CheckoutPage from './Pages/CheckoutPage';
+
 
 function App() {
   return (
@@ -47,7 +49,8 @@ function App() {
           }
         />
 
-        {/* <Route path="/checkout" element={<CheckoutPage />} /> */}
+        <Route path="/checkout" element={<CheckoutPage />} />
+        
       </Route>
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
