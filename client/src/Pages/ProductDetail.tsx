@@ -124,8 +124,8 @@ const ProductDetail: React.FC = () => {
         variations[0].colorImageUrl
           ? getImageUrl(variations[0].colorImageUrl)
           : product?.image?.[0]
-          ? getImageUrl(product.image[0])
-          : getImageUrl()
+            ? getImageUrl(product.image[0])
+            : getImageUrl()
       );
     } else if (product && !selectedVariation) {
       setMainImage(
@@ -144,8 +144,8 @@ const ProductDetail: React.FC = () => {
       variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product?.image?.[0]
-        ? getImageUrl(product.image[0])
-        : getImageUrl()
+          ? getImageUrl(product.image[0])
+          : getImageUrl()
     );
     setQuantity(1); // Reset số lượng
   };
@@ -258,11 +258,10 @@ const ProductDetail: React.FC = () => {
                 key={idx}
                 src={getImageUrl(src)}
                 onClick={() => setMainImage(getImageUrl(src))}
-                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${
-                  mainImage === getImageUrl(src)
-                    ? 'border-blue-500'
-                    : 'border-gray-300'
-                }`}
+                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${mainImage === getImageUrl(src)
+                  ? 'border-blue-500'
+                  : 'border-gray-300'
+                  }`}
                 loading="lazy"
                 alt={`Thumbnail ${idx + 1}`}
               />
@@ -344,11 +343,10 @@ const ProductDetail: React.FC = () => {
                   <button
                     key={variation._id}
                     onClick={() => handleVariationSelect(variation)}
-                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
-                      selectedVariation?._id === variation._id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                    }`}
+                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${selectedVariation?._id === variation._id
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                      }`}
                   >
                     {variation.dimensions}
                   </button>
@@ -368,9 +366,9 @@ const ProductDetail: React.FC = () => {
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
-              {selectedVariation?.materialVariation ||
-                product.material ||
-                'Không xác định'}
+              {selectedVariation?.material && typeof selectedVariation.material === 'object'
+                ? selectedVariation.material.name
+                : product?.material || 'Không xác định'}
             </p>
             <p>
               <strong>Mô tả ngắn:</strong>{' '}
@@ -427,11 +425,10 @@ const ProductDetail: React.FC = () => {
           <div className="flex flex-row items-center gap-2">
             <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-semibold pt-1 ${
-                (details.stockQuantity || 0) > 0
-                  ? 'text-green-600'
-                  : 'text-red-600'
-              }`}
+              className={`text-sm font-semibold pt-1 ${(details.stockQuantity || 0) > 0
+                ? 'text-green-600'
+                : 'text-red-600'
+                }`}
             >
               {(details.stockQuantity || 0) > 0 ? 'Còn hàng' : 'Hết hàng'}
             </p>

@@ -60,7 +60,6 @@ const AddProductPage: React.FC = () => {
     formData.append('brand', values.brand);
     formData.append('descriptionShort', values.descriptionShort);
     formData.append('descriptionLong', values.descriptionLong || '');
-    formData.append('material', values.material);
     formData.append('categoryId', values.categoryId);
     formData.append('status', values.status);
 
@@ -131,15 +130,6 @@ const AddProductPage: React.FC = () => {
                     </Option>
                   ))}
                 </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Chất liệu"
-                name="material"
-                rules={[{ required: true, message: 'Vui lòng nhập chất liệu' }]}
-              >
-                <Input />
               </Form.Item>
             </Col>
             <Col span={12}>

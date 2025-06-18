@@ -29,15 +29,16 @@ import EditCategory from '../pages/Categories/editCategory';
 import CreateProductVariationPage from '../pages/Products/ProductVariants/CreateVariantProduct';
 import UpdateProductVariationPage from '../pages/Products/ProductVariants/EditVariantProduct';
 import ProductVariationList from '../pages/Products/ProductVariants/ListVariantProduct';
+import MaterialAdmin from '../pages/Materials/MaterialsAdmin';
 
 const routes: RouteObject[] = [
   {
     path: '/admin',
     element: (
       // <Authenticated fallback={<Navigate to="/signin" replace />}>
-        <MainLayout>
-          <Outlet />
-        </MainLayout>
+      <MainLayout>
+        <Outlet />
+      </MainLayout>
       // {/* </Authenticated> */}
     ),
     children: [
@@ -71,7 +72,7 @@ const routes: RouteObject[] = [
           },
           {
             path: 'variants/:id/edit/:variationId',
-            element: <UpdateProductVariationPage/>,
+            element: <UpdateProductVariationPage />,
           },
         ],
       },
@@ -148,6 +149,15 @@ const routes: RouteObject[] = [
           {
             path: 'edit/:id',
             element: <EditBanner />,
+          },
+        ],
+      },
+      {
+        path: 'materials',
+        children: [
+          {
+            index: true,
+            element: <MaterialAdmin />,
           },
         ],
       },
