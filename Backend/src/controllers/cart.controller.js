@@ -408,6 +408,7 @@ exports.addToCart = async (req, res) => {
     };
 
 // Hợp nhất giỏ hàng khi đăng nhập
+// Hợp nhất giỏ hàng khi đăng nhập
 exports.mergeCart = async (req, res) => {
     try {
         const { guestId } = req.body;
@@ -426,25 +427,72 @@ exports.mergeCart = async (req, res) => {
         const guestCart = await Cart.findOne({ guestId });
         if (!guestCart || !guestCart.items.length) {
             logger.info(`Không tìm thấy giỏ hàng khách với guestId: ${guestId} hoặc giỏ hàng rỗng`);
+            // Tìm giỏ hàng người dùng nếu tồn tại
+            const userCart = await Cart.findOne({ userId });
+            if (!userCart) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Không có giỏ hàng khách hoặc người dùng để hợp nhất',
+                    data: { cart: { items: [] }, totalPrice: 0 },
+                });
+            }
+
+            // Populate giỏ hàng người dùng
+            const populatedCart = await Cart.findById(userCart._id).populate({
+                path: 'items.variationId',
+                select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
+                populate: {
+                    path: 'productId',
+                    select: 'name image isDeleted status',
+                    match: { isDeleted: false, status: 'active' },
+                },
+            });
+
+            // Tính tổng giá
+            const totalPrice = populatedCart.items.reduce((total, item) => {
+                const price = item.variationId.salePrice || item.variationId.finalPrice;
+                return total + price * item.quantity;
+            }, 0);
+
             return res.status(200).json({
                 success: true,
-                message: 'Không có giỏ hàng khách để hợp nhất',
-                data: null,
+                message: 'Không có giỏ hàng khách để hợp nhất, trả về giỏ hàng người dùng',
+                data: { cart: populatedCart, totalPrice },
             });
         }
 
         // Tìm giỏ hàng người dùng
         const userCart = await Cart.findOne({ userId });
         if (userCart && userCart.items.length > 0) {
-            logger.warn(`Giỏ hàng người dùng với userId: ${userId} đã chứa sản phẩm`);
-            return res.status(400).json({
-                success: false,
-                message: 'Tài khoản này đã có giỏ hàng chứa sản phẩm. Vui lòng sử dụng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
-                errorCode: 'USER_CART_NOT_EMPTY',
+            // Nếu giỏ hàng người dùng đã có sản phẩm, xóa giỏ hàng khách và trả về giỏ hàng người dùng
+            logger.info(`Giỏ hàng người dùng với userId: ${userId} đã chứa sản phẩm, xóa guestCart: ${guestId}`);
+            await Cart.deleteOne({ guestId });
+
+            // Populate giỏ hàng người dùng
+            const populatedCart = await Cart.findById(userCart._id).populate({
+                path: 'items.variationId',
+                select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
+                populate: {
+                    path: 'productId',
+                    select: 'name image isDeleted status',
+                    match: { isDeleted: false, status: 'active' },
+                },
+            });
+
+            // Tính tổng giá
+            const totalPrice = populatedCart.items.reduce((total, item) => {
+                const price = item.variationId.salePrice || item.variationId.finalPrice;
+                return total + price * item.quantity;
+            }, 0);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Giỏ hàng người dùng đã tồn tại, giỏ hàng khách đã bị xóa',
+                data: { cart: populatedCart, totalPrice },
             });
         }
 
-        // Nếu giỏ hàng người dùng không tồn tại, tạo mới
+        // Nếu giỏ hàng người dùng không tồn tại hoặc rỗng, tiến hành hợp nhất
         let newUserCart = userCart || new Cart({ userId, items: [] });
         logger.info(userCart ? `Tìm thấy giỏ hàng rỗng cho userId: ${userId}` : `Tạo giỏ hàng mới cho userId: ${userId}`);
 
