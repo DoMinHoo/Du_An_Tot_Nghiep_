@@ -12,12 +12,9 @@ import {
 } from 'antd';
 import { ArrowLeftOutlined, UploadOutlined } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  createProduct,
-  getCategories,
-  type Category,
-} from '../../Services/products.service';
+import { createProduct, getCategories } from '../../Services/products.service';
 import { useNavigate } from 'react-router-dom';
+import type { Category } from '../../Types/product.interface';
 
 const { TextArea } = Input;
 const { Option } = Select;

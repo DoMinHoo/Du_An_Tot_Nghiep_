@@ -7,6 +7,8 @@ const { changePasswordSchema } = require('../validators/changePass.validate');
 const { generateToken } = require('../middlewares/auth.middleware');
 const { sendEmail } = require('../untils/mailers'); // Giả sử bạn đã có hàm gửi email
 const Role = require('../models/roles.model');
+const logger = require('../untils/logger');
+const Cart = require('../models/cart.model'); // Thêm dòng này
 
 const jwt = require('jsonwebtoken');
 
@@ -73,58 +75,72 @@ exports.register = async (req, res) => {
 // Đăng nhập
 // Đăng nhập
 exports.login = async (req, res) => {
-    const { error } = loginSchema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0].message });
-    }
-
-    const { email, password } = req.body;
-
     try {
-        const user = await User.findOne({ email });
+        const { email, password, guestId } = req.body;
+
+        // Kiểm tra thông tin đăng nhập
+        const user = await User.findOne({ email }).populate('roleId', 'name');
         if (!user) {
-            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+            return res.status(401).json({
+                success: false,
+                message: 'Email hoặc mật khẩu không đúng',
+            });
         }
-        if (user.status === 'banned') {
-    return res.status(403).json({ message: 'Tài khoản đã bị khóa, vui lòng liên hệ Admin' });
-}
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Kiểm tra mật khẩu
+        const isMatch = await user.matchPassword(password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Mật khẩu không đúng' });
+            return res.status(401).json({
+                success: false,
+                message: 'Email hoặc mật khẩu không đúng',
+            });
         }
 
-        // JOIN sang role để lấy tên
-        const role = await Role.findById(user.roleId);
-        if (!role) {
-            return res.status(400).json({ message: 'User không có role hợp lệ' });
-        }
+        // Tạo token
+        const token = generateToken(user);
 
-        // Tạo token với role là tên role, viết thường, loại bỏ khoảng trắng/dấu
-        const token = generateToken({
-            _id: user._id,
-            role: role.name.trim().toLowerCase() // <-- Rất quan trọng!
-        });
-
-        res.status(200).json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                address: user.address,
-                phone: user.phone,
-                gender: user.gender,
-                status: user.status,
-                avatarUrl: user.avatarUrl,
-                role: role.name, // trả về luôn role name cho FE
-                createdAt: user.createdAt,
+        // Gọi mergeCart nếu có guestId
+        let cartResponse = null;
+        if (guestId) {
+            try {
+                const mergeResponse = await fetch('http://localhost:5000/api/carts/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ guestId }),
+                });
+                cartResponse = await mergeResponse.json();
+                if (!cartResponse.success) {
+                    logger.warn(`Hợp nhất giỏ hàng thất bại cho userId ${user._id}, guestId ${guestId}`);
+                }
+            } catch (error) {
+                logger.error(`Lỗi gọi mergeCart cho userId ${user._id}, guestId ${guestId}`, error);
             }
-        });
+        }
 
+        // Trả về thông tin người dùng và token
+        res.status(200).json({
+            success: true,
+            message: 'Đăng nhập thành công',
+            data: {
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.roleId.name,
+                },
+                token,
+                cart: cartResponse?.data || null, // Trả về thông tin giỏ hàng nếu có
+            },
+        });
     } catch (error) {
-        console.error('Error during login:', error);
-        res.status(500).json({ message: 'Có lỗi xảy ra khi đăng nhập', error: error.message });
+        logger.error('Lỗi đăng nhập:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server: ' + error.message,
+        });
     }
 };
 

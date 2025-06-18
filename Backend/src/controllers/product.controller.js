@@ -158,14 +158,6 @@ exports.createProduct = async (req, res) => {
     const productData = {
       ...body,
       image: images,
-      price: parseFloat(body.price),
-      importPrice: parseFloat(body.importPrice),
-      salePrice: parseFloat(body.salePrice || 0),
-      flashSale_discountedPrice: parseFloat(
-        body.flashSale_discountedPrice || 0
-      ),
-      weight: parseFloat(body.weight),
-      stock_quantity: parseInt(body.stock_quantity) || 0,
       isDeleted: body.isDeleted === "true" || false,
       categoryId: body.categoryId,
     };
@@ -206,14 +198,6 @@ exports.updateProduct = async (req, res) => {
     const productData = {
       ...body,
       image: finalImages,
-      price: parseFloat(body.price),
-      importPrice: parseFloat(body.importPrice),
-      salePrice: parseFloat(body.salePrice || 0),
-      flashSale_discountedPrice: parseFloat(
-        body.flashSale_discountedPrice || 0
-      ),
-      weight: parseFloat(body.weight),
-      stock_quantity: parseInt(body.stock_quantity) || product.stock_quantity,
       isDeleted: body.isDeleted === "true" || false,
       categoryId: body.categoryId,
     };

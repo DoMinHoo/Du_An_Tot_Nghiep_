@@ -22,25 +22,56 @@ import type { Product } from '../../Types/product.interface';
 import { deleteProduct, getProductMaterials, getProducts } from '../../Services/products.service';
 import { useEffect, useState } from 'react';
 
+
 const ProductList = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
 
   const [materialsMap, setMaterialsMap] = useState<Record<string, string>>({});
 
 
 
   const { data: products, isLoading } = useQuery<Product[]>({
+
     queryKey: ['products'],
     queryFn: getProducts,
   });
 
-  const queryClient = useQueryClient();
+  // Fetch biến thể cho tất cả sản phẩm
+  const { data: variationsMap = {}, isLoading: isLoadingVariations } = useQuery<
+    Record<string, ProductVariation[]>
+  >({
+    queryKey: ['allVariations'],
+    queryFn: async () => {
+      if (!products) return {};
+      const variationPromises = products.map((product) =>
+        getVariations(product._id).then((variations) => ({
+          [product._id]: variations,
+        }))
+      );
+      const variationResults = await Promise.all(variationPromises);
+      return Object.assign({}, ...variationResults);
+    },
+    enabled: !!products && products.length > 0,
+  });
+
+  // Kết hợp sản phẩm với biến thể
+  const productsWithVariations: ProductWithVariations[] = useMemo(() => {
+    return (
+      products?.map((product) => ({
+        ...product,
+        variations: variationsMap[product._id] || [],
+      })) || []
+    );
+  }, [products, variationsMap]);
 
   const { mutate: deleteMutate } = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
     onSuccess: () => {
       message.success('Xoá sản phẩm thành công');
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['allVariations'] });
     },
     onError: () => {
       message.error('Xoá sản phẩm thất bại');
@@ -126,6 +157,7 @@ const ProductList = () => {
       title: 'Chất liệu',
       key: 'material',
       render: (_: any, record: Product) => materialsMap[record._id] || 'Đang tải...',
+
     },
     {
       title: 'Danh mục',
@@ -206,8 +238,8 @@ const ProductList = () => {
     >
       <Table
         columns={columns}
-        dataSource={products}
-        loading={isLoading}
+        dataSource={productsWithVariations}
+        loading={isLoadingProducts || isLoadingVariations}
         rowKey="_id"
         scroll={{ x: 'max-content' }}
       />

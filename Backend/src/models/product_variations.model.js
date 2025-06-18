@@ -7,7 +7,7 @@ const productVariationSchema = new mongoose.Schema({
         ref: 'Product',
         required: true
     },
-    name: { type: String, required: true }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
+    name: { type: String, required: true  }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
     sku: {
         type: String,
         required: true,
