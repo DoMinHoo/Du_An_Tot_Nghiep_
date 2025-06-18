@@ -9,6 +9,7 @@ import Register from './Pages/Register/register';
 import Login from './Pages/Login/login';
 import SetUser from './SetUser';
 import CartPage from './Pages/Cart/CartPage';
+import CheckoutPage from './Pages/CheckoutPage';
 
 function App() {
   return (
@@ -21,7 +22,8 @@ function App() {
         <Route path="/categories/:slug" element={<CategoryPage />} />
         <Route path="/categories" element={<CategoryPage />} />
 
-        {/* <Route path="/checkout" element={<CheckoutPage />} /> */}
+        <Route path="/checkout" element={<CheckoutPage />} />
+        
       </Route>
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
