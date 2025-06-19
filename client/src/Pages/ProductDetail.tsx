@@ -406,9 +406,10 @@ const ProductDetail: React.FC = () => {
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
-              {selectedVariation?.material &&
-              typeof selectedVariation.material === 'object'
-                ? selectedVariation.material
+              {selectedVariation?.material
+                ? typeof selectedVariation.material === 'object'
+                  ? selectedVariation.material.name
+                  : selectedVariation.material
                 : 'Không xác định'}
             </p>
             <p>
@@ -493,7 +494,7 @@ const ProductDetail: React.FC = () => {
                   : 'text-red-600'
               }`}
             >
-              {details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+              {typeof details.stockQuantity === 'number' && details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
             </p>
           </div>
         </div>
