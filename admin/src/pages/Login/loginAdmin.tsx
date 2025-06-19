@@ -53,7 +53,11 @@ const Login: React.FC = () => {
       if (role === 'admin') {
         setTimeout(() => navigate('/admin/dashboard'), 1000);
       } else if (role === 'client') {
-        setTimeout(() => navigate('http://localhost:5173/'), 1000); // Điều hướng client về trang chủ
+        // chuyen sang link localhost:3000
+        setTimeout(
+          () => (window.location.href = 'http://localhost:5173/'),
+          1000
+        ); // Điều hướng client về trang chủ
       }
     } catch (err: any) {
       const errorMessage =
