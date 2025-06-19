@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
+const Material = require('../models/material.model'); // <--- Import model chất liệu
 const path = require('path');
 
 
@@ -24,7 +25,7 @@ exports.createVariation = async (req, res) => {
     // 3. Kiểm tra các trường bắt buộc
     const requiredFields = [
       'name', 'sku', 'dimensions', 'basePrice', 'importPrice',
-      'stockQuantity', 'colorName', 'colorHexCode', 'materialVariation'
+      'stockQuantity', 'colorName', 'colorHexCode', 'material'
     ];
     for (const field of requiredFields) {
       if (!body[field]) {
@@ -32,7 +33,16 @@ exports.createVariation = async (req, res) => {
       }
     }
 
-    // 4. Xử lý hình ảnh (từ cả req.files và body.colorImageUrl)
+    // 4. Kiểm tra material ID
+    if (!mongoose.Types.ObjectId.isValid(body.material)) {
+      return res.status(400).json({ success: false, message: 'ID chất liệu không hợp lệ' });
+    }
+    const materialExists = await Material.findById(body.material);
+    if (!materialExists) {
+      return res.status(400).json({ success: false, message: 'Chất liệu không tồn tại' });
+    }
+
+    // 5. Xử lý hình ảnh
     const uploadedImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
@@ -49,17 +59,18 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Ảnh màu (colorImageUrl) là bắt buộc' });
     }
 
-    // 5. Kiểm tra SKU duy nhất
-    const existingVariation = await ProductVariation.findOne({ sku: body.sku });
-    if (existingVariation) {
-      return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
-    }
-    const existingMaterialVariation = await ProductVariation.findOne({ materialVariation: body.materialVariation });
+    // 6. Kiểm tra SKU duy nhất
+    const existingMaterialVariation = await ProductVariation.findOne({
+      productId,
+      material: body.material,
+      dimensions: body.dimensions,
+      colorName: body.colorName
+    });
     if (existingMaterialVariation) {
-      return res.status(400).json({ success: false, message: 'Biến thể chất liệu đã tồn tại' });
+      return res.status(400).json({ success: false, message: 'Biến thể này đã tồn tại (cùng chất liệu, kích thước, màu)' });
     }
 
-    // 6. Tính finalPrice
+    // 7. Tính finalPrice
     const basePrice = parseFloat(body.basePrice);
     const priceAdjustment = parseFloat(body.priceAdjustment || 0);
     if (isNaN(basePrice)) {
@@ -69,7 +80,7 @@ exports.createVariation = async (req, res) => {
       ? parseFloat(body.finalPrice)
       : basePrice + priceAdjustment;
 
-    // 7. Tạo dữ liệu
+    // 8. Tạo dữ liệu
     const variationData = {
       productId,
       name: body.name,
@@ -87,7 +98,7 @@ exports.createVariation = async (req, res) => {
       colorName: body.colorName,
       colorHexCode: body.colorHexCode,
       colorImageUrl,
-      materialVariation: body.materialVariation
+      material: body.material // ✅ Gán ObjectId chất liệu đúng
     };
 
     const variation = new ProductVariation(variationData);
@@ -99,128 +110,149 @@ exports.createVariation = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
-
 // Cập nhật một biến thể sản phẩm
 exports.updateVariation = async (req, res) => {
   try {
-      const { id } = req.params;
-      const body = req.body || {};
+    console.log("✅ Backend nhận material:", req.body.material);
+    const { id } = req.params;
+    const body = req.body || {};
 
-      // Kiểm tra id hợp lệ
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-          return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
+    // 1. Kiểm tra id biến thể hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID biến thể không hợp lệ" });
+    }
+
+    // 2. Tìm biến thể
+    const variation = await ProductVariation.findById(id);
+    if (!variation) {
+      return res.status(404).json({ success: false, message: "Biến thể không tồn tại" });
+    }
+
+    // 3. Kiểm tra trùng SKU nếu thay đổi
+    if (body.sku && body.sku !== variation.sku) {
+      const existingVariation = await ProductVariation.findOne({ sku: body.sku });
+      if (existingVariation) {
+        return res.status(400).json({ success: false, message: "Mã SKU đã tồn tại" });
+      }
+    }
+
+    // 4. Kiểm tra material nếu có cập nhật
+    let materialId = variation.material; // mặc định giữ nguyên
+    if (body.material) {
+      if (!mongoose.Types.ObjectId.isValid(body.material)) {
+        return res.status(400).json({ success: false, message: "ID chất liệu không hợp lệ" });
       }
 
-      // Kiểm tra biến thể tồn tại
-      const variation = await ProductVariation.findById(id);
-      if (!variation) {
-          return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
+      const materialExists = await Material.findById(body.material);
+      if (!materialExists) {
+        return res.status(400).json({ success: false, message: "Chất liệu không tồn tại" });
       }
 
-      // Kiểm tra SKU duy nhất nếu được cập nhật
-      if (body.sku && body.sku !== variation.sku) {
-          const existingVariation = await ProductVariation.findOne({ sku: body.sku });
-          if (existingVariation) {
-              return res.status(400).json({ success: false, message: 'Mã SKU đã tồn tại' });
-          }
-      }
+      materialId = body.material; // ✅ cập nhật mới
+    }
 
-      // Xử lý hình ảnh (tương tự createVariation)
-      const uploadedImages = Array.isArray(req.files)
-          ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
-          : [];
+    // 5. Xử lý ảnh
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
+      : [];
 
-      const bodyImages = Array.isArray(body.colorImageUrl)
-          ? body.colorImageUrl
-          : body.colorImageUrl
-              ? [body.colorImageUrl]
-              : [];
+    const bodyImages = Array.isArray(body.colorImageUrl)
+      ? body.colorImageUrl
+      : body.colorImageUrl
+        ? [body.colorImageUrl]
+        : [];
 
-      const colorImageUrl = [...uploadedImages, ...bodyImages][0] || variation.colorImageUrl;
+    const colorImageUrl = [...uploadedImages, ...bodyImages][0] || variation.colorImageUrl;
 
-      if (!colorImageUrl) {
-          return res.status(400).json({ success: false, message: 'Ảnh màu (colorImageUrl) là bắt buộc' });
-      }
+    if (!colorImageUrl) {
+      return res.status(400).json({ success: false, message: "Ảnh màu (colorImageUrl) là bắt buộc" });
+    }
 
-      // Tính lại finalPrice nếu basePrice hoặc priceAdjustment thay đổi
-      const basePrice = body.basePrice ? parseFloat(body.basePrice) : variation.basePrice;
-      const priceAdjustment = body.priceAdjustment ? parseFloat(body.priceAdjustment) : variation.priceAdjustment;
-      const finalPrice = body.finalPrice ? parseFloat(body.finalPrice) : (basePrice + priceAdjustment);
+    // 6. Tính lại giá
+    const basePrice = body.basePrice ? parseFloat(body.basePrice) : variation.basePrice;
+    const priceAdjustment = body.priceAdjustment ? parseFloat(body.priceAdjustment) : variation.priceAdjustment;
+    const finalPrice = body.finalPrice ? parseFloat(body.finalPrice) : basePrice + priceAdjustment;
 
-      const variationData = {
-          name: body.name || variation.name,
-          sku: body.sku || variation.sku,
-          dimensions: body.dimensions || variation.dimensions,
-          basePrice,
-          priceAdjustment,
-          finalPrice,
-          importPrice: body.importPrice ? parseFloat(body.importPrice) : variation.importPrice,
-          salePrice: body.salePrice ? parseFloat(body.salePrice) : variation.salePrice,
-          flashSaleDiscountedPrice: body.flashSaleDiscountedPrice 
-              ? parseFloat(body.flashSaleDiscountedPrice) 
-              : variation.flashSaleDiscountedPrice,
-          flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : variation.flashSaleStart,
-          flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : variation.flashSaleEnd,
-          stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
-          colorName: body.colorName || variation.colorName,
-          colorHexCode: body.colorHexCode || variation.colorHexCode,
-          colorImageUrl,
-          materialVariation: body.materialVariation || variation.materialVariation
-      };
+    // 7. Gộp dữ liệu để cập nhật
+    const variationData = {
+      name: body.name || variation.name,
+      sku: body.sku || variation.sku,
+      dimensions: body.dimensions || variation.dimensions,
+      basePrice,
+      priceAdjustment,
+      finalPrice,
+      importPrice: body.importPrice ? parseFloat(body.importPrice) : variation.importPrice,
+      salePrice: body.salePrice ? parseFloat(body.salePrice) : variation.salePrice,
+      flashSaleDiscountedPrice: body.flashSaleDiscountedPrice
+        ? parseFloat(body.flashSaleDiscountedPrice)
+        : variation.flashSaleDiscountedPrice,
+      flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : variation.flashSaleStart,
+      flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : variation.flashSaleEnd,
+      stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
+      colorName: body.colorName || variation.colorName,
+      colorHexCode: body.colorHexCode || variation.colorHexCode,
+      colorImageUrl,
+      material: materialId // ✅ gán đúng material đã kiểm tra ở trên
+    };
 
-      const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
+    // 8. Cập nhật vào DB
+    const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
 
-      res.json({ success: true, data: updatedVariation });
+    res.json({ success: true, data: updatedVariation });
   } catch (err) {
-      console.error('Lỗi khi cập nhật biến thể:', err);
-      res.status(400).json({ success: false, message: err.message });
+    console.error("Lỗi khi cập nhật biến thể:", err);
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
 // Lấy danh sách biến thể theo productId
 exports.getVariationsByProductId = async (req, res) => {
-    try {
-        const { productId } = req.params;
+  try {
+    const { productId } = req.params;
 
-        // Kiểm tra productId hợp lệ
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
-        }
-
-        // Kiểm tra sản phẩm tồn tại
-        const product = await Product.findOne({ _id: productId, isDeleted: false });
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
-        }
-
-        const variations = await ProductVariation.find({ productId }).lean();
-        res.json({ success: true, data: variations });
-    } catch (err) {
-        console.error('Lỗi khi truy vấn biến thể:', err);
-        res.status(500).json({ success: false, message: err.message });
+    // Kiểm tra productId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
     }
+
+    // Kiểm tra sản phẩm tồn tại
+    const product = await Product.findOne({ _id: productId, isDeleted: false });
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
+    }
+
+    // Truy vấn và populate field "material"
+    const variations = await ProductVariation.find({ productId })
+      .populate('material', 'name') // ✅ lấy tên chất liệu
+      .lean();
+
+    res.json({ success: true, data: variations });
+  } catch (err) {
+    console.error('Lỗi khi truy vấn biến thể:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 // Xóa một biến thể sản phẩm
 exports.deleteVariation = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        // Kiểm tra id hợp lệ
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
-        }
-
-        const deleted = await ProductVariation.findByIdAndDelete(id);
-        if (!deleted) {
-            return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
-        }
-
-        res.json({ success: true, message: 'Xóa biến thể thành công' });
-    } catch (err) {
-        console.error('Lỗi khi xóa biến thể:', err);
-        res.status(500).json({ success: false, message: err.message });
+    // Kiểm tra id hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
     }
+
+    const deleted = await ProductVariation.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
+    }
+
+    res.json({ success: true, message: 'Xóa biến thể thành công' });
+  } catch (err) {
+    console.error('Lỗi khi xóa biến thể:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 // Lấy chi tiết một biến thể sản phẩm
 exports.getVariationById = async (req, res) => {
@@ -232,8 +264,11 @@ exports.getVariationById = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
     }
 
-    // Tìm biến thể theo ID
-    const variation = await ProductVariation.findById(id).lean();
+    // Tìm biến thể theo ID và populate material
+    const variation = await ProductVariation.findById(id)
+      .populate('material', 'name') // ✅ populate tên chất liệu
+      .lean();
+
     if (!variation) {
       return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
     }
@@ -244,3 +279,4 @@ exports.getVariationById = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+

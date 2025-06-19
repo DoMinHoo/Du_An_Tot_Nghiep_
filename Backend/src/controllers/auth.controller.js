@@ -73,9 +73,10 @@ exports.register = async (req, res) => {
 };
 
 // Đăng nhập
+// Đăng nhập
 exports.login = async (req, res) => {
     try {
-        const { email, password, guestId } = req.body; // Nhận guestId từ request body
+        const { email, password, guestId } = req.body;
 
         // Kiểm tra thông tin đăng nhập
         const user = await User.findOne({ email }).populate('roleId', 'name');
@@ -95,21 +96,29 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Kiểm tra giỏ hàng của userId nếu có guestId
-        if (guestId) {
-            const userCart = await Cart.findOne({ userId: user._id });
-            if (userCart && userCart.items.length > 0) {
-                logger.warn(`Đăng nhập thất bại: Giỏ hàng của userId ${user._id} đã chứa sản phẩm`);
-                return res.status(400).json({
-                    success: false,
-                    message: 'Tài khoản này đã có giỏ hàng chứa sản phẩm. Vui lòng sử dụng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
-                    errorCode: 'USER_CART_NOT_EMPTY',
-                });
-            }
-        }
-
         // Tạo token
         const token = generateToken(user);
+
+        // Gọi mergeCart nếu có guestId
+        let cartResponse = null;
+        if (guestId) {
+            try {
+                const mergeResponse = await fetch('http://localhost:5000/api/carts/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ guestId }),
+                });
+                cartResponse = await mergeResponse.json();
+                if (!cartResponse.success) {
+                    logger.warn(`Hợp nhất giỏ hàng thất bại cho userId ${user._id}, guestId ${guestId}`);
+                }
+            } catch (error) {
+                logger.error(`Lỗi gọi mergeCart cho userId ${user._id}, guestId ${guestId}`, error);
+            }
+        }
 
         // Trả về thông tin người dùng và token
         res.status(200).json({
@@ -123,6 +132,7 @@ exports.login = async (req, res) => {
                     role: user.roleId.name,
                 },
                 token,
+                cart: cartResponse?.data || null, // Trả về thông tin giỏ hàng nếu có
             },
         });
     } catch (error) {

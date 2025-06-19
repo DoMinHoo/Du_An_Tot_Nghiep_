@@ -316,7 +316,9 @@ const ProductDetail: React.FC = () => {
                 src={getImageUrl(src)}
                 onClick={() => setMainImage(getImageUrl(src))}
                 className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${
-                  mainImage === src ? 'border-blue-500' : 'border-gray-300'
+                  mainImage === getImageUrl(src)
+                    ? 'border-blue-500'
+                    : 'border-gray-300'
                 }`}
                 loading="lazy"
                 alt={`Thumbnail ${idx + 1}`}
@@ -404,7 +406,10 @@ const ProductDetail: React.FC = () => {
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
-              {selectedVariation?.materialVariation || product.material || ''}
+              {selectedVariation?.material &&
+              typeof selectedVariation.material === 'object'
+                ? selectedVariation.material
+                : 'Không xác định'}
             </p>
             <p>
               <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
@@ -482,8 +487,10 @@ const ProductDetail: React.FC = () => {
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-medium ${
-                details.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
+              className={`text-sm font-semibold pt-1 ${
+                (details.stockQuantity || 0) > 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
               }`}
             >
               {details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}

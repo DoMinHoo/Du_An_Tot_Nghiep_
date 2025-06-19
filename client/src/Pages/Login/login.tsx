@@ -22,33 +22,6 @@ const Login: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const mergeCart = async (token: string, guestId: string) => {
-    try {
-      const response = await axios.post(
-        'http://localhost:5000/api/carts/merge',
-        { guestId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(response.data.message, {
-        autoClose: 1000,
-      });
-      localStorage.removeItem('guestId'); // Xóa guestId sau khi hợp nhất
-    } catch (error: any) {
-      if (error.response?.data?.errorCode === 'USER_CART_NOT_EMPTY') {
-        toast.error(
-          'Tài khoản này đã có giỏ hàng. Vui lòng đăng nhập bằng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
-          { autoClose: 5000 }
-        );
-      } else {
-        toast.warn(
-          error.response?.data?.message || 'Không thể hợp nhất giỏ hàng',
-          { autoClose: 3000 }
-        );
-      }
-      console.error('Lỗi hợp nhất giỏ hàng:', error);
-    }
-  };
-
   const onFinish = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -66,6 +39,7 @@ const Login: React.FC = () => {
       const user = res.data?.data?.user;
       const token = res.data?.data?.token;
       const role = user?.role?.trim().toLowerCase();
+      const cart = res.data?.data?.cart;
 
       if (!user || !role) {
         toast.error('Thông tin tài khoản không hợp lệ!');
@@ -79,12 +53,15 @@ const Login: React.FC = () => {
         localStorage.setItem('token', token);
       }
 
-      // Hợp nhất giỏ hàng nếu có guestId
+      // Xóa guestId khỏi localStorage nếu có
       if (guestId) {
-        await mergeCart(token, guestId);
+        localStorage.removeItem('guestId');
       }
 
-      toast.success('Đăng nhập thành công!');
+      // Hiển thị thông báo thành công
+      toast.success(cart?.message || 'Đăng nhập thành công!', {
+        autoClose: 1000,
+      });
 
       if (role === 'admin') {
         setTimeout(() => {
@@ -94,16 +71,9 @@ const Login: React.FC = () => {
         setTimeout(() => navigate('/'), 1000);
       }
     } catch (err: any) {
-      if (err.response?.data?.errorCode === 'USER_CART_NOT_EMPTY') {
-        toast.error(
-          'Tài khoản này đã có giỏ hàng. Vui lòng đăng nhập bằng tài khoản khác hoặc xóa giỏ hàng hiện tại.',
-          { autoClose: 1000 }
-        );
-      } else {
-        toast.error(err?.response?.data?.message || 'Đăng nhập thất bại!', {
-          autoClose: 1000,
-        });
-      }
+      toast.error(err?.response?.data?.message || 'Đăng nhập thất bại!', {
+        autoClose: 1000,
+      });
     }
 
     setLoading(false);

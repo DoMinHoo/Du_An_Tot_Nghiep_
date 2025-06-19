@@ -58,7 +58,7 @@ const Header: React.FC = () => {
   return (
     <header className="shadow-sm">
       {/* Top Bar */}
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-3 mt-3 mb-5 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="Livento" className="h-12 object-contain scale-150" />
@@ -96,9 +96,9 @@ const Header: React.FC = () => {
             <Link to="/login" className="flex items-center gap-1">
               <FaUser className="text-lg" /> Đăng nhập / <Link to={"/signin"}>Đăng ký</Link>
             </Link>
-            
+
           )}
-             <Link to="/account" className="hidden md:inline">Tài khoản của tôi</Link>
+          <Link to="/account" className="hidden md:inline">Tài khoản của tôi</Link>
           <Link to="/cart" className="flex items-center gap-1">
             <FaShoppingCart className="text-lg" /> Giỏ hàng
           </Link>
@@ -107,7 +107,7 @@ const Header: React.FC = () => {
 
       {/* Navigation */}
       <nav className="bg-white text-sm relative">
-        <div className="container mx-auto px-4 py-3 flex gap-8 text-black text-base">
+        <div className="container mx-auto px-4 py-3 mb-3 flex gap-8 text-black text-base">
           <div
             className="relative cursor-pointer"
             onMouseEnter={handleMouseEnter}
@@ -119,9 +119,8 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${
-                openDropdown ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"
-              }`}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"
+                }`}
             >
               {categories.map((cat) => (
                 <Link

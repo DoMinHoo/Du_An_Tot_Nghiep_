@@ -15,7 +15,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
   return (
     <section className="my-8">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+        <h2 className="text-2xl md:text-3xl mb-4 mt-3 font-bold text-gray-800">
           {title}
         </h2>
         <Link to="/products" className="text-sm text-red-500 hover:underline">

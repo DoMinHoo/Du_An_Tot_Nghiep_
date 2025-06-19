@@ -56,6 +56,11 @@ const AdminSidebar: React.FC = () => {
       icon: <ProfileOutlined />,
       label: <Link to="banners">Banner</Link>,
     },
+    {
+      key: "materials",
+      icon: <ProfileOutlined />,
+      label: <Link to="materials">Materials</Link>,
+    },
   ];
 
   return (

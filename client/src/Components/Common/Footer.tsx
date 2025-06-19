@@ -36,7 +36,7 @@ const Footer = () => {
             </div>
 
             {/* Main Footer */}
-            <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-8">
+            <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-8  ">
                 <div>
                     <h4 className="font-bold mb-3">NỘI THẤT LIVENTO</h4>
                     <p className="text-sm mb-4">
