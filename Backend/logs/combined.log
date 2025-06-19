@@ -32,3 +32,4 @@
 {"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: 46566d3c-0eab-40f6-b4e2-19d598473194","timestamp":"2025-06-18 19:54:23"}
 {"level":"info","message":"Tạo giỏ hàng mới cho userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-18 19:55:33"}
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 5f90170f-cdf6-4f06-ba97-66864904f4e6 sang userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-18 19:55:33"}
+{"level":"info","message":"Không tìm thấy giỏ hàng khách với guestId: e0895b7b-c183-4e84-9032-134e9708011b hoặc giỏ hàng rỗng","timestamp":"2025-06-19 17:09:40"}
