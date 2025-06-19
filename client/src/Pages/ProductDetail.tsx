@@ -404,7 +404,9 @@ const ProductDetail: React.FC = () => {
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
+
               {selectedVariation?.material?.name ?? 'Không xác định'}
+
             </p>
             <p>
               <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
@@ -487,7 +489,7 @@ const ProductDetail: React.FC = () => {
                 : 'text-red-600'
                 }`}
             >
-              {details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+              {typeof details.stockQuantity === 'number' && details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
             </p>
           </div>
         </div>
