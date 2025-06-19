@@ -31,6 +31,11 @@ import UpdateProductVariationPage from '../pages/Products/ProductVariants/EditVa
 import ProductVariationList from '../pages/Products/ProductVariants/ListVariantProduct';
 import MaterialAdmin from '../pages/Materials/MaterialsAdmin';
 
+import ListPromotion from '../pages/Promotions/listPromotion';
+import UpdatePromotion from '../pages/Promotions/updatePromotion';
+import CreatePromotion from '../pages/Promotions/createPromotion';
+
+
 const routes: RouteObject[] = [
   {
     path: '/admin',
@@ -128,6 +133,23 @@ const routes: RouteObject[] = [
           {
             path: ':id',
             element: <UserDetail />,
+          },
+        ],
+      },
+      {
+        path: 'promotions',
+        children: [
+          {
+            index: true,
+            element: <ListPromotion />,
+          },
+          {
+            path: 'edit/:id',
+            element: <UpdatePromotion />,
+          },
+          {
+            path: 'create',
+            element: <CreatePromotion />,
           },
         ],
       },
