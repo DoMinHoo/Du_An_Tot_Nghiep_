@@ -21,7 +21,7 @@
     }) => {
     const name = item.variationId?.name || 'Sản phẩm không xác định';
     const dimensions = item.variationId?.dimensions || 'N/A';
-    const materialVariation = item.variationId?.materialVariation || 'N/A';
+    const materialVariation = item.variationId?.material || 'N/A';
     const salePrice = item.variationId?.salePrice;
     const finalPrice = item.variationId?.finalPrice || 0;
     const displayPrice = salePrice || finalPrice;
