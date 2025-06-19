@@ -71,9 +71,10 @@ exports.register = async (req, res) => {
 };
 
 // Đăng nhập
+
 exports.login = async (req, res) => {
     try {
-        const { email, password, guestId } = req.body;
+        const { email, password } = req.body;
 
         // Validate request body
         const { error } = loginSchema.validate({ email, password });
@@ -108,35 +109,14 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Tạo token với thông tin vai trò
+        // Gọi hàm generateToken ở đây để tạo JWT
         const token = generateToken({
-            userId: user._id,
+            _id: user._id,
             role: roleName,
         });
 
-        // Gọi mergeCart nếu có guestId
-        let cartResponse = null;
-        if (guestId && roleName === 'client') { // Chỉ client mới có giỏ hàng
-            try {
-                const mergeResponse = await fetch('http://localhost:5000/api/carts/merge', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ guestId }),
-                });
-                cartResponse = await mergeResponse.json();
-                if (!cartResponse.success) {
-                    logger.warn(`Hợp nhất giỏ hàng thất bại cho userId ${user._id}, guestId ${guestId}`);
-                }
-            } catch (error) {
-                logger.error(`Lỗi gọi mergeCart cho userId ${user._id}, guestId ${guestId}`, error);
-            }
-        }
-
         // Trả về thông tin người dùng và token
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Đăng nhập thành công',
             data: {
@@ -147,14 +127,15 @@ exports.login = async (req, res) => {
                     role: roleName,
                 },
                 token,
-                cart: cartResponse?.data || null, // Trả về thông tin giỏ hàng nếu có
             },
         });
-    } catch (error) {
-        logger.error('Lỗi đăng nhập:', error);
+
+    } catch (err) {
+        console.error('Lỗi đăng nhập:', err);
         res.status(500).json({
             success: false,
-            message: 'Lỗi server: ' + error.message,
+            message: 'Lỗi server',
+            error: err.message
         });
     }
 };

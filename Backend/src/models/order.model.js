@@ -1,7 +1,5 @@
-// src/models/order.model.js
 const mongoose = require('mongoose');
 
-// Schema cho từng mục trong items
 const itemSchema = new mongoose.Schema({
     variationId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -15,11 +13,10 @@ const itemSchema = new mongoose.Schema({
     },
     salePrice: {
         type: Number,
-        required: true // Lưu giá tại thời điểm tạo đơn hàng
+        required: true
     }
 }, { _id: false });
 
-// Schema cho lịch sử trạng thái
 const statusHistorySchema = new mongoose.Schema({
     status: {
         type: String,
@@ -28,8 +25,7 @@ const statusHistorySchema = new mongoose.Schema({
     },
     changedAt: {
         type: Date,
-        default: Date.now,
-        required: true
+        default: Date.now
     },
     note: {
         type: String,
@@ -37,36 +33,37 @@ const statusHistorySchema = new mongoose.Schema({
     }
 }, { _id: false });
 
-// Schema cho địa chỉ giao hàng
 const shippingAddressSchema = new mongoose.Schema({
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String, required: true },
+    addressLine: { type: String, required: true },
     street: { type: String, required: true },
-    city: { type: String, required: true },
+    province: { type: String, required: true },
+    district: { type: String, required: true },
+    ward: { type: String, required: true },
     zipCode: { type: String },
     country: { type: String, default: 'Vietnam' }
 }, { _id: false });
 
-// Schema chính cho đơn hàng
 const orderSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
+    },
+    cartId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Cart',
+        required: false
     },
     orderCode: {
         type: String,
         required: true,
         unique: true
     },
-    customerName: {
-        type: String,
-        required: true
-    },
-    phone: {
-        type: String,
-        required: true
-    },
-    email: {
-        type: String,
+    shippingAddress: {
+        type: shippingAddressSchema,
         required: true
     },
     totalAmount: {
@@ -78,10 +75,6 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'shipping', 'completed', 'canceled'],
         default: 'pending',
-        required: true
-    },
-    shippingAddress: {
-        type: shippingAddressSchema,
         required: true
     },
     paymentMethod: {
@@ -99,6 +92,6 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ orderCode: 1 });
 orderSchema.index({ userId: 1 });
 orderSchema.index({ 'items.variationId': 1 });
+orderSchema.index({ cartId: 1 });
 
-const Order = mongoose.model('Order', orderSchema);
-module.exports = Order;
+module.exports = mongoose.model('Order', orderSchema);
