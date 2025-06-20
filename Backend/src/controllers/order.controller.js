@@ -363,7 +363,7 @@ exports.updateOrder = async (req, res) => {
         }
 
         if (status && order.status !== status) {
-            // Xử lý khi hủy đơn hàng
+            // Cập nhật tồn kho nếu đơn bị huỷ
             if (status === 'canceled' && order.status !== 'completed') {
                 for (const item of order.items) {
                     await ProductVariation.findByIdAndUpdate(item.variationId, {
@@ -372,7 +372,7 @@ exports.updateOrder = async (req, res) => {
                 }
             }
 
-            // Cập nhật totalPurchased khi đơn hàng được hoàn thành
+            // Cập nhật totalPurchased nếu đơn hoàn thành
             if (status === 'completed' && order.status !== 'completed') {
                 for (const item of order.items) {
                     const variation = await ProductVariation.findById(item.variationId);
@@ -383,22 +383,23 @@ exports.updateOrder = async (req, res) => {
                     }
                 }
             }
-
-            order.status = status;
-            order.statusHistory.push({
-                status,
-                changedAt: new Date(),
-                note: note || `Cập nhật trạng thái thành ${status}`
+            // Cập nhật riêng status + statusHistory, tránh validate toàn bộ schema
+            await Order.findByIdAndUpdate(id, {
+                $set: { status },
+                $push: {
+                    statusHistory: {
+                        status,
+                        changedAt: new Date(),
+                        note: note || `Cập nhật trạng thái thành ${status}`
+                    }
+                }
+            });
+            return res.status(200).json({
+                success: true,
+                message: 'Cập nhật đơn hàng thành công',
             });
         }
 
-        await order.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Cập nhật đơn hàng thành công',
-            order
-        });
     } catch (err) {
         console.error('Lỗi updateOrder:', err);
         res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
@@ -409,14 +410,13 @@ exports.updateOrder = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
     try {
         const { id } = req.params;
-        const userRole = req.user.roleId;
+        const userRole = req.user.role;
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
         }
 
-        // Chỉ admin được xóa
-        const isAdmin = userRole.toString() === 'admin_role_id'; // Thay 'admin_role_id' bằng ID thực tế
+        const isAdmin = userRole === 'admin';
         if (!isAdmin) {
             return res.status(403).json({ success: false, message: 'Chỉ admin được xóa đơn hàng' });
         }
@@ -441,6 +441,7 @@ exports.deleteOrder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
     }
 };
+
 
 // Lấy danh sách đơn hàng theo người dùng
 exports.getOrdersByUser = async (req, res) => {

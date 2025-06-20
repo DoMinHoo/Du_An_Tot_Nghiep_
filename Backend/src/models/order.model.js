@@ -20,7 +20,7 @@ const itemSchema = new mongoose.Schema({
 const statusHistorySchema = new mongoose.Schema({
     status: {
         type: String,
-        enum: ['pending', 'shipping', 'completed', 'canceled'],
+        enum: ['pending', 'shipping', 'completed', 'canceled', 'confirmed'],
         required: true
     },
     changedAt: {
@@ -73,7 +73,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'shipping', 'completed', 'canceled'],
+        enum: ['pending', 'shipping', 'completed', 'canceled', 'confirmed'],
         default: 'pending',
         required: true
     },
