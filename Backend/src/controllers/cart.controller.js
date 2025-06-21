@@ -408,7 +408,6 @@ exports.addToCart = async (req, res) => {
     };
 
 // Hợp nhất giỏ hàng khi đăng nhập
-// Hợp nhất giỏ hàng khi đăng nhập
 exports.mergeCart = async (req, res) => {
     try {
         const { guestId } = req.body;
@@ -425,10 +424,13 @@ exports.mergeCart = async (req, res) => {
 
         // Tìm giỏ hàng khách
         const guestCart = await Cart.findOne({ guestId });
+        const userCart = await Cart.findOne({ userId });
+
+        // Trường hợp 1: Không có giỏ hàng khách hoặc giỏ hàng khách rỗng
         if (!guestCart || !guestCart.items.length) {
             logger.info(`Không tìm thấy giỏ hàng khách với guestId: ${guestId} hoặc giỏ hàng rỗng`);
-            // Tìm giỏ hàng người dùng nếu tồn tại
-            const userCart = await Cart.findOne({ userId });
+
+            // Nếu người dùng cũng không có giỏ hàng, trả về giỏ hàng rỗng
             if (!userCart) {
                 return res.status(200).json({
                     success: true,
@@ -437,7 +439,7 @@ exports.mergeCart = async (req, res) => {
                 });
             }
 
-            // Populate giỏ hàng người dùng
+            // Nếu người dùng có giỏ hàng, trả về giỏ hàng người dùng
             const populatedCart = await Cart.findById(userCart._id).populate({
                 path: 'items.variationId',
                 select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
@@ -448,7 +450,6 @@ exports.mergeCart = async (req, res) => {
                 },
             });
 
-            // Tính tổng giá
             const totalPrice = populatedCart.items.reduce((total, item) => {
                 const price = item.variationId.salePrice || item.variationId.finalPrice;
                 return total + price * item.quantity;
@@ -461,14 +462,11 @@ exports.mergeCart = async (req, res) => {
             });
         }
 
-        // Tìm giỏ hàng người dùng
-        const userCart = await Cart.findOne({ userId });
+        // Trường hợp 2: Người dùng đã có giỏ hàng
         if (userCart && userCart.items.length > 0) {
-            // Nếu giỏ hàng người dùng đã có sản phẩm, xóa giỏ hàng khách và trả về giỏ hàng người dùng
             logger.info(`Giỏ hàng người dùng với userId: ${userId} đã chứa sản phẩm, xóa guestCart: ${guestId}`);
             await Cart.deleteOne({ guestId });
 
-            // Populate giỏ hàng người dùng
             const populatedCart = await Cart.findById(userCart._id).populate({
                 path: 'items.variationId',
                 select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
@@ -479,7 +477,6 @@ exports.mergeCart = async (req, res) => {
                 },
             });
 
-            // Tính tổng giá
             const totalPrice = populatedCart.items.reduce((total, item) => {
                 const price = item.variationId.salePrice || item.variationId.finalPrice;
                 return total + price * item.quantity;
@@ -492,11 +489,11 @@ exports.mergeCart = async (req, res) => {
             });
         }
 
-        // Nếu giỏ hàng người dùng không tồn tại hoặc rỗng, tiến hành hợp nhất
+        // Trường hợp 3: Người dùng chưa có giỏ hàng hoặc giỏ hàng rỗng, tiến hành hợp nhất
         let newUserCart = userCart || new Cart({ userId, items: [] });
         logger.info(userCart ? `Tìm thấy giỏ hàng rỗng cho userId: ${userId}` : `Tạo giỏ hàng mới cho userId: ${userId}`);
 
-        // Truy vấn hàng loạt các biến thể sản phẩm
+        // Truy vấn hàng loạt các biến thể sản phẩm từ giỏ hàng khách
         const variationIds = guestCart.items.map((item) => item.variationId);
         const variations = await ProductVariation.find({ _id: { $in: variationIds } }).populate({
             path: 'productId',
@@ -504,9 +501,9 @@ exports.mergeCart = async (req, res) => {
         });
 
         const variationMap = new Map(variations.map((v) => [v._id.toString(), v]));
-
-        // Hợp nhất các mặt hàng
         let mergedItems = 0;
+
+        // Hợp nhất các mặt hàng từ giỏ hàng khách
         for (const guestItem of guestCart.items) {
             const variation = variationMap.get(guestItem.variationId.toString());
             if (!variation || !variation.productId) {
@@ -514,9 +511,11 @@ exports.mergeCart = async (req, res) => {
                 continue;
             }
 
-            if (variation.stockQuantity < guestItem.quantity) {
+            // Kiểm tra số lượng tồn kho
+            const maxQuantity = variation.stockQuantity;
+            if (maxQuantity < guestItem.quantity) {
                 logger.warn(
-                    `Bỏ qua biến thể ${guestItem.variationId} do thiếu tồn kho (${variation.stockQuantity}) cho userId: ${userId}`
+                    `Bỏ qua biến thể ${guestItem.variationId} do thiếu tồn kho (${maxQuantity}) cho userId: ${userId}`
                 );
                 continue;
             }
@@ -526,17 +525,19 @@ exports.mergeCart = async (req, res) => {
             );
 
             if (itemIndex > -1) {
+                // Cập nhật số lượng nếu sản phẩm đã có trong giỏ hàng người dùng
                 newUserCart.items[itemIndex].quantity += guestItem.quantity;
-                if (newUserCart.items[itemIndex].quantity > variation.stockQuantity) {
-                    newUserCart.items[itemIndex].quantity = variation.stockQuantity;
+                if (newUserCart.items[itemIndex].quantity > maxQuantity) {
+                    newUserCart.items[itemIndex].quantity = maxQuantity;
                     logger.info(
-                        `Giới hạn số lượng biến thể ${guestItem.variationId} ở mức tồn kho: ${variation.stockQuantity} cho userId: ${userId}`
+                        `Giới hạn số lượng biến thể ${guestItem.variationId} ở mức tồn kho: ${maxQuantity} cho userId: ${userId}`
                     );
                 }
             } else {
+                // Thêm sản phẩm mới vào giỏ hàng người dùng
                 newUserCart.items.push({
                     variationId: guestItem.variationId,
-                    quantity: guestItem.quantity,
+                    quantity: Math.min(guestItem.quantity, maxQuantity),
                 });
                 mergedItems++;
             }
@@ -576,7 +577,7 @@ exports.mergeCart = async (req, res) => {
             },
         });
     } catch (error) {
-        logger.error(`Lỗi hợp nhất giỏ hàng cho userId: ${req.user.userId}, guestId: ${req.body.guestId}`, error);
+        logger.error(`Lỗi hợp nhất giỏ hàng cho userId: ${userId}, guestId: ${guestId}`, error);
         res.status(500).json({
             success: false,
             message: 'Lỗi server: ' + error.message,
