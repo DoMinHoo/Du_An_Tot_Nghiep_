@@ -40,3 +40,5 @@
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 824d70a9-44fe-44c1-9355-747c34c4f60b sang userId: 68562bfbe1a9f8d220a466b4","timestamp":"2025-06-21 11:12:27"}
 {"level":"info","message":"Tạo giỏ hàng mới cho userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 11:17:18"}
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: ef7be56b-277d-4b29-97e9-8f433263dab6 sang userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 11:17:18"}
+{"level":"info","message":"Tạo giỏ hàng mới cho userId: 68480739b6d432cc252f3c0a","timestamp":"2025-06-21 12:57:27"}
+{"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: ded40b27-99b2-443f-8989-636b87fb454c sang userId: 68480739b6d432cc252f3c0a","timestamp":"2025-06-21 12:57:27"}

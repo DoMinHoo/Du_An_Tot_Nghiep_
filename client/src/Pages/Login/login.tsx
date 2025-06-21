@@ -144,7 +144,7 @@ const Login: React.FC = () => {
       const role = user?.role?.trim().toLowerCase();
       setTimeout(() => {
         if (role === 'admin') {
-          navigate('/admin/dashboard'); // Sử dụng navigate thay vì window.location
+        window.location.href = 'http://localhost:5174/admin/products'
         } else {
           navigate('/');
         }
