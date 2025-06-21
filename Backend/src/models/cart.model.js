@@ -35,7 +35,5 @@ const cartSchema = new mongoose.Schema(
     }
 );
 
-// Chỉ giữ index cho guestId
-cartSchema.index({ guestId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Cart', cartSchema);
