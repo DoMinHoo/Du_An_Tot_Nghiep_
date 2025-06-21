@@ -4,7 +4,6 @@
     brand?: string;
     descriptionShort: string;
     descriptionLong: string;
-    material: string;
     categoryId: string;
     image: string[];
     totalPurchased: number;

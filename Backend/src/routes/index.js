@@ -8,6 +8,7 @@ const productRoutes = require("./product.routes");
 const orderRoutes = require("./order.routes");
 const variationRoutes = require("./variation.routes");
 const bannerRoutes = require("./banner.routes");
+const materialsRoutes = require("./materials.routes");
 
 const promotionRoutes = require("./promotion.route");
 
@@ -20,10 +21,11 @@ router.use("/users", userRoutes);
 router.use("/reviews", reviewRoutes);
 router.use('/products', productRoutes);
 router.use('/orders', orderRoutes);
-router.use('/variations', variationRoutes);
+router.use('/', variationRoutes);
 router.use('/banners', bannerRoutes);
-router.use("/api/promotions", promotionRoutes);
+router.use("/promotions", promotionRoutes);
 router.use('/carts', cartRoutes);
+router.use('/materials', materialsRoutes);
 
 
 

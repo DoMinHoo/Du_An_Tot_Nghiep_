@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface LoginFormValues {
   email: string;
@@ -11,7 +13,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<LoginFormValues>({
     email: '',
-    password: ''
+    password: '',
   });
   const navigate = useNavigate();
 
@@ -23,15 +25,24 @@ const Login: React.FC = () => {
   const onFinish = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
 
-      const user = res.data?.user;
-      const token = res.data?.token;
+    try {
+      // Lấy guestId từ localStorage
+      const guestId = localStorage.getItem('guestId');
+
+      // Gửi guestId trong request đăng nhập
+      const res = await axios.post(
+        'http://localhost:5000/api/auth/login',
+        { ...formData, guestId } // Thêm guestId vào body
+      );
+
+      const user = res.data?.data?.user;
+      const token = res.data?.data?.token;
       const role = user?.role?.trim().toLowerCase();
+      const cart = res.data?.data?.cart;
 
       if (!user || !role) {
-        alert('Thông tin tài khoản không hợp lệ!');
+        toast.error('Thông tin tài khoản không hợp lệ!');
         setLoading(false);
         return;
       }
@@ -42,26 +53,35 @@ const Login: React.FC = () => {
         localStorage.setItem('token', token);
       }
 
-      alert('Đăng nhập thành công!');
+      // Xóa guestId khỏi localStorage nếu có
+      if (guestId) {
+        localStorage.removeItem('guestId');
+      }
+
+      // Hiển thị thông báo thành công
+      toast.success(cart?.message || 'Đăng nhập thành công!', {
+        autoClose: 1000,
+      });
 
       if (role === 'admin') {
-        // Admin: chuyển sang giao diện admin
         setTimeout(() => {
           window.location.href = 'http://localhost:5174/admin/dashboard';
         }, 1000);
       } else {
-        // Client: ở lại trang client
-        setTimeout(() => navigate('/about'), 1000);
+        setTimeout(() => navigate('/'), 1000);
       }
-
     } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'Đăng nhập thất bại!');
+      toast.error(err?.response?.data?.message || 'Đăng nhập thất bại!', {
+        autoClose: 1000,
+      });
     }
+
     setLoading(false);
   };
 
   return (
     <div className="login-container">
+      <ToastContainer position="top-right" autoClose={3000} />
       <form className="login-form" onSubmit={onFinish}>
         <h2>ĐĂNG NHẬP TÀI KHOẢN</h2>
         <p>Nhập email và mật khẩu của bạn:</p>
@@ -85,7 +105,9 @@ const Login: React.FC = () => {
         />
 
         <p className="recaptcha-text">
-          Website được bảo vệ bởi reCAPTCHA và <a href="#">Chính sách bảo mật</a> và <a href="#">Điều khoản dịch vụ</a> của Google.
+          Website được bảo vệ bởi reCAPTCHA và{' '}
+          <a href="#">Chính sách bảo mật</a> và{' '}
+          <a href="#">Điều khoản dịch vụ</a> của Google.
         </p>
 
         <button type="submit" disabled={loading}>
@@ -93,8 +115,12 @@ const Login: React.FC = () => {
         </button>
 
         <div className="form-footer">
-          <p>Khách hàng mới? <a href="/signin">Tạo tài khoản</a></p>
-          <p>Quên mật khẩu? <a href="/forgot">Khôi phục mật khẩu</a></p>
+          <p>
+            Khách hàng mới? <a href="/signin">Tạo tài khoản</a>
+          </p>
+          <p>
+            Quên mật khẩu? <a href="/forgot">Khôi phục mật khẩu</a>
+          </p>
         </div>
       </form>
 

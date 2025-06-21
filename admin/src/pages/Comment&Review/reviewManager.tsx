@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Layout,
   Table,
@@ -8,51 +8,44 @@ import {
   Image,
   Input,
   message,
+  Spin,
 } from "antd";
-
-
+import { getAllReviews } from "../../Services/review.service"; // bạn phải có file này
 
 const { Content } = Layout;
 
-// Dữ liệu giả lập
-const reviewData = [
-  {
-    key: "1",
-    productId: "P001",
-    userId: "U001",
-    rating: 5,
-    content: "Sản phẩm rất tốt!",
-    images: ["https://via.placeholder.com/60"],
-    createdAt: "2025-05-28 09:00",
-    visible: true,
-    flagged: false,
-    replies: [
-      {
-        id: "r1",
-        content: "Cảm ơn bạn đã đánh giá!",
-        createdAt: "2025-05-28 10:00",
-      },
-    ],
-  },
-  {
-    key: "2",
-    productId: "P002",
-    userId: "U002",
-    rating: 2,
-    content: "Hàng giao trễ, bị móp.",
-    images: [],
-    createdAt: "2025-05-27 15:30",
-    visible: true,
-    flagged: true,
-    replies: [],
-  },
-];
-
 const ReviewManager: React.FC = () => {
-  const [data, setData] = useState(reviewData);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [replyContent, setReplyContent] = useState<{ [key: string]: string }>(
     {}
   );
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      setLoading(true);
+      try {
+        const res = await getAllReviews();
+        const formatted = res.map((item: any) => ({
+          ...item,
+          key: item._id,
+          productId: item.product?.name || item.product,
+          userId: item.user?.name || item.user,
+          content: item.comment,
+          images: item.images || [],
+          replies: item.replies || [], // nếu bạn thêm phản hồi vào DB
+        }));
+        setData(formatted);
+      } catch (err) {
+        console.error(err);
+        message.error("Không thể tải danh sách đánh giá.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, []);
 
   const toggleVisibility = (key: string) => {
     setData((prev) =>
@@ -144,6 +137,9 @@ const ReviewManager: React.FC = () => {
       title: "Ngày",
       dataIndex: "createdAt",
       key: "createdAt",
+      render: (createdAt: string) => (
+        <span>{new Date(createdAt).toLocaleString()}</span>
+      ),
     },
     {
       title: "Hiển thị",
@@ -171,51 +167,55 @@ const ReviewManager: React.FC = () => {
   ];
 
   return (
-        <Content style={{ margin: 24, background: "#fff", padding: 24 }}>
-          <h2 style={{ marginBottom: 16 }}>Quản lý đánh giá & phản hồi</h2>
-          <Table
-            columns={columns}
-            dataSource={data}
-            pagination={{ pageSize: 5 }}
-            expandable={{
-              expandedRowRender: (record) => (
-                <div>
-                  <strong>Phản hồi:</strong>
-                  {record.replies?.length > 0 ? (
-                    <ul style={{ paddingLeft: 16 }}>
-                      {record.replies.map((reply: any) => (
-                        <li key={reply.id}>
-                          {reply.content}{" "}
-                          <span style={{ color: "#999", marginLeft: 8 }}>
-                            ({reply.createdAt})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ color: "#999" }}>Chưa có phản hồi</p>
-                  )}
-                  <Input.TextArea
-                    rows={2}
-                    placeholder="Nhập phản hồi..."
-                    style={{ marginTop: 8 }}
-                    value={replyContent[record.key] || ""}
-                    onChange={(e) =>
-                      handleReplyChange(record.key, e.target.value)
-                    }
-                  />
-                  <Button
-                    type="primary"
-                    onClick={() => handleAddReply(record.key)}
-                    style={{ marginTop: 8 }}
-                  >
-                    Gửi phản hồi
-                  </Button>
-                </div>
-              ),
-            }}
-          />
-        </Content>
+    <Content style={{ margin: 24, background: "#fff", padding: 24 }}>
+      <h2 style={{ marginBottom: 16 }}>Quản lý đánh giá & phản hồi</h2>
+      {loading ? (
+        <Spin size="large" />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 5 }}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div>
+                <strong>Phản hồi:</strong>
+                {record.replies?.length > 0 ? (
+                  <ul style={{ paddingLeft: 16 }}>
+                    {record.replies.map((reply: any) => (
+                      <li key={reply.id}>
+                        {reply.content}{" "}
+                        <span style={{ color: "#999", marginLeft: 8 }}>
+                          ({reply.createdAt})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ color: "#999" }}>Chưa có phản hồi</p>
+                )}
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Nhập phản hồi..."
+                  style={{ marginTop: 8 }}
+                  value={replyContent[record.key] || ""}
+                  onChange={(e) =>
+                    handleReplyChange(record.key, e.target.value)
+                  }
+                />
+                <Button
+                  type="primary"
+                  onClick={() => handleAddReply(record.key)}
+                  style={{ marginTop: 8 }}
+                >
+                  Gửi phản hồi
+                </Button>
+              </div>
+            ),
+          }}
+        />
+      )}
+    </Content>
   );
 };
 

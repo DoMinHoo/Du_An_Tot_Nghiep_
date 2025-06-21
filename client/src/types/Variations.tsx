@@ -13,7 +13,7 @@ export interface Variation {
   colorName: string; // ten mau
   colorHexCode: string; // ma mau hex
   colorImageUrl: string; // url anh mau
-  materialVariation: string; // bien the chat lieu
-  createdAt: string; 
+  material?: string | { _id: string; name: string }; // bien the chat lieu
+  createdAt: string;
   updatedAt: string;
 }

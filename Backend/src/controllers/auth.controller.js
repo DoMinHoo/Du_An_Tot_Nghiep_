@@ -5,12 +5,11 @@ const { registerSchema } = require('../validators/register.validators');
 const { loginSchema } = require('../validators/login.validators');
 const { changePasswordSchema } = require('../validators/changePass.validate');
 const { generateToken } = require('../middlewares/auth.middleware');
-const { sendEmail } = require('../untils/mailers'); // Giả sử bạn đã có hàm gửi email
+const { sendEmail } = require('../untils/mailers');
 const Role = require('../models/roles.model');
-
+const logger = require('../untils/logger');
+const Cart = require('../models/cart.model');
 const jwt = require('jsonwebtoken');
-
-
 
 // Đăng ký người dùng
 exports.register = async (req, res) => {
@@ -38,18 +37,18 @@ exports.register = async (req, res) => {
             address,
             phone,
             email,
-            password: hashedPassword,  // Lưu mật khẩu đã mã hóa
+            password: hashedPassword,
             dateBirth,
             gender,
             status,
             avatarUrl,
-            roleId,
+            roleId: roleId || (await Role.findOne({ name: 'client' }).select('_id'))._id, // Mặc định là client nếu không có roleId
         });
 
         // Lưu người dùng vào cơ sở dữ liệu
         await newUser.save();
 
-        // Trả về thông tin người dùng (có thể không trả về mật khẩu)
+        // Trả về thông tin người dùng
         res.status(201).json({
             message: 'Đăng ký thành công!',
             user: {
@@ -66,81 +65,100 @@ exports.register = async (req, res) => {
             }
         });
     } catch (error) {
+        logger.error('Lỗi khi đăng ký người dùng:', error);
         res.status(500).json({ message: 'Lỗi khi đăng ký người dùng', error: error.message });
     }
 };
 
 // Đăng nhập
-// Đăng nhập
+
 exports.login = async (req, res) => {
-    const { error } = loginSchema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0].message });
-    }
-
-    const { email, password } = req.body;
-
     try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'Người dùng không tồn tại' });
-        }
-        if (user.status === 'banned') {
-    return res.status(403).json({ message: 'Tài khoản đã bị khóa, vui lòng liên hệ Admin' });
-}
+        const { email, password } = req.body;
 
+        // Validate request body
+        const { error } = loginSchema.validate({ email, password });
+        if (error) {
+            return res.status(400).json({ success: false, message: error.details[0].message });
+        }
+
+        // Kiểm tra thông tin đăng nhập
+        const user = await User.findOne({ email }).populate('roleId', 'name');
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Email hoặc mật khẩu không đúng',
+            });
+        }
+
+        // Kiểm tra mật khẩu
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Mật khẩu không đúng' });
+            return res.status(401).json({
+                success: false,
+                message: 'Email hoặc mật khẩu không đúng',
+            });
         }
 
-        // JOIN sang role để lấy tên
-        const role = await Role.findById(user.roleId);
-        if (!role) {
-            return res.status(400).json({ message: 'User không có role hợp lệ' });
+        // Kiểm tra vai trò (admin hoặc client)
+        const roleName = user.roleId?.name?.trim().toLowerCase();
+        if (!['admin', 'client'].includes(roleName)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Vai trò không hợp lệ. Chỉ admin hoặc client được phép đăng nhập.',
+            });
         }
 
-        // Tạo token với role là tên role, viết thường, loại bỏ khoảng trắng/dấu
+        // Gọi hàm generateToken ở đây để tạo JWT
         const token = generateToken({
             _id: user._id,
-            role: role.name.trim().toLowerCase() // <-- Rất quan trọng!
+            role: roleName,
         });
 
-        res.status(200).json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                address: user.address,
-                phone: user.phone,
-                gender: user.gender,
-                status: user.status,
-                avatarUrl: user.avatarUrl,
-                role: role.name, // trả về luôn role name cho FE
-                createdAt: user.createdAt,
-            }
+        // Trả về thông tin người dùng và token
+        return res.status(200).json({
+            success: true,
+            message: 'Đăng nhập thành công',
+            data: {
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: roleName,
+                },
+                token,
+            },
         });
 
-    } catch (error) {
-        console.error('Error during login:', error);
-        res.status(500).json({ message: 'Có lỗi xảy ra khi đăng nhập', error: error.message });
+    } catch (err) {
+        console.error('Lỗi đăng nhập:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server',
+            error: err.message
+        });
     }
 };
 
-
+// Quên mật khẩu
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     try {
         // Kiểm tra xem email có tồn tại trong DB hay không
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('roleId', 'name');
         if (!user) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
 
+        // Kiểm tra vai trò
+        const roleName = user.roleId?.name?.trim().toLowerCase();
+        if (!['admin', 'client'].includes(roleName)) {
+            return res.status(403).json({ message: 'Vai trò không hợp lệ' });
+        }
+
         // Tạo token cho việc xác thực mật khẩu
-        const resetToken = crypto.randomBytes(32).toString('hex'); // Mã token tạm thời
+        const resetToken = crypto.randomBytes(32).toString('hex');
         const resetTokenExpiry = Date.now() + 3600000; // Token hết hạn sau 1 giờ
 
         // Lưu token và thời gian hết hạn vào DB
@@ -159,54 +177,60 @@ exports.forgotPassword = async (req, res) => {
         res.status(200).json({ message: 'Email đặt lại mật khẩu đã được gửi' });
 
     } catch (error) {
-        console.error('Error sending email:', error);
+        logger.error('Lỗi gửi email:', error);
         res.status(500).json({ message: 'Có lỗi xảy ra khi gửi email', error: error.message });
     }
+};
 
-}
-
+// Đổi mật khẩu
 exports.changePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     const userId = req.user.userId;
 
+    // Validate request body
     const { error } = changePasswordSchema.validate({ oldPassword, newPassword });
     if (error) {
         return res.status(400).json({ message: error.details[0].message });
     }
 
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(userId).populate('roleId', 'name');
         if (!user) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
 
+        // Kiểm tra vai trò
+        const roleName = user.roleId?.name?.trim().toLowerCase();
+        if (!['admin', 'client'].includes(roleName)) {
+            return res.status(403).json({ message: 'Vai trò không hợp lệ' });
+        }
+
+        // Kiểm tra mật khẩu cũ
         const isMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
         }
 
+        // Kiểm tra mật khẩu mới không được trùng với mật khẩu cũ
         if (oldPassword === newPassword) {
             return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ' });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-
+        // Mã hóa mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedPassword;
         await user.save();
 
-        // JOIN lại role
-        const role = await Role.findById(user.roleId);
+        // Tạo token mới với thông tin vai trò
         const token = generateToken({
-            _id: user._id,
-            role: role ? role.name.trim().toLowerCase() : 'user'
+            userId: user._id,
+            role: roleName,
         });
 
         res.status(200).json({ message: 'Mật khẩu đã được cập nhật thành công', token });
 
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ message: 'Có lỗi xảy ra khi đổi mật khẩu' });
+        logger.error('Lỗi đổi mật khẩu:', error);
+        res.status(500).json({ message: 'Có lỗi xảy ra khi đổi mật khẩu', error: error.message });
     }
 };
-

@@ -19,10 +19,15 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../Types/product.interface';
-import { deleteProduct, getProducts } from '../../Services/products.service';
+import { deleteProduct, getProductMaterials, getProducts } from '../../Services/products.service';
+import { useEffect, useState } from 'react';
 
 const ProductList = () => {
   const navigate = useNavigate();
+
+  const [materialsMap, setMaterialsMap] = useState<Record<string, string>>({});
+
+
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -41,6 +46,29 @@ const ProductList = () => {
       message.error('Xoá sản phẩm thất bại');
     },
   });
+
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+
+    const fetchMaterials = async () => {
+      const map: Record<string, string> = {};
+
+      await Promise.all(
+        products.map(async (product) => {
+          try {
+            const materialName = await getProductMaterials(product._id);
+            map[product._id] = materialName || "Không có";
+          } catch (err) {
+            map[product._id] = "Lỗi";
+          }
+        })
+      );
+
+      setMaterialsMap(map);
+    };
+
+    fetchMaterials();
+  }, [products]);
 
   const handleEdit = (product: Product) => {
     navigate(`/admin/products/edit/${product._id}`);
@@ -96,8 +124,8 @@ const ProductList = () => {
     },
     {
       title: 'Chất liệu',
-      dataIndex: 'material',
       key: 'material',
+      render: (_: any, record: Product) => materialsMap[record._id] || 'Đang tải...',
     },
     {
       title: 'Danh mục',
@@ -119,8 +147,8 @@ const ProductList = () => {
           status === 'active'
             ? 'green'
             : status === 'hidden'
-            ? 'orange'
-            : 'red';
+              ? 'orange'
+              : 'red';
         return <Tag color={color}>{status.toUpperCase()}</Tag>;
       },
     },

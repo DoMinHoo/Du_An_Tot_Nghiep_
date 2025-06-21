@@ -8,9 +8,10 @@ import {
   Popconfirm,
   message,
   Spin,
+  Tag,
 } from "antd";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getOrders, deleteOrder } from "../../Services/orders.service";
 
 const { Content } = Layout;
 
@@ -31,45 +32,75 @@ interface Order {
   customerName: string;
   totalAmount: number;
   status: string;
-  shippingAddress: string;
+  shippingAddress: { street: string; city: string };
   createdAt: string;
   items: OrderItem[];
   statusHistory: StatusEntry[];
-  key: number;
+  key?: number;
 }
+
+const statusText: Record<string, string> = {
+  pending: "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  shipping: "Đang giao",
+  completed: "Đã giao",
+  canceled: "Đã hủy",
+};
+
+const statusColor: Record<string, string> = {
+  pending: "default",
+  confirmed: "blue",
+  shipping: "orange",
+  completed: "green",
+  canceled: "red",
+};
 
 const OrderManager: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    if (location.state?.shouldRefresh) {
+      fetchOrders();
+    }
+  }, [location.state]);
+
   const fetchOrders = async () => {
-    setLoading(true);
     try {
-      const res = await axios.get("/api/orders");
-      console.log("💡 API response:", res.data);
-      const ordersData = res.data.data as Order[];
-      setOrders(
-        ordersData.map((order, index) => ({
-          ...order,
-          key: index + 1,
-        }))
-      );
-    } catch (err) {
+      setLoading(true);
+      const data = await getOrders();
+      const ordersWithKeys = data.map((order: Order, index: number) => ({
+        ...order,
+        key: index + 1,
+      }));
+      setOrders(ordersWithKeys);
+    } catch (error) {
       message.error("Lỗi khi tải danh sách đơn hàng");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, status: string) => {
+    if (status !== "pending" && status !== "canceled") {
+      message.warning("Chỉ có thể xóa đơn hàng khi đang chờ xác nhận hoặc đã hủy");
+      return;
+    }
+
     try {
-      await axios.delete(`/api/orders/${id}`);
-      message.success("Xóa đơn hàng thành công");
-      fetchOrders();
-    } catch (err) {
-      message.error("Xóa đơn hàng thất bại");
+      await deleteOrder(id);
+      setOrders((prev) => prev.filter((o) => o._id !== id));
+      message.success("Đã xóa đơn hàng");
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || "Lỗi khi xóa đơn hàng";
+      message.error(errorMsg);
     }
   };
 
@@ -77,14 +108,10 @@ const OrderManager: React.FC = () => {
     navigate(`/admin/orders/${orderId}`);
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const filteredOrders = orders.filter(
     (order) =>
-      order.orderCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+      order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
@@ -107,23 +134,34 @@ const OrderManager: React.FC = () => {
       title: "Tổng tiền",
       dataIndex: "totalAmount",
       key: "totalAmount",
-      render: (amount: number) => (amount ? amount.toLocaleString("vi-VN") + "₫" : "N/A"),
+      render: (amount: number) =>
+        amount ? amount.toLocaleString("vi-VN") + "₫" : "N/A",
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      render: (status: string) => (
+        <Tag color={statusColor[status] || "default"}>
+          {statusText[status] || status}
+        </Tag>
+      ),
     },
     {
       title: "Địa chỉ giao hàng",
       dataIndex: "shippingAddress",
       key: "shippingAddress",
+      render: (address: any) =>
+        address?.street && address?.city
+          ? `${address.street}, ${address.city}`
+          : "N/A",
     },
     {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date: string) => (date ? new Date(date).toLocaleString("vi-VN") : "N/A"),
+      render: (date: string) =>
+        date ? new Date(date).toLocaleString("vi-VN") : "N/A",
     },
     {
       title: "Sản phẩm",
@@ -133,7 +171,8 @@ const OrderManager: React.FC = () => {
         items.length > 0
           ? items.map((item, i) => (
               <div key={i}>
-                {item.name} x{item.quantity} – {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
+                {item.name} x{item.quantity} –{" "}
+                {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
               </div>
             ))
           : "Không có sản phẩm",
@@ -146,7 +185,11 @@ const OrderManager: React.FC = () => {
         history.length > 0
           ? history.map((item, i) => (
               <div key={i}>
-                {item.status} ({item.changedAt ? new Date(item.changedAt).toLocaleString("vi-VN") : "N/A"})
+                {statusText[item.status] || item.status} (
+                {item.changedAt
+                  ? new Date(item.changedAt).toLocaleString("vi-VN")
+                  : "N/A"}
+                )
               </div>
             ))
           : "Chưa có lịch sử",
@@ -162,7 +205,7 @@ const OrderManager: React.FC = () => {
           <Popconfirm
             title="Xóa đơn hàng"
             description="Bạn có chắc muốn xóa đơn hàng này?"
-            onConfirm={() => handleDelete(record._id)}
+            onConfirm={() => handleDelete(record._id, record.status)}
             okText="Xóa"
             cancelText="Hủy"
           >
@@ -181,16 +224,20 @@ const OrderManager: React.FC = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         style={{ width: 300, marginBottom: 16 }}
       />
-      {loading ? (
-        <Spin tip="Đang tải đơn hàng..." size="large" />
-      ) : (
-        <Table
-          dataSource={filteredOrders}
-          columns={columns}
-          rowKey={(record) => record._id}
-          pagination={false}
-        />
-      )}
+      <div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "50px 0" }}>
+            <Spin tip="Đang tải đơn hàng..." size="large" />
+          </div>
+        ) : (
+          <Table
+            dataSource={filteredOrders}
+            columns={columns}
+            rowKey={(record) => record._id}
+            pagination={false}
+          />
+        )}
+      </div>
     </Content>
   );
 };

@@ -1,5 +1,8 @@
+const mongoose = require("mongoose");
 const Product = require("../models/products.model");
 const Category = require("../models/category.model");
+const Material = require("../models/material.model");
+const ProductVariation = require("../models/product_variations.model");
 const path = require("path");
 
 // Hàm đệ quy xây dựng breadcrumb từ categoryId
@@ -23,7 +26,6 @@ exports.getProducts = async (req, res) => {
       sort = "created_at",
       category,
       color,
-      material,
       minPrice,
       maxPrice,
       status = "active",
@@ -36,7 +38,7 @@ exports.getProducts = async (req, res) => {
     if (status) query.status = status;
     if (category) query.categoryId = category;
     if (color) query.color = color;
-    if (material) query.material = material;
+
 
     // ✅ Lọc theo salePrice (giá đang bán) thay vì giá gốc
     if (minPrice || maxPrice) {
@@ -156,14 +158,6 @@ exports.createProduct = async (req, res) => {
     const productData = {
       ...body,
       image: images,
-      price: parseFloat(body.price),
-      importPrice: parseFloat(body.importPrice),
-      salePrice: parseFloat(body.salePrice || 0),
-      flashSale_discountedPrice: parseFloat(
-        body.flashSale_discountedPrice || 0
-      ),
-      weight: parseFloat(body.weight),
-      stock_quantity: parseInt(body.stock_quantity) || 0,
       isDeleted: body.isDeleted === "true" || false,
       categoryId: body.categoryId,
     };
@@ -204,14 +198,6 @@ exports.updateProduct = async (req, res) => {
     const productData = {
       ...body,
       image: finalImages,
-      price: parseFloat(body.price),
-      importPrice: parseFloat(body.importPrice),
-      salePrice: parseFloat(body.salePrice || 0),
-      flashSale_discountedPrice: parseFloat(
-        body.flashSale_discountedPrice || 0
-      ),
-      weight: parseFloat(body.weight),
-      stock_quantity: parseInt(body.stock_quantity) || product.stock_quantity,
       isDeleted: body.isDeleted === "true" || false,
       categoryId: body.categoryId,
     };
@@ -271,5 +257,37 @@ exports.updateStock = async (req, res) => {
     res.json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+// Lấy danh sách chất liệu của sản phẩm theo ID
+exports.getMaterialsByProductId = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // 1. Kiểm tra ID hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: "ID sản phẩm không hợp lệ" });
+    }
+
+    // 2. Lấy tất cả variations của productId và populate material
+    const variations = await ProductVariation.find({ productId })
+      .populate("material", "name") // chỉ lấy field 'name' trong material
+      .lean();
+
+    // 3. Trích xuất danh sách tên chất liệu
+    const materialNames = variations
+      .map((v) => v.material?.name)
+      .filter(Boolean); // loại bỏ null/undefined
+
+    // 4. Lọc trùng và ghép thành chuỗi
+    const uniqueMaterials = [...new Set(materialNames)];
+    const materialString = uniqueMaterials.join(", ");
+
+    return res.json({ success: true, materials: materialString });
+  } catch (err) {
+    console.error("Lỗi khi lấy chất liệu:", err);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };

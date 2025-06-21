@@ -16,7 +16,7 @@
     };
 
     export const fetchVariations = async (productId: string): Promise<Variation[]> => {
-    const response = await axios.get(`${API_BASE_URL}/variations/${productId}`);
+    const response = await axios.get(`${API_BASE_URL}/${productId}/variations`);
     if (!response.data.success) {
         throw new Error(response.data.message || 'Lỗi từ server');
     }

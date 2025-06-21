@@ -1,222 +1,164 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-    Layout,
-    Descriptions,
-    Table,
-    Tag,
-    Button,
-    Modal,
-    Select,
-    message,
-    Spin,
-    Alert,
+  Layout,
+  Card,
+  Typography,
+  Descriptions,
+  Tag,
+  Select,
+  Button,
+  Divider,
+  List,
+  message,
+  Spin,
 } from "antd";
+import { getOrderById, updateOrder } from "../../Services/orders.service";
 
 const { Content } = Layout;
+const { Title, Text } = Typography;
 const { Option } = Select;
 
-const itemColumns = [
-    {
-        title: "Sản phẩm",
-        dataIndex: "name",
-        key: "name",
-    },
-    {
-        title: "Số lượng",
-        dataIndex: "quantity",
-        key: "quantity",
-    },
-    {
-        title: "Giá",
-        dataIndex: "price",
-        key: "price",
-    },
-];
-
-const statusHistoryColumns = [
-    {
-        title: "Trạng thái",
-        dataIndex: "status",
-        key: "status",
-    },
-    {
-        title: "Thời gian",
-        dataIndex: "changedAt",
-        key: "changedAt",
-        render: (date: string) => new Date(date).toLocaleString("vi-VN"),
-    },
-];
-
-const statusMap: Record<string, string> = {
-    pending: "Chưa thanh toán",
-    shipping: "Đang xử lý",
-    completed: "Đã thanh toán",
-    canceled: "Đã hủy",
+const statusText: Record<string, string> = {
+  pending: "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  shipping: "Đang giao",
+  completed: "Đã giao",
+  canceled: "Đã hủy",
 };
 
-const reverseStatusMap: Record<string, string> = {
-    "Chưa thanh toán": "pending",
-    "Đang xử lý": "shipping",
-    "Đã thanh toán": "completed",
-    "Đã hủy": "canceled",
+// Xác định các trạng thái kế tiếp hợp lệ
+const getNextAvailableStatuses = (currentStatus: string): string[] => {
+  const transitions: Record<string, string[]> = {
+    pending: ["confirmed", "canceled"],
+    confirmed: ["shipping", "canceled"],
+    shipping: ["completed", "canceled"],
+    completed: [], // Không thay đổi được nữa
+    canceled: [], // Không thay đổi được nữa
+  };
+  return transitions[currentStatus] || [];
 };
 
 const OrderDetail: React.FC = () => {
-    const { id } = useParams();
-    const [order, setOrder] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [status, setStatus] = useState<string>("");
 
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [newStatus, setNewStatus] = useState("");
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const data = await getOrderById(id!);
+      setOrder(data);
+      setStatus(data.status);
+    } catch (error) {
+      message.error("Không thể tải chi tiết đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                const res = await fetch(`http://localhost:5000/api/orders/${id}`);
-                if (!res.ok) throw new Error("Không tìm thấy đơn hàng!");
-                const data = await res.json();
-                setOrder(data);
-                setNewStatus(data.status);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    fetchOrder();
+  }, [id]);
 
-        fetchOrder();
-    }, [id]);
+  const handleStatusChange = (value: string) => {
+    setStatus(value);
+  };
 
-    const handleOpenModal = () => {
-        if (order) {
-            setNewStatus(order.status);
-            setIsModalVisible(true);
-        }
-    };
-
-    const handleUpdateStatus = async () => {
-        try {
-            const res = await fetch(`http://localhost:5000/api/orders/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ status: newStatus }),
-            });
-
-            if (!res.ok) throw new Error("Lỗi khi cập nhật trạng thái");
-
-            const updatedOrder = await res.json();
-            setOrder(updatedOrder.order); // ✅ FIX: lấy order đúng từ object
-            setIsModalVisible(false);
-            message.success("Cập nhật trạng thái thành công!");
-        } catch (err: any) {
-            message.error(err.message);
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "completed":
-                return "green";
-            case "pending":
-                return "red";
-            case "canceled":
-                return "volcano";
-            case "shipping":
-                return "blue";
-            default:
-                return "default";
-        }
-    };
-
-    if (loading) {
-        return (
-            <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                <Spin tip="Đang tải đơn hàng..." size="large" />
-            </Content>
-        );
+  const handleUpdateStatus = async () => {
+    const allowedStatuses = getNextAvailableStatuses(order.status);
+    if (!allowedStatuses.includes(status)) {
+      message.warning("Trạng thái không hợp lệ. Không thể cập nhật.");
+      return;
     }
 
-    if (error) {
-        return (
-            <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                <Alert message="Lỗi" description={error} type="error" showIcon />
-                <Button style={{ marginTop: 16 }} onClick={() => window.history.back()}>
-                    Quay lại
-                </Button>
-            </Content>
-        );
+    try {
+      await updateOrder(id!, { status });
+      message.success("Cập nhật trạng thái thành công");
+      navigate("/admin/orders", { state: { shouldRefresh: true } });
+    } catch (error) {
+      message.error("Cập nhật trạng thái thất bại");
     }
+  };
 
+  if (loading || !order) {
     return (
-        <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-            <h2>Chi tiết đơn hàng #{order.orderCode}</h2>
-
-            <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
-                <Descriptions.Item label="Khách hàng">{order.customerName}</Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
-                    <Tag color={getStatusColor(order.status)}>{statusMap[order.status]}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày tạo">
-                    {new Date(order.createdAt).toLocaleString("vi-VN")}
-                </Descriptions.Item>
-                <Descriptions.Item label="Tổng tiền">
-                    {order.totalAmount.toLocaleString("vi-VN")}₫
-                </Descriptions.Item>
-                <Descriptions.Item label="Địa chỉ giao hàng">
-                    {order.shippingAddress}
-                </Descriptions.Item>
-            </Descriptions>
-
-            <Button type="primary" onClick={handleOpenModal} style={{ marginBottom: 16 }}>
-                Cập nhật trạng thái
-            </Button>
-
-            <h3>Danh sách sản phẩm</h3>
-            <Table
-                dataSource={order.items || []}
-                columns={itemColumns}
-                pagination={false}
-                rowKey={(record: any) => record._id || record.name}
-            />
-
-            <h3 style={{ marginTop: 32 }}>Lịch sử trạng thái</h3>
-            <Table
-                dataSource={order.statusHistory || []}
-                columns={statusHistoryColumns}
-                pagination={false}
-                rowKey={(record: any) => record.changedAt}
-            />
-
-            <Button style={{ marginTop: 24 }} onClick={() => window.history.back()}>
-                Quay lại
-            </Button>
-
-            <Modal
-                title="Cập nhật trạng thái đơn hàng"
-                open={isModalVisible}
-                onOk={handleUpdateStatus}
-                onCancel={() => setIsModalVisible(false)}
-                okText="Cập nhật"
-                cancelText="Hủy"
-            >
-                <Select
-                    value={statusMap[newStatus] || newStatus}
-                    style={{ width: "100%" }}
-                    onChange={(value) => setNewStatus(reverseStatusMap[value])}
-                >
-                    {Object.entries(statusMap).map(([key, label]) => (
-                        <Option key={key} value={label}>
-                            {label}
-                        </Option>
-                    ))}
-                </Select>
-            </Modal>
-        </Content>
+      <div style={{ textAlign: "center", padding: 50 }}>
+        <Spin size="large" />
+      </div>
     );
+  }
+
+  const availableStatuses = getNextAvailableStatuses(order.status);
+
+  return (
+    <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+      <Title level={3}>Chi tiết đơn hàng #{order.orderCode}</Title>
+      <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
+        <Descriptions.Item label="Tên khách hàng">
+          {order.customerName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Email">{order.email || "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">{order.phone || "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Địa chỉ giao hàng">
+          {order.shippingAddress?.street}, {order.shippingAddress?.city}
+        </Descriptions.Item>
+        <Descriptions.Item label="Trạng thái hiện tại">
+          <Tag color="blue">{statusText[order.status] || order.status}</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Cập nhật trạng thái">
+          {availableStatuses.length === 0 ? (
+            <Text type="secondary">Không thể cập nhật trạng thái</Text>
+          ) : (
+            <>
+              <Select value={status} onChange={handleStatusChange} style={{ width: 200 }}>
+                {availableStatuses.map((s) => (
+                  <Option key={s} value={s}>
+                    {statusText[s] || s}
+                  </Option>
+                ))}
+              </Select>
+              <Button
+                type="primary"
+                onClick={handleUpdateStatus}
+                style={{ marginLeft: 12 }}
+              >
+                Cập nhật
+              </Button>
+            </>
+          )}
+        </Descriptions.Item>
+      </Descriptions>
+
+      <Divider />
+      <Title level={4}>Sản phẩm</Title>
+      <List
+        bordered
+        dataSource={order.items}
+        renderItem={(item: any) => (
+          <List.Item>
+            {item.name} x{item.quantity} –{" "}
+            {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
+          </List.Item>
+        )}
+      />
+
+      <Divider />
+      <Title level={4}>Lịch sử trạng thái</Title>
+      <List
+        bordered
+        dataSource={order.statusHistory}
+        renderItem={(entry: any) => (
+          <List.Item>
+            <Text strong>{statusText[entry.status] || entry.status}</Text> –{" "}
+            {new Date(entry.changedAt).toLocaleString("vi-VN")}
+          </List.Item>
+        )}
+      />
+    </Content>
+  );
 };
 
 export default OrderDetail;

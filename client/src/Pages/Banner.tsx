@@ -50,7 +50,7 @@ const BannerSlider: React.FC = () => {
 
     return (
         <div className="relative w-full overflow-hidden select-none">
-            <div className="relative h-64 md:h-[700px]">
+            <div className="relative h-64 md:h-[500px]">
                 <a href={currentBanner.link} target="_blank" rel="noopener noreferrer">
                     <img
                         src={currentBanner.image.startsWith('http') ? currentBanner.image : `http://localhost:5000${currentBanner.image}`}
