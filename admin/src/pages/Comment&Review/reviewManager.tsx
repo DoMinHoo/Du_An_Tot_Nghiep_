@@ -10,88 +10,115 @@ import {
   message,
   Spin,
 } from "antd";
-import { getAllReviews } from "../../Services/review.service"; // bạn phải có file này
+import {
+  getAllReviews,
+  toggleReviewVisibility,
+  toggleReviewFlag,
+  replyToReview,
+} from "../../Services/review.service"; // các API cần được định nghĩa
 
 const { Content } = Layout;
 
 const ReviewManager: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [replyContent, setReplyContent] = useState<{ [key: string]: string }>(
-    {}
-  );
+  const [replyContent, setReplyContent] = useState<{ [key: string]: string }>({});
+
+  // Load toàn bộ đánh giá
+  const loadReviews = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllReviews();
+      const formatted = res.map((item: any) => ({
+        ...item,
+        key: item._id,
+        productId: item.product?.name || item.product,
+        userId: item.user?.name || item.user,
+        content: item.comment,
+        images: item.images || [],
+        replies: item.replies || [],
+        visible: item.visible,
+        flagged: item.flagged,
+      }));
+      setData(formatted);
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể tải danh sách đánh giá.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadReviews = async () => {
-      setLoading(true);
-      try {
-        const res = await getAllReviews();
-        const formatted = res.map((item: any) => ({
-          ...item,
-          key: item._id,
-          productId: item.product?.name || item.product,
-          userId: item.user?.name || item.user,
-          content: item.comment,
-          images: item.images || [],
-          replies: item.replies || [], // nếu bạn thêm phản hồi vào DB
-        }));
-        setData(formatted);
-      } catch (err) {
-        console.error(err);
-        message.error("Không thể tải danh sách đánh giá.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadReviews();
   }, []);
 
-  const toggleVisibility = (key: string) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.key === key ? { ...item, visible: !item.visible } : item
-      )
-    );
-    message.success("Đã cập nhật hiển thị.");
+  // Toggle hiển thị
+  const toggleVisibility = async (id: string, current: boolean) => {
+    try {
+      await toggleReviewVisibility(id, !current);
+      setData((prev) =>
+        prev.map((item) =>
+          item.key === id ? { ...item, visible: !current } : item
+        )
+      );
+      message.success(`Đã ${!current ? "hiện" : "ẩn"} đánh giá.`);
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể cập nhật hiển thị.");
+    }
   };
 
-  const toggleFlag = (key: string) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.key === key ? { ...item, flagged: !item.flagged } : item
-      )
-    );
-    message.warning("Đã cập nhật trạng thái vi phạm.");
+  // Toggle đánh dấu vi phạm
+  const toggleFlag = async (id: string, current: boolean) => {
+    try {
+      await toggleReviewFlag(id, !current);
+      setData((prev) =>
+        prev.map((item) =>
+          item.key === id ? { ...item, flagged: !current } : item
+        )
+      );
+      message.success(`Đã ${!current ? "đánh dấu" : "bỏ đánh dấu"} vi phạm.`);
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể cập nhật trạng thái vi phạm.");
+    }
   };
 
+  // Xử lý phản hồi
   const handleReplyChange = (key: string, value: string) => {
     setReplyContent((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleAddReply = (reviewKey: string) => {
-    const reply = replyContent[reviewKey]?.trim();
+  const handleAddReply = async (reviewId: string) => {
+    const reply = replyContent[reviewId]?.trim();
     if (!reply) return;
 
-    setData((prev) =>
-      prev.map((item) =>
-        item.key === reviewKey
-          ? {
-              ...item,
-              replies: [
-                ...(item.replies || []),
-                {
-                  id: Date.now().toString(),
-                  content: reply,
-                  createdAt: new Date().toLocaleString(),
-                },
-              ],
-            }
-          : item
-      )
-    );
-    setReplyContent((prev) => ({ ...prev, [reviewKey]: "" }));
-    message.success("Đã thêm phản hồi.");
+    try {
+      await replyToReview(reviewId, reply);
+      setData((prev) =>
+        prev.map((item) =>
+          item.key === reviewId
+            ? {
+                ...item,
+                replies: [
+                  ...(item.replies || []),
+                  {
+                    id: Date.now().toString(),
+                    content: reply,
+                    createdAt: new Date().toLocaleString(),
+                  },
+                ],
+              }
+            : item
+        )
+      );
+      setReplyContent((prev) => ({ ...prev, [reviewId]: "" }));
+      message.success("Đã thêm phản hồi.");
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể thêm phản hồi.");
+    }
   };
 
   const columns = [
@@ -146,7 +173,7 @@ const ReviewManager: React.FC = () => {
       dataIndex: "visible",
       key: "visible",
       render: (_: any, record: any) => (
-        <Button onClick={() => toggleVisibility(record.key)}>
+        <Button onClick={() => toggleVisibility(record.key, record.visible)}>
           {record.visible ? "Ẩn" : "Hiện"}
         </Button>
       ),
@@ -158,7 +185,7 @@ const ReviewManager: React.FC = () => {
       render: (_: any, record: any) => (
         <Button
           danger={record.flagged}
-          onClick={() => toggleFlag(record.key)}
+          onClick={() => toggleFlag(record.key, record.flagged)}
         >
           {record.flagged ? "Bỏ đánh dấu" : "Đánh dấu"}
         </Button>
