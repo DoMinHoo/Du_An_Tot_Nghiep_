@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 // Logger cho client-side
 const logger = {
   info: (message: string) => console.info(message),
   warn: (message: string) => console.warn(message),
   error: (message: string, error: any) => console.error(message, error),
 };
+
 
 interface LoginFormValues {
   email: string;
@@ -144,7 +146,7 @@ const Login: React.FC = () => {
       const role = user?.role?.trim().toLowerCase();
       setTimeout(() => {
         if (role === 'admin') {
-          navigate('/admin/dashboard'); // Sử dụng navigate thay vì window.location
+        window.location.href = 'http://localhost:5174/admin/products'
         } else {
           navigate('/');
         }

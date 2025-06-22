@@ -1,28 +1,77 @@
+const mongoose = require("mongoose");
+const Order = require("../models/order.model");
+const ProductVariation = require("../models/product_variations.model");
 const Review = require("../models/review.model");
 require("../models/review.model");
 // Tạo mới
 exports.createReview = async (req, res) => {
+  console.log("🧑‍💻 req.user:", req.user);
   try {
-    // Lấy thông tin từ request body
     const { product, rating, comment } = req.body;
 
-    // Thêm thông tin user vào dữ liệu review
+    // ✅ Kiểm tra input bắt buộc
+    if (!product || !rating) {
+      return res
+        .status(400)
+        .json({ message: "Thiếu thông tin đánh giá (product, rating)." });
+    }
+
+    // 1. Tìm tất cả variationId thuộc product đó
+    const variations = await ProductVariation.find({
+      productId: product,
+    }).select("_id");
+    const variationIds = variations.map((v) => v._id.toString());
+
+    console.log("🧩 variationIds:", variationIds);
+
+    if (variationIds.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Sản phẩm không có biến thể nào để đánh giá." });
+    }
+
+    // 2. Kiểm tra người dùng có đơn hàng hoàn tất chứa variation không
+    const orders = await Order.find({
+      userId: req.user.userId,
+      status: { $in: ["completed", "pending"] },
+    });
+
+    console.log("🧾 Orders chứa variation:", JSON.stringify(orders, null, 2));
+
+    const hasPurchased = orders.some((order) =>
+      order.items.some((item) =>
+        variationIds.includes(item.variationId.toString())
+      )
+    );
+
+    // 3. Kiểm tra đã từng đánh giá sản phẩm chưa
+    const alreadyReviewed = await Review.findOne({
+      product,
+      user: req.user.userId,
+    });
+
+    if (alreadyReviewed) {
+      return res
+        .status(400)
+        .json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
+    }
+
+    // 4. Tạo review mới
     const review = new Review({
       product,
-      user: req.user.userId, // Lấy userId từ req.user (được xác thực trong middleware)
+      user: req.user.userId,
       rating,
       comment,
     });
 
-    // Lưu review vào database
     await review.save();
-
-    res.status(201).json(review); // Trả về đánh giá mới
+    res.status(201).json(review);
   } catch (error) {
     console.error("❌ Lỗi khi tạo review:", error);
     res.status(500).json({ message: "Lỗi tạo review", error: error.message });
   }
 };
+
 
 // Lấy chi tiết
 exports.getReviewById = async (req, res) => {
@@ -97,3 +146,99 @@ exports.deleteReview = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi xóa review", error: err.message });
   }
 };
+
+// Lấy tất cả đánh giá (có phân trang hoặc không)
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate("user", "name avatar") // ✅ Lấy cả avatar
+      .populate("product", "name"); // ✅ Lấy tên sản phẩm
+
+    res.status(200).json(reviews);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Lỗi lấy danh sách đánh giá", error: err.message });
+  }
+};
+
+// POST /api/reviews/:id/reply
+exports.addReply = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) return res.status(404).json({ message: "Không tìm thấy review" });
+
+    // Chỉ admin mới được phản hồi
+    if (req.user.role !== "admin")
+      return res.status(403).json({ message: "Bạn không có quyền phản hồi" });
+
+    review.replies.push({
+      content: req.body.content,
+      admin: req.user.userId,
+    });
+
+    await review.save();
+    res.status(200).json({ message: "Đã thêm phản hồi", replies: review.replies });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi khi thêm phản hồi", error: err.message });
+  }
+};
+
+exports.getReviewsByProduct = async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      product: req.params.productId,
+      visible: true, // Chỉ lấy đánh giá đang hiển thị
+    })
+      .populate("user", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(reviews);
+  } catch (err) {
+    res.status(500).json({
+      message: "Không thể lấy đánh giá",
+      error: err.message,
+    });
+  }
+};
+
+
+// Cập nhật hiển thị
+exports.toggleVisibility = async (req, res) => {
+
+  try {
+    console.log("🔒 REQ.USER:", req.user);
+    console.log("🔄 REQ.BODY:", req.body);
+    const review = await Review.findByIdAndUpdate(
+      req.params.id,
+      { visible: req.body.visible },
+      { new: true }
+    );
+    if (!review) return res.status(404).json({ message: "Không tìm thấy đánh giá" });
+
+    res.status(200).json({ message: "Cập nhật hiển thị thành công", review });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi cập nhật hiển thị", error: err.message });
+  }
+};
+
+// Cập nhật trạng thái vi phạm
+exports.toggleFlag = async (req, res) => {
+  try {
+    const review = await Review.findByIdAndUpdate(
+      req.params.id,
+      { flagged: req.body.flagged },
+      { new: true }
+    );
+    if (!review) return res.status(404).json({ message: "Không tìm thấy đánh giá" });
+
+    res.status(200).json({ message: "Cập nhật trạng thái vi phạm thành công", review });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi cập nhật trạng thái", error: err.message });
+  }
+};
+
+
+
+
+

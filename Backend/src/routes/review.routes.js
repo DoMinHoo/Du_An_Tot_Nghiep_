@@ -1,18 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const reviewController = require('../controllers/review.controller');
-const { verifyToken } = require('../middlewares/auth.middleware');
+const reviewController = require("../controllers/review.controller");
+const { verifyToken, protect } = require("../middlewares/auth.middleware");
 
-// Tạo đánh giá
-router.post('/', verifyToken, reviewController.createReview);
+// 📌 Đặt các route cụ thể TRƯỚC
+router.get("/product/:productId", reviewController.getReviewsByProduct);
+router.patch(
+  "/:id/visibility",
+  protect(["admin"]),
+  reviewController.toggleVisibility
+);
+router.patch("/:id/flag", protect(["admin"]), reviewController.toggleFlag);
+router.post("/:id/reply", verifyToken, reviewController.addReply);
 
-// Lấy chi tiết đánh giá
-router.get('/:id', reviewController.getReviewById);
+// 📌 Các route động phải để SAU
+router.get("/:id", reviewController.getReviewById);
+router.put("/:id", verifyToken, reviewController.updateReview);
+router.delete("/:id", verifyToken, reviewController.deleteReview);
 
-// Cập nhật đánh giá
-router.put('/:id', verifyToken, reviewController.updateReview);
-
-// Xoá đánh giá
-router.delete('/:id', verifyToken, reviewController.deleteReview);
+// Tổng quan
+router.get("/", protect(["admin"]), reviewController.getAllReviews);
+router.post("/", verifyToken, reviewController.createReview);
 
 module.exports = router;

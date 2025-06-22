@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
@@ -6,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
+
 
 const CheckoutPage: React.FC = () => {
     const queryClient = useQueryClient();
@@ -110,6 +112,7 @@ const CheckoutPage: React.FC = () => {
 
     return (
         <div className="flex flex-col lg:flex-row bg-white p-6 rounded-md">
+
             <ToastContainer />
 
             <div className="lg:w-2/3 pr-0 lg:pr-6 border-b lg:border-b-0 lg:border-r border-gray-200">

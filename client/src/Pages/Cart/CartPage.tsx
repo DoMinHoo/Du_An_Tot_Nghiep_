@@ -12,6 +12,7 @@ import {
 import CartItemComponent from './CartItem';
 import CartSummary from './CartSummary';
 import type { Cart } from '../../types/Cart';
+
 import { useNavigate } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
@@ -160,12 +161,14 @@ const CartPage: React.FC = () => {
       toast.warn('Vui lòng chọn sản phẩm để thanh toán!', { autoClose: 1000 });
       return;
     }
+
     navigate('/checkout', {
       state: {
         selectedItems,
         cartItems: cart.items,
         totalPrice: selectedTotalPrice,
       },
+
     });
   };
 
