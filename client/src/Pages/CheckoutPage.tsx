@@ -12,7 +12,7 @@ import { createOrder } from '../services/orderService';
 const CheckoutPage: React.FC = () => {
     const queryClient = useQueryClient();
     const location = useLocation();
-    const [finalAmount, setFinalAmount] = useState('');
+    const [finalAmount, setFinalAmount] = useState<number | null>(null);
 
 
     const [fullName, setFullName] = useState('');
@@ -247,7 +247,7 @@ const CheckoutPage: React.FC = () => {
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
                                 code: couponCode,
-                                originalPrice: totalPrice,
+                                originalPrice: Number(totalPrice),
                                 }),
                             });
 
@@ -259,7 +259,7 @@ const CheckoutPage: React.FC = () => {
                             }
 
                             toast.success(data.message || "Áp dụng mã thành công!");
-                            setFinalAmount(data.finalPrice); // Cập nhật tổng cộng
+                            setFinalAmount(data.finalPrice); 
                             } catch {
                             toast.error("Có lỗi khi áp dụng mã");
                             }
@@ -281,7 +281,7 @@ const CheckoutPage: React.FC = () => {
                     <hr />
                     <div className="flex justify-between font-semibold text-red-500 text-lg">
                         <span>Tổng cộng:</span>
-                        <span>{finalAmount.toLocaleString()}₫</span>
+                        <span>{(finalAmount ?? totalPrice).toLocaleString()}₫</span>
                     </div>
 
                 </div>
