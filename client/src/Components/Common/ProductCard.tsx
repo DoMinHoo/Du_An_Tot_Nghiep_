@@ -95,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   if (hasVariations && variation) {
     effectiveSalePrice = isValidPrice(variation.salePrice)
-      ? variation.salePrice
+      ? variation.salePrice ?? 0
       : null;
     effectiveFinalPrice = isValidPrice(variation.finalPrice)
       ? variation.finalPrice
@@ -167,11 +167,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <span className="text-red-600 font-semibold text-base">
             {formatPrice(effectiveSalePrice || effectiveFinalPrice)}
           </span>
-          {effectiveSalePrice && effectiveFinalPrice && (
-            <del className="text-gray-400 text-xs">
-              {formatPrice(effectiveFinalPrice)}
-            </del>
-          )}
+          {effectiveSalePrice != 0 &&
+            effectiveSalePrice &&
+            effectiveFinalPrice && (
+              <del className="text-gray-400 text-xs">
+                {formatPrice(effectiveFinalPrice)}
+              </del>
+            )}
         </div>
       </div>
     </div>
