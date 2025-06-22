@@ -11,6 +11,18 @@ const reviewSchema = new mongoose.Schema(
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String },
     createdAt: { type: Date, default: Date.now },
+    visible: {
+      type: Boolean,
+      default: true,
+    },
+    flagged: { type: Boolean, default: false },
+    replies: [
+      {
+        content: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        admin: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // nếu muốn biết ai trả lời
+      },
+    ],
   },
   { timestamps: true }
 );
