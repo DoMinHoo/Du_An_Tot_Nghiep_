@@ -17,6 +17,7 @@ const Header: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const [openUserDropdown, setOpenUserDropdown] = useState(false);
   let timeout: ReturnType<typeof setTimeout>;
 
   useEffect(() => {
@@ -80,24 +81,45 @@ const Header: React.FC = () => {
 
         {/* User Info */}
         <div className="flex items-center gap-4 text-sm text-gray-600">
-          {user ? (
-            <>
-              <span className="flex items-center gap-1">
-                <FaUser className="text-lg" /> {user.name}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-red-600 hover:underline text-sm"
-              >
-                Đăng xuất
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="flex items-center gap-1">
-              <FaUser className="text-lg" /> Đăng nhập / <Link to={"/signin"}>Đăng ký</Link>
-            </Link>
+         {user ? (
+  <div className="relative">
+    <button
+      onClick={() => setOpenUserDropdown(!openUserDropdown)}
+      className="flex items-center gap-1"
+    >
+      <FaUser className="text-lg" /> {user.name}
+      <IoIosArrowDown className="text-xs mt-1" />
+    </button>
 
-          )}
+    {openUserDropdown && (
+      <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+        <div
+          onClick={() => {
+            navigate("/order-history");
+            setOpenUserDropdown(false);
+          }}
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+        >
+          Lịch sử đơn hàng
+        </div>
+        <div
+          onClick={() => {
+            handleLogout();
+            setOpenUserDropdown(false);
+          }}
+          className="px-4 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
+        >
+          Đăng xuất
+        </div>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="flex items-center gap-1">
+    <FaUser className="text-lg" />
+    <Link to="/login">Đăng nhập</Link> / <Link to="/signin">Đăng ký</Link>
+  </div>
+)}
           <Link to="/account" className="hidden md:inline">Tài khoản của tôi</Link>
           <Link to="/cart" className="flex items-center gap-1">
             <FaShoppingCart className="text-lg" /> Giỏ hàng
