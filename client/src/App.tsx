@@ -11,6 +11,7 @@ import SetUser from './SetUser';
 import CartPage from './Pages/Cart/CartPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import BannerSlider from './Pages/Banner';
+import OrderHistoryPage from './Pages/OrderHistoryPage';
 
 
 function App() {
@@ -49,11 +50,13 @@ function App() {
         />
 
         <Route path="/checkout" element={<CheckoutPage />} />
-        
+       <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/set-user" element={<SetUser />} />
+
+
     </Routes>
   );
 }
