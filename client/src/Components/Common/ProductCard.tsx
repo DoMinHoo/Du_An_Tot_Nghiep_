@@ -17,37 +17,53 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasVariations, setHasVariations] = useState<boolean | null>(null);
 
-  // Sử dụng useEffect để lấy biến thể mặc định
+  // Kiểm tra sản phẩm có biến thể hay không
   useEffect(() => {
     let isMounted = true;
-    const fetchDefaultVariation = async () => {
+
+    const checkVariations = async () => {
       try {
         setLoading(true);
+
+        // Kiểm tra ID sản phẩm hợp lệ
+        if (!product._id || !/^[0-9a-fA-F]{24}$/.test(product._id)) {
+          if (isMounted) {
+            setHasVariations(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Gọi API fetchVariations
         const variations = await fetchVariations(product._id);
-        // Kiểm tra xem variations có phải mảng và có phần tử không
-        if (isMounted && Array.isArray(variations) && variations.length > 0) {
-          setVariation(variations[0]);
-        } else if (isMounted) {
-          setVariation(null); // Không có biến thể
+
+        if (isMounted) {
+          if (Array.isArray(variations) && variations.length > 0) {
+            setVariation(variations[0]);
+            setHasVariations(true);
+          } else {
+            setVariation(null);
+            setHasVariations(false);
+          }
+          setLoading(false);
         }
       } catch {
         if (isMounted) {
-          setVariation(null); // Lỗi API, không hiển thị
-        }
-      } finally {
-        if (isMounted) {
+          setVariation(null);
+          setHasVariations(false);
           setLoading(false);
         }
       }
     };
 
-    // Kiểm tra ID sản phẩm hợp lệ (ObjectId MongoDB)
+    // Chỉ gọi API nếu sản phẩm có ID hợp lệ
     if (product._id && /^[0-9a-fA-F]{24}$/.test(product._id)) {
-      fetchDefaultVariation();
+      checkVariations();
     } else {
+      setHasVariations(false);
       setLoading(false);
-      setVariation(null); // ID không hợp lệ, không hiển thị
     }
 
     return () => {
@@ -68,23 +84,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     );
   }
 
-  // Nếu không có biến thể hoặc dữ liệu sản phẩm không hợp lệ, không hiển thị gì
-  if (
-    !variation ||
-    !product._id ||
-    !product.name ||
-    !Array.isArray(product.image)
-  ) {
+  // Nếu dữ liệu sản phẩm không hợp lệ, không hiển thị gì
+  if (!product._id || !product.name || !Array.isArray(product.image)) {
     return null;
   }
 
-  // Kiểm tra giá hợp lệ từ biến thể
-  const effectiveSalePrice = isValidPrice(variation.salePrice)
-    ? variation.salePrice
-    : null;
-  const effectiveFinalPrice = isValidPrice(variation.finalPrice)
-    ? variation.finalPrice
-    : null;
+  // Nếu sản phẩm không có biến thể, sử dụng giá từ product
+  let effectiveSalePrice = null;
+  let effectiveFinalPrice = null;
+
+  if (hasVariations && variation) {
+    effectiveSalePrice = isValidPrice(variation.salePrice)
+      ? variation.salePrice
+      : null;
+    effectiveFinalPrice = isValidPrice(variation.finalPrice)
+      ? variation.finalPrice
+      : null;
+  } else {
+    effectiveSalePrice = isValidPrice(product.salePrice)
+      ? product.salePrice
+      : null;
+    effectiveFinalPrice = isValidPrice(product.finalPrice)
+      ? product.finalPrice
+      : null;
+  }
 
   // Nếu không có giá hợp lệ, không hiển thị
   if (!effectiveSalePrice && !effectiveFinalPrice) {

@@ -40,3 +40,9 @@
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 824d70a9-44fe-44c1-9355-747c34c4f60b sang userId: 68562bfbe1a9f8d220a466b4","timestamp":"2025-06-21 11:12:27"}
 {"level":"info","message":"Tạo giỏ hàng mới cho userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 11:17:18"}
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: ef7be56b-277d-4b29-97e9-8f433263dab6 sang userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 11:17:18"}
+{"level":"info","message":"Tạo giỏ hàng mới cho userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 12:51:23"}
+{"level":"info","message":"Hợp nhất 2 mặt hàng thành công từ guestId: f3bf8bda-ac65-40ae-8a9b-54090b7ae81b sang userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-06-21 12:51:23"}
+{"level":"info","message":"Tạo giỏ hàng mới cho userId: 68563aade498442d7c09fe11","timestamp":"2025-06-21 12:51:59"}
+{"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 940c6403-7f42-40f8-bfea-0c7c5cb77751 sang userId: 68563aade498442d7c09fe11","timestamp":"2025-06-21 12:51:59"}
+{"level":"info","message":"Tạo giỏ hàng mới cho userId: 68562bfbe1a9f8d220a466b4","timestamp":"2025-06-21 12:52:51"}
+{"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 443792d4-f010-4923-aa60-cecf1474022f sang userId: 68562bfbe1a9f8d220a466b4","timestamp":"2025-06-21 12:52:51"}
