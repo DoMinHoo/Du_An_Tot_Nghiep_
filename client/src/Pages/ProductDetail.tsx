@@ -186,8 +186,8 @@ console.log("➡️ comment:", comment);
         variations[0].colorImageUrl
           ? getImageUrl(variations[0].colorImageUrl)
           : product?.image?.[0]
-          ? getImageUrl(product.image[0])
-          : getImageUrl()
+            ? getImageUrl(product.image[0])
+            : getImageUrl()
       );
     } else if (product && !selectedVariation) {
       setMainImage(
@@ -205,8 +205,8 @@ console.log("➡️ comment:", comment);
       variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product?.image?.[0]
-        ? getImageUrl(product.image[0])
-        : getImageUrl()
+          ? getImageUrl(product.image[0])
+          : getImageUrl()
     );
     setQuantity('1');
   };
@@ -365,11 +365,10 @@ console.log("➡️ comment:", comment);
                 key={idx}
                 src={getImageUrl(src)}
                 onClick={() => setMainImage(getImageUrl(src))}
-                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${
-                  mainImage === getImageUrl(src)
-                    ? 'border-blue-500'
-                    : 'border-gray-300'
-                }`}
+                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${mainImage === getImageUrl(src)
+                  ? 'border-blue-500'
+                  : 'border-gray-300'
+                  }`}
                 loading="lazy"
                 alt={`Thumbnail ${idx + 1}`}
               />
@@ -435,11 +434,10 @@ console.log("➡️ comment:", comment);
                   <button
                     key={variation._id}
                     onClick={() => handleVariationSelect(variation)}
-                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
-                      selectedVariation?._id === variation._id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                    }`}
+                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${selectedVariation?._id === variation._id
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                      }`}
                   >
                     {variation.dimensions}
                   </button>
@@ -456,7 +454,9 @@ console.log("➡️ comment:", comment);
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
+
               {selectedVariation?.material?.name ?? 'Không xác định'}
+
             </p>
             <p>
               <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
@@ -534,13 +534,13 @@ console.log("➡️ comment:", comment);
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-semibold pt-1 ${
-                (details.stockQuantity || 0) > 0
-                  ? 'text-green-600'
-                  : 'text-red-600'
-              }`}
+              className={`text-sm font-semibold pt-1 ${(details.stockQuantity || 0) > 0
+                ? 'text-green-600'
+                : 'text-red-600'
+                }`}
             >
-              {details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+              {typeof details.stockQuantity === 'number' && details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+
             </p>
           </div>
         </div>

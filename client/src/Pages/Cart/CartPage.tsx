@@ -13,8 +13,11 @@ import CartItemComponent from './CartItem';
 import CartSummary from './CartSummary';
 import type { Cart } from '../../types/Cart';
 
+import { useNavigate } from 'react-router-dom';
+
 const CartPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = React.useState<string[]>([]);
 
   const token = localStorage.getItem('token') || undefined;
@@ -156,8 +159,14 @@ const CartPage: React.FC = () => {
       });
       return;
     }
-    toast.info('Chức năng thanh toán đang được phát triển!', {
-      autoClose: 1000,
+
+    navigate('/checkout', {
+      state: {
+        selectedItems: selectedItems,
+        cartItems: cart.items,
+        totalPrice: totalPrice,
+      },
+
     });
   };
 

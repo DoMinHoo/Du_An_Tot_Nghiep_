@@ -99,6 +99,15 @@ exports.login = async (req, res) => {
                 message: 'Email hoặc mật khẩu không đúng',
             });
         }
+// Kiểm tra trạng thái người dùng
+
+
+if (user.status === 'banned') {
+    return res.status(403).json({
+        success: false,
+        message: 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.',
+    });
+}
 
         // Kiểm tra vai trò (admin hoặc client)
         const roleName = user.roleId?.name?.trim().toLowerCase();
