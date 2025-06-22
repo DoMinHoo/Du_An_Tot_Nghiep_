@@ -12,6 +12,7 @@ import {
 import CartItemComponent from './CartItem';
 import CartSummary from './CartSummary';
 import type { Cart } from '../../types/Cart';
+
 import { useNavigate } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
@@ -158,12 +159,14 @@ const CartPage: React.FC = () => {
       });
       return;
     }
+
     navigate('/checkout', {
       state: {
         selectedItems: selectedItems,
         cartItems: cart.items,
         totalPrice: totalPrice,
       },
+
     });
   };
 
