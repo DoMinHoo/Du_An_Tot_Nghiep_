@@ -27,14 +27,13 @@ const statusText: Record<string, string> = {
   canceled: "Đã hủy",
 };
 
-// Xác định các trạng thái kế tiếp hợp lệ
 const getNextAvailableStatuses = (currentStatus: string): string[] => {
   const transitions: Record<string, string[]> = {
     pending: ["confirmed", "canceled"],
     confirmed: ["shipping", "canceled"],
     shipping: ["completed", "canceled"],
-    completed: [], // Không thay đổi được nữa
-    canceled: [], // Không thay đổi được nữa
+    completed: [],
+    canceled: [],
   };
   return transitions[currentStatus] || [];
 };
@@ -92,18 +91,23 @@ const OrderDetail: React.FC = () => {
   }
 
   const availableStatuses = getNextAvailableStatuses(order.status);
+  const shipping = order.shippingAddress || {};
 
   return (
     <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
       <Title level={3}>Chi tiết đơn hàng #{order.orderCode}</Title>
       <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
         <Descriptions.Item label="Tên khách hàng">
-          {order.customerName}
+          {shipping.fullName || "N/A"}
         </Descriptions.Item>
-        <Descriptions.Item label="Email">{order.email || "N/A"}</Descriptions.Item>
-        <Descriptions.Item label="Số điện thoại">{order.phone || "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Email">
+          {shipping.email || "N/A"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">
+          {shipping.phone || "N/A"}
+        </Descriptions.Item>
         <Descriptions.Item label="Địa chỉ giao hàng">
-          {order.shippingAddress?.street}, {order.shippingAddress?.city}
+          {`${shipping.addressLine || ""}, ${shipping.street || ""}, ${shipping.ward || ""}, ${shipping.district || ""}, ${shipping.province || ""}`}
         </Descriptions.Item>
         <Descriptions.Item label="Trạng thái hiện tại">
           <Tag color="blue">{statusText[order.status] || order.status}</Tag>
@@ -120,11 +124,7 @@ const OrderDetail: React.FC = () => {
                   </Option>
                 ))}
               </Select>
-              <Button
-                type="primary"
-                onClick={handleUpdateStatus}
-                style={{ marginLeft: 12 }}
-              >
+              <Button type="primary" onClick={handleUpdateStatus} style={{ marginLeft: 12 }}>
                 Cập nhật
               </Button>
             </>
@@ -139,8 +139,7 @@ const OrderDetail: React.FC = () => {
         dataSource={order.items}
         renderItem={(item: any) => (
           <List.Item>
-            {item.name} x{item.quantity} –{" "}
-            {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
+            {item.name} x{item.quantity} – {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
           </List.Item>
         )}
       />
@@ -152,8 +151,7 @@ const OrderDetail: React.FC = () => {
         dataSource={order.statusHistory}
         renderItem={(entry: any) => (
           <List.Item>
-            <Text strong>{statusText[entry.status] || entry.status}</Text> –{" "}
-            {new Date(entry.changedAt).toLocaleString("vi-VN")}
+            <Text strong>{statusText[entry.status] || entry.status}</Text> – {new Date(entry.changedAt).toLocaleString("vi-VN")}
           </List.Item>
         )}
       />

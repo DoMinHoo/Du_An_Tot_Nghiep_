@@ -15,6 +15,18 @@ import { getOrders, deleteOrder } from "../../Services/orders.service";
 
 const { Content } = Layout;
 
+interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  email: string;
+  addressLine: string;
+  street: string;
+  province: string;
+  district: string;
+  ward: string;
+  country: string;
+}
+
 interface OrderItem {
   name: string;
   quantity: number;
@@ -29,10 +41,9 @@ interface StatusEntry {
 interface Order {
   _id: string;
   orderCode: string;
-  customerName: string;
   totalAmount: number;
   status: string;
-  shippingAddress: { street: string; city: string };
+  shippingAddress: ShippingAddress;
   createdAt: string;
   items: OrderItem[];
   statusHistory: StatusEntry[];
@@ -111,7 +122,7 @@ const OrderManager: React.FC = () => {
   const filteredOrders = orders.filter(
     (order) =>
       order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+      order.shippingAddress.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
@@ -127,8 +138,14 @@ const OrderManager: React.FC = () => {
     },
     {
       title: "Khách hàng",
-      dataIndex: "customerName",
-      key: "customerName",
+      key: "customer",
+      render: (_: any, record: Order) => (
+        <>
+          <div>{record.shippingAddress.fullName}</div>
+          <div>{record.shippingAddress.phone}</div>
+          <div>{record.shippingAddress.email}</div>
+        </>
+      ),
     },
     {
       title: "Tổng tiền",
@@ -151,9 +168,9 @@ const OrderManager: React.FC = () => {
       title: "Địa chỉ giao hàng",
       dataIndex: "shippingAddress",
       key: "shippingAddress",
-      render: (address: any) =>
-        address?.street && address?.city
-          ? `${address.street}, ${address.city}`
+      render: (address: ShippingAddress) =>
+        address?.addressLine && address?.street
+          ? `${address.addressLine}, ${address.street}, ${address.ward}, ${address.district}, ${address.province}`
           : "N/A",
     },
     {
