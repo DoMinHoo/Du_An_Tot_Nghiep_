@@ -12,13 +12,12 @@ export const getCart = async (
   guestId?: string
 ): Promise<CartResponse> => {
   try {
-    const response = await cartApi.get('/', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
-    });
-    if (response.data.data.guestId) {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
+    const response = await cartApi.get('/', { headers });
+    if (response.data.data.guestId && !token) {
       sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
@@ -44,17 +43,16 @@ export const addToCart = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.post(
       '/add',
       { variationId, quantity },
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          'X-Guest-Id': guestId || undefined,
-        },
-      }
+      { headers }
     );
-    if (response.data.data.guestId) {
+    if (response.data.data.guestId && !token) {
       sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
@@ -82,17 +80,16 @@ export const updateCartItem = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.put(
       '/update',
       { variationId, quantity },
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          'X-Guest-Id': guestId || undefined,
-        },
-      }
+      { headers }
     );
-    if (response.data.data.guestId) {
+    if (response.data.data.guestId && !token) {
       sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
@@ -116,13 +113,14 @@ export const removeCartItem = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.delete(`/remove/${variationId}`, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
+      headers,
     });
-    if (response.data.data?.guestId) {
+    if (response.data.data?.guestId && !token) {
       sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
@@ -148,11 +146,12 @@ export const deleteMultipleCartItems = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.delete('/remove-multiple', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
+      headers,
       data: { variationIds },
     });
     if (!response.data.data || !response.data.data.cart) {
@@ -174,12 +173,11 @@ export const clearCart = async (
   guestId?: string
 ): Promise<CartResponse> => {
   try {
-    const response = await cartApi.delete('/clear', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
-    });
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
+    const response = await cartApi.delete('/clear', { headers });
     sessionStorage.removeItem('guestId');
     return response.data;
   } catch (error) {

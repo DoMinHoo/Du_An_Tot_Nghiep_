@@ -1,3 +1,4 @@
+// Header.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaSearch, FaShoppingCart, FaUser } from 'react-icons/fa';
@@ -51,10 +52,12 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
+    // Xóa tất cả dữ liệu trong sessionStorage
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('guestId');
     setUser(null);
+    setOpenUserDropdown(false);
     navigate('/');
   };
 
@@ -105,10 +108,7 @@ const Header: React.FC = () => {
                     Lịch sử đơn hàng
                   </div>
                   <div
-                    onClick={() => {
-                      handleLogout();
-                      setOpenUserDropdown(false);
-                    }}
+                    onClick={handleLogout}
                     className="px-4 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
                   >
                     Đăng xuất

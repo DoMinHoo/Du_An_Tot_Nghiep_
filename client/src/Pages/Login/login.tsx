@@ -1,3 +1,4 @@
+// Login.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -70,8 +71,13 @@ const Login: React.FC = () => {
         throw new Error('Thông tin đăng nhập không hợp lệ');
       }
 
+      // Lưu thông tin người dùng và token
       sessionStorage.setItem('currentUser', JSON.stringify(user));
       sessionStorage.setItem('token', token);
+
+      // Xóa guestId sau khi đăng nhập thành công
+      sessionStorage.removeItem('guestId');
+
       logger.info(`Đăng nhập thành công cho userId: ${user._id}`);
 
       if (guestId) {
@@ -111,8 +117,6 @@ const Login: React.FC = () => {
             position: 'top-right',
             autoClose: 3000,
           });
-        } finally {
-          sessionStorage.removeItem('guestId');
         }
       }
 

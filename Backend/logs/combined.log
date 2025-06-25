@@ -69,3 +69,8 @@
 =======
 
 >>>>>>> 241479448b06ea2eb5262e7c1825aba2aa4a1e57
+{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-25 23:37:32"}
+{"level":"warn","message":"Bỏ qua biến thể không hợp lệ: 6857e46182e0a1c4037ceb5f","timestamp":"2025-06-25 23:41:39"}
+{"level":"info","message":"Hợp nhất 0 mặt hàng thành công từ guestId: 1d9a1656-b320-444a-83d0-7dae0905d0f3 sang userId: 68563aade498442d7c09fe11","timestamp":"2025-06-25 23:41:39"}
+{"level":"warn","message":"Bỏ qua biến thể không hợp lệ: 6857e46182e0a1c4037ceb5f","timestamp":"2025-06-25 23:42:12"}
+{"level":"info","message":"Hợp nhất 0 mặt hàng thành công từ guestId: 09cac27b-055f-47b7-bc85-b9210538b127 sang userId: 68563aade498442d7c09fe11","timestamp":"2025-06-25 23:42:12"}
