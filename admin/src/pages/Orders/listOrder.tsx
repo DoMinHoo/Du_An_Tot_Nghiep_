@@ -9,6 +9,7 @@ import {
   message,
   Spin,
   Tag,
+  Tooltip,
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getOrders, deleteOrder } from "../../Services/orders.service";
@@ -36,6 +37,7 @@ interface OrderItem {
 interface StatusEntry {
   status: string;
   changedAt: string;
+  note?: string;
 }
 
 interface Order {
@@ -158,11 +160,22 @@ const OrderManager: React.FC = () => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (status: string) => (
-        <Tag color={statusColor[status] || "default"}>
-          {statusText[status] || status}
-        </Tag>
-      ),
+      render: (status: string, record: Order) => {
+        const reason =
+          status === "canceled"
+            ? record.statusHistory?.find((s) => s.status === "canceled")?.note
+            : null;
+        const tag = (
+          <Tag color={statusColor[status] || "default"}>
+            {statusText[status] || status}
+          </Tag>
+        );
+        return status === "canceled" && reason ? (
+          <Tooltip title={`Lý do huỷ: ${reason}`}>{tag}</Tooltip>
+        ) : (
+          tag
+        );
+      },
     },
     {
       title: "Địa chỉ giao hàng",

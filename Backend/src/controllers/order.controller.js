@@ -10,6 +10,8 @@ const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
 const User = require('../models/user.model');
 
+
+
 // Tạo mã đơn hàng ngẫu nhiên
 const generateOrderCode = () => {
     return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -384,8 +386,13 @@ exports.updateOrder = async (req, res) => {
                 }
             }
             // Cập nhật riêng status + statusHistory, tránh validate toàn bộ schema
+            const updateData = {
+                status,
+                ...(status === 'canceled' && note ? { cancellationReason: note } : {})
+            };
+
             await Order.findByIdAndUpdate(id, {
-                $set: { status },
+                $set: updateData,
                 $push: {
                     statusHistory: {
                         status,
@@ -394,6 +401,7 @@ exports.updateOrder = async (req, res) => {
                     }
                 }
             });
+
             return res.status(200).json({
                 success: true,
                 message: 'Cập nhật đơn hàng thành công',
