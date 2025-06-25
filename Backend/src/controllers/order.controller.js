@@ -338,12 +338,6 @@ exports.updateOrder = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, note } = req.body;
-        const userIdFromToken = req.user.userId;
-        const userRole = req.user.role;
-
-        if (!userRole || !userIdFromToken) {
-            return res.status(401).json({ success: false, message: 'Token không hợp lệ hoặc thiếu thông tin quyền truy cập' });
-        }
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
@@ -352,16 +346,6 @@ exports.updateOrder = async (req, res) => {
         const order = await Order.findById(id).populate('userId');
         if (!order) {
             return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
-        }
-
-        // Kiểm tra quyền truy cập
-        const isAdmin = userRole === 'admin'; // So sánh đúng với giá trị role từ token
-
-        if (!isAdmin && order.userId.toString() !== userIdFromToken) {
-            return res.status(403).json({
-                success: false,
-                message: 'Không có quyền cập nhật đơn hàng'
-            });
         }
 
         if (status && order.status !== status) {
@@ -385,6 +369,7 @@ exports.updateOrder = async (req, res) => {
                     }
                 }
             }
+
             // Cập nhật riêng status + statusHistory, tránh validate toàn bộ schema
             const updateData = {
                 status,
@@ -406,6 +391,11 @@ exports.updateOrder = async (req, res) => {
                 success: true,
                 message: 'Cập nhật đơn hàng thành công',
             });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Trạng thái đơn hàng không thay đổi hoặc không hợp lệ'
+            });
         }
 
     } catch (err) {
@@ -413,6 +403,7 @@ exports.updateOrder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
     }
 };
+
 
 // Xóa đơn hàng
 exports.deleteOrder = async (req, res) => {
