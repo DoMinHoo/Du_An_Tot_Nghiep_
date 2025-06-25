@@ -71,8 +71,8 @@ const ProductDetail: React.FC = () => {
   const [comment, setComment] = useState<string>('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
+  const token = sessionStorage.getItem('token') || undefined;
+  const guestId = sessionStorage.getItem('guestId') || undefined;
 
   const handleSubmitReview = async () => {
     // console.log("✅ Gửi đánh giá...");

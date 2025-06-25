@@ -3,14 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-// Logger cho client-side
 const logger = {
   info: (message: string) => console.info(message),
   warn: (message: string) => console.warn(message),
   error: (message: string, error: any) => console.error(message, error),
 };
-
 
 interface LoginFormValues {
   email: string;
@@ -29,11 +26,10 @@ const Login: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null); // Xóa lỗi khi người dùng nhập lại
+    setError(null);
   };
 
   const handleLogin = async () => {
-    // Kiểm tra đầu vào
     if (!formData.email || !formData.password) {
       setError('Vui lòng nhập email và mật khẩu');
       toast.error('Vui lòng nhập email và mật khẩu', {
@@ -47,10 +43,8 @@ const Login: React.FC = () => {
     setError(null);
 
     try {
-      // Lấy guestId từ localStorage
-      const guestId = localStorage.getItem('guestId') || '';
+      const guestId = sessionStorage.getItem('guestId') || '';
 
-      // Gửi yêu cầu đăng nhập
       const loginResponse = await fetch(
         'http://localhost:5000/api/auth/login',
         {
@@ -67,7 +61,7 @@ const Login: React.FC = () => {
       );
 
       const loginData = await loginResponse.json();
-      if (!loginResponse.ok) {
+      if (!loginResponse.ok || !loginData.success) {
         throw new Error(loginData.message || 'Đăng nhập thất bại');
       }
 
@@ -76,12 +70,10 @@ const Login: React.FC = () => {
         throw new Error('Thông tin đăng nhập không hợp lệ');
       }
 
-      // Lưu thông tin người dùng và token
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('token', token);
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem('token', token);
       logger.info(`Đăng nhập thành công cho userId: ${user._id}`);
 
-      // Hợp nhất giỏ hàng nếu có guestId
       if (guestId) {
         try {
           const mergeResponse = await fetch(
@@ -98,21 +90,13 @@ const Login: React.FC = () => {
 
           const cartResponse = await mergeResponse.json();
           if (!cartResponse.success) {
-            logger.warn(
-              `Hợp nhất giỏ hàng thất bại cho userId ${user._id}, guestId ${guestId}: ${cartResponse.message}`
-            );
-            toast.warn(
-              cartResponse.message ||
-                'Không thể hợp nhất giỏ hàng, sử dụng giỏ hàng người dùng',
-              {
-                position: 'top-right',
-                autoClose: 3000,
-              }
-            );
+            logger.warn(`Hợp nhất giỏ hàng thất bại: ${cartResponse.message}`);
+            toast.warn(cartResponse.message || 'Không thể hợp nhất giỏ hàng', {
+              position: 'top-right',
+              autoClose: 3000,
+            });
           } else {
-            logger.info(
-              `Hợp nhất giỏ hàng thành công cho userId ${user._id}, guestId ${guestId}`
-            );
+            logger.info(`Hợp nhất giỏ hàng thành công cho userId ${user._id}`);
             toast.success(
               cartResponse.message || 'Hợp nhất giỏ hàng thành công',
               {
@@ -122,31 +106,25 @@ const Login: React.FC = () => {
             );
           }
         } catch (error: any) {
-          logger.error(
-            `Lỗi hợp nhất giỏ hàng cho userId ${user._id}, guestId ${guestId}`,
-            error
-          );
-          toast.warn('Lỗi khi hợp nhất giỏ hàng, sử dụng giỏ hàng người dùng', {
+          logger.error(`Lỗi hợp nhất giỏ hàng: ${error.message}`, error);
+          toast.warn('Lỗi khi hợp nhất giỏ hàng', {
             position: 'top-right',
             autoClose: 3000,
           });
         } finally {
-          // Xóa guestId sau khi hợp nhất
-          localStorage.removeItem('guestId');
+          sessionStorage.removeItem('guestId');
         }
       }
 
-      // Hiển thị thông báo đăng nhập thành công
       toast.success('Đăng nhập thành công!', {
         position: 'top-right',
         autoClose: 1500,
       });
 
-      // Điều hướng dựa trên vai trò
       const role = user?.role?.trim().toLowerCase();
       setTimeout(() => {
         if (role === 'admin') {
-        window.location.href = 'http://localhost:5174/admin/products'
+          navigate('/admin/products');
         } else {
           navigate('/');
         }
@@ -155,10 +133,7 @@ const Login: React.FC = () => {
       const errorMessage =
         err.message || 'Đăng nhập thất bại. Vui lòng thử lại!';
       setError(errorMessage);
-      logger.error(
-        `Lỗi đăng nhập cho email ${formData.email}: ${errorMessage}`,
-        err
-      );
+      logger.error(`Lỗi đăng nhập: ${errorMessage}`, err);
       toast.error(errorMessage, {
         position: 'top-right',
         autoClose: 3000,
