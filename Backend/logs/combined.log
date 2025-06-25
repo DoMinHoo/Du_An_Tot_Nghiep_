@@ -57,3 +57,4 @@
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 59910ecb-2b92-4f6a-b10d-752cd0d74635 sang userId: 685613015c51f91eeac98b99","timestamp":"2025-06-22 16:35:29"}
 
 >>>>>>> 3bb82cccbf0dee605be227bcd5e655c36bdecb13
+{"level":"info","message":"Không tìm thấy giỏ hàng khách với guestId: dec750ee-efe9-4b5d-be6e-9bba8b8920db hoặc giỏ hàng rỗng","timestamp":"2025-06-25 10:11:04"}
