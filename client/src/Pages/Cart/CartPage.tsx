@@ -12,7 +12,6 @@ import {
 import CartItemComponent from './CartItem';
 import CartSummary from './CartSummary';
 import type { Cart } from '../../types/Cart';
-
 import { useNavigate } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
@@ -123,6 +122,24 @@ const CartPage: React.FC = () => {
     },
   });
 
+  // Xử lý chọn hoặc bỏ chọn tất cả sản phẩm
+  const handleSelectAll = () => {
+    if (!cart?.items.length) {
+      toast.warn('Giỏ hàng đang trống, không có sản phẩm để chọn!', {
+        autoClose: 1000,
+      });
+      return;
+    }
+
+    if (selectedItems.length === cart?.items.length) {
+      setSelectedItems([]);
+    } else {
+      const allVariationIds =
+        cart?.items.map((item) => item.variationId._id) || [];
+      setSelectedItems(allVariationIds);
+    }
+  };
+
   // Xử lý chọn/xóa chọn sản phẩm
   const toggleSelectItem = (variationId: string) => {
     setSelectedItems((prev) =>
@@ -168,7 +185,6 @@ const CartPage: React.FC = () => {
         cartItems: cart.items,
         totalPrice: selectedTotalPrice,
       },
-
     });
   };
 
@@ -216,12 +232,12 @@ const CartPage: React.FC = () => {
     );
   }
 
-  // Trường hợp đang tải dữ liệu
+  // Trường hợp đang tải933 dữ liệu
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-2 py-4 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class SIX="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-3">
             {Array(3)
               .fill(0)
@@ -295,7 +311,19 @@ const CartPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-md">
-            <span>Có {cart?.items.length || 0} sản phẩm trong giỏ hàng</span>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={
+                  !!cart?.items && cart.items.length > 0 &&
+                  selectedItems.length === cart.items.length
+                }
+                onChange={handleSelectAll}
+                className="mr-2"
+                disabled={!cart?.items.length}
+              />
+              <span>Có {cart?.items.length || 0} sản phẩm trong giỏ hàng</span>
+            </div>
             <button
               onClick={handleDeleteSelected}
               disabled={selectedItems.length === 0 || !cart?.items.length}
