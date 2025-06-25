@@ -42,6 +42,14 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Chất liệu không tồn tại' });
     }
 
+    const existingVariation = await ProductVariation.findOne({
+      productId,
+      material: body.material,
+      dimensions: body.dimensions,
+    });
+    if (existingVariation) {
+      return res.status(400).json({ success: false, message: 'Biến thể này đã tồn tại (cùng chất liệu và kích thước)' });
+    }
     // 5. Xử lý hình ảnh
     const uploadedImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
