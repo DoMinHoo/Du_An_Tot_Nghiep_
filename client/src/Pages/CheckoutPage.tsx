@@ -6,10 +6,16 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
+import { getAllPromotions } from '../services/apiPromotion.service';
 
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
+  const [finalAmount, setFinalAmount] = useState<number | null>(null);
+  const { data: promotionList } = useQuery({
+    queryKey: ['promotions'],
+    queryFn: getAllPromotions,
+});
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -321,9 +327,80 @@ const CheckoutPage: React.FC = () => {
             placeholder="Mã giảm giá..."
             className="w-full border rounded px-4 py-2"
             value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-          />
-          <button className="w-full bg-gray-200 py-2 rounded">Sử dụng</button>
+            onChange={(e) => {
+                setCouponCode(e.target.value);
+
+                // Khi xóa hết ô input, tự trả lại giá ban đầu
+                if (e.target.value.trim() === "") {
+                    setFinalAmount(null);
+                    toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
+                }
+            }}
+        />
+
+        <button
+            className="w-full bg-gray-200 py-2 rounded mt-2"
+            onClick={async () => {
+                if (!couponCode.trim()) {
+                    toast.error("Vui lòng nhập mã giảm giá");
+                    return;
+                }
+
+                try {
+                    const res = await fetch("http://localhost:5000/api/promotions/apply", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            code: couponCode.trim(),
+                            originalPrice: Number(totalPrice),
+                        }),
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        toast.error(data.message || "Áp mã thất bại");
+                        setFinalAmount(null);
+                        return;
+                    }
+
+                    toast.success(data.message || "Áp dụng mã thành công!");
+                    setFinalAmount(data.finalPrice);
+                } catch {
+                    toast.error("Có lỗi khi áp dụng mã");
+                    setFinalAmount(null);
+                }
+            }}
+        >
+            Sử dụng
+        </button>
+
+        {/* Danh sách mã giảm giá có sẵn */}
+        {promotionList?.length > 0 && (
+            <div className="mt-4 border rounded p-3 space-y-2">
+                <p className="font-medium mb-2">Hoặc chọn nhanh mã giảm giá:</p>
+                {promotionList.map((promo: any) => (
+                    <button
+                        key={promo._id}
+                        className="w-full border px-3 py-2 rounded hover:bg-gray-100 text-left"
+                        onClick={() => setCouponCode(promo.code)}
+                    >
+                        <div className="flex justify-between">
+                            <span className="font-semibold">{promo.code}</span>
+                            <span className="text-gray-600 text-sm">
+                                {promo.discountType === "percentage"
+                                    ? `${promo.discountValue}%`
+                                    : `${promo.discountValue.toLocaleString()}₫`}
+                            </span>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        )}
+
+
+
+
 
           <hr />
           <div className="flex justify-between">
@@ -337,7 +414,7 @@ const CheckoutPage: React.FC = () => {
           <hr />
           <div className="flex justify-between font-semibold text-red-500 text-lg">
             <span>Tổng cộng:</span>
-            <span>{totalPrice.toLocaleString()}₫</span>
+            <span>{(finalAmount ?? totalPrice).toLocaleString()}₫</span>
           </div>
         </div>
       </div>
