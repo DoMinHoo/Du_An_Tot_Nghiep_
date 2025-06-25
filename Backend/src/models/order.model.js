@@ -85,7 +85,7 @@ const orderSchema = new mongoose.Schema({
   cancellationReason: {
     type: String,
     default: '',
-  },
+  }, // Lý do huy
   items: [itemSchema],
   statusHistory: [statusHistorySchema],
 }, {

@@ -5,3 +5,127 @@ a {
 .ant-menu-item a {
   color: inherit;
 }
+/* styles.css */
+
+/* Container styles */
+.container {
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+/* Heading styles */
+.heading-2xl {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.heading-3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Flex container for inputs and select */
+.input-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Input and select wrapper */
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Label styles */
+.input-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151; /* Màu xám đậm tương ứng với Tailwind text-gray-700 */
+}
+
+/* Input and select styles */
+.input,
+.select {
+  border: 1px solid #d1d5db;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Error text */
+.text-error {
+  color: #ef4444;
+  font-size: 14px;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Full-width column for charts */
+.grid-full {
+  grid-column: span 1;
+}
+
+@media (min-width: 768px) {
+  .grid-full {
+    grid-column: span 2;
+  }
+}
+
+/* Card styles */
+.card {
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+}
+
+/* Text styles */
+.text-xl {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/* List item for products/users */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* Product image */
+.product-image {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* List styles */
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+/* General container padding for components without shadow */
+.container-no-shadow {
+  padding: 16px;
+}
