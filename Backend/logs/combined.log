@@ -73,3 +73,4 @@
 {"level":"warn","message":"Bỏ qua biến thể không hợp lệ: 6857e46182e0a1c4037ceb5f","timestamp":"2025-06-25 23:42:12"}
 {"level":"info","message":"Hợp nhất 0 mặt hàng thành công từ guestId: 09cac27b-055f-47b7-bc85-b9210538b127 sang userId: 68563aade498442d7c09fe11","timestamp":"2025-06-25 23:42:12"}
 {"level":"info","message":"Hợp nhất 3 mặt hàng thành công từ guestId: d39c0b57-8d01-471b-b43a-82dfe17e0742 sang userId: 68563aade498442d7c09fe11","timestamp":"2025-06-25 23:47:34"}
+{"level":"info","message":"Hợp nhất 2 mặt hàng thành công từ guestId: 5e619d87-2479-43c7-811a-598efbf4ccf0 sang userId: 68482de9d33140e1b15ab182","timestamp":"2025-06-26 23:42:05"}
