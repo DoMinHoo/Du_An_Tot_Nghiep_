@@ -1,0 +1,34 @@
+    /* Định nghĩa kiểu dáng cho container chính */
+    .dashboard-container {
+        min-height: 100vh;
+        background-color: #f3f4f6;
+    }
+    
+    /* Định nghĩa kiểu dáng cho header */
+    .dashboard-header {
+        background-color: #2563eb;
+        color: white;
+        padding: 1rem;
+    }
+    
+    /* Định nghĩa kiểu dáng cho tiêu đề */
+    .dashboard-title {
+        font-size: 1.875rem; /* 30px */
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    /* Định nghĩa kiểu dáng cho main content */
+    .dashboard-main {
+        padding: 1rem;
+    }
+    
+    /* Đảm bảo các thành phần con (Stats components) có khoảng cách */
+    .dashboard-main > * {
+        margin-bottom: 1rem; /* Khoảng cách 16px giữa các thành phần */
+    }
+    
+    /* (Tùy chọn) Xóa margin-bottom cho thành phần cuối cùng */
+    .dashboard-main > *:last-child {
+        margin-bottom: 0;
+    }

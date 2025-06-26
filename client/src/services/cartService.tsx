@@ -12,15 +12,13 @@ export const getCart = async (
   guestId?: string
 ): Promise<CartResponse> => {
   try {
-    const response = await cartApi.get('/', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
-    });
-    // console.log('getCart response:', JSON.stringify(response.data, null, 2));
-    if (response.data.data.guestId) {
-      localStorage.setItem('guestId', response.data.data.guestId);
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
+    const response = await cartApi.get('/', { headers });
+    if (response.data.data.guestId && !token) {
+      sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
   } catch (error) {
@@ -30,26 +28,7 @@ export const getCart = async (
     throw error;
   }
 };
-export const deleteMultipleCartItems = async (
-  variationIds: string[],
-  token?: string,
-  guestId?: string
-) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...(guestId && { 'x-guest-id': guestId }),
-  };
 
-  const response = await cartApi.delete('/remove-multiple', {
-    data: { variationIds },
-    headers,
-  });
-  if (!response.data.data || !response.data.data.cart) {
-    localStorage.removeItem('guestId');
-  }
-  return response.data;
-};
 export const addToCart = async (
   variationId: string,
   quantity: number,
@@ -64,19 +43,17 @@ export const addToCart = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.post(
       '/add',
       { variationId, quantity },
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          'X-Guest-Id': guestId || undefined,
-        },
-      }
+      { headers }
     );
-    // console.log('addToCart response:', JSON.stringify(response.data, null, 2));
-    if (response.data.data.guestId) {
-      localStorage.setItem('guestId', response.data.data.guestId);
+    if (response.data.data.guestId && !token) {
+      sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
   } catch (error) {
@@ -103,22 +80,17 @@ export const updateCartItem = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.put(
       '/update',
       { variationId, quantity },
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          'X-Guest-Id': guestId || undefined,
-        },
-      }
+      { headers }
     );
-    // console.log(
-    //   'updateCartItem response:',
-    //   JSON.stringify(response.data, null, 2)
-    // );
-    if (response.data.data.guestId) {
-      localStorage.setItem('guestId', response.data.data.guestId);
+    if (response.data.data.guestId && !token) {
+      sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
   } catch (error) {
@@ -141,18 +113,15 @@ export const removeCartItem = async (
   }
 
   try {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
     const response = await cartApi.delete(`/remove/${variationId}`, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
+      headers,
     });
-    // console.log(
-    //   'removeCartItem response:',
-    //   JSON.stringify(response.data, null, 2)
-    // );
-    if (response.data.data?.guestId) {
-      localStorage.setItem('guestId', response.data.data.guestId);
+    if (response.data.data?.guestId && !token) {
+      sessionStorage.setItem('guestId', response.data.data.guestId);
     }
     return response.data;
   } catch (error) {
@@ -163,7 +132,7 @@ export const removeCartItem = async (
   }
 };
 
-export const removeSelectedCartItems = async (
+export const deleteMultipleCartItems = async (
   variationIds: string[],
   token?: string,
   guestId?: string
@@ -177,28 +146,22 @@ export const removeSelectedCartItems = async (
   }
 
   try {
-    const response = await cartApi.post(
-      '/remove-selected',
-      { variationIds },
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          'X-Guest-Id': guestId || undefined,
-        },
-      }
-    );
-    // console.log(
-    //   'removeSelectedCartItems response:',
-    //   JSON.stringify(response.data, null, 2)
-    // );
-    if (response.data.data?.guestId) {
-      localStorage.setItem('guestId', response.data.data.guestId);
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
+    const response = await cartApi.delete('/remove-multiple', {
+      headers,
+      data: { variationIds },
+    });
+    if (!response.data.data || !response.data.data.cart) {
+      sessionStorage.removeItem('guestId');
     }
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
-        error.response?.data.message || 'Lỗi khi xóa các sản phẩm đã chọn'
+        error.response?.data.message || 'Lỗi khi xóa các sản phẩm'
       );
     }
     throw error;
@@ -210,14 +173,12 @@ export const clearCart = async (
   guestId?: string
 ): Promise<CartResponse> => {
   try {
-    const response = await cartApi.delete('/clear', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-        'X-Guest-Id': guestId || undefined,
-      },
-    });
-    // console.log('clearCart response:', JSON.stringify(response.data, null, 2));
-    localStorage.removeItem('guestId');
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token && guestId) headers['X-Guest-Id'] = guestId;
+
+    const response = await cartApi.delete('/clear', { headers });
+    sessionStorage.removeItem('guestId');
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

@@ -6,11 +6,11 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
+import { getAllPromotions } from '../services/apiPromotion.service';
 
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -217,9 +217,6 @@ const CheckoutPage: React.FC = () => {
             <p>Giỏ hàng trống</p>
           )}
 
-          <input type="text" placeholder="Mã giảm giá..." className="w-full border rounded px-4 py-2" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-          <button className="w-full bg-gray-200 py-2 rounded">Sử dụng</button>
-
           <hr />
           <div className="flex justify-between">
             <span>Tạm tính:</span>
@@ -232,7 +229,7 @@ const CheckoutPage: React.FC = () => {
           <hr />
           <div className="flex justify-between font-semibold text-red-500 text-lg">
             <span>Tổng cộng:</span>
-            <span>{totalPrice.toLocaleString()}₫</span>
+            <span>{(finalAmount ?? totalPrice).toLocaleString()}₫</span>
           </div>
         </div>
       </div>
