@@ -4,3 +4,5 @@
 {"level":"error","message":"Lỗi đăng nhập: Cannot read properties of undefined (reading 'name')","stack":"TypeError: Cannot read properties of undefined (reading 'name')\n    at exports.login (C:\\Du-an-tot-nghiep3\\Du_An_Tot_Nghiep_\\Backend\\src\\controllers\\auth.controller.js:123:39)","timestamp":"2025-06-18 12:01:40"}
 {"level":"error","message":"Lỗi đăng nhập: Cannot read properties of undefined (reading 'name')","stack":"TypeError: Cannot read properties of undefined (reading 'name')\n    at exports.login (C:\\Du-an-tot-nghiep3\\Du_An_Tot_Nghiep_\\Backend\\src\\controllers\\auth.controller.js:123:39)","timestamp":"2025-06-18 12:01:59"}
 {"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-25 23:37:32"}
+{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-27 20:52:10"}
+{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-27 20:52:12"}

@@ -1,4 +1,4 @@
-import axios from '../utils/axiosInstance ';
+import axios from '../utils/axiosInstance';
 
 // ✅ Lấy tất cả review (Admin)
 export const getAllReviews = async () => {

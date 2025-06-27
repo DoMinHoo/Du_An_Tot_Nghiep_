@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const axiosInstance = axios.create({
+const axiosInstance= axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   // ❌ GỠ withCredentials nếu không dùng cookie
 });
@@ -8,7 +8,8 @@ const axiosInstance = axios.create({
 // ✅ Gắn token từ localStorage vào Authorization Header
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token =
+      sessionStorage.getItem('token') || localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -16,5 +17,4 @@ axiosInstance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 export default axiosInstance;
