@@ -13,7 +13,8 @@ import CheckoutPage from './Pages/CheckoutPage';
 import BannerSlider from './Pages/Banner';
 import OrderHistoryPage from './Pages/OrderHistoryPage';
 import UserAccount from './Pages/account';
-// import UserAccountEdit from './Pages/account';
+import ThankYouPage from './Pages/ThanhYouPage';
+
 
 
 function App() {
@@ -52,6 +53,7 @@ function App() {
         />
 
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path='/thank-you' element={<ThankYouPage />} />
        <Route path="/order-history" element={<OrderHistoryPage />} />
        <Route path="/account" element={<UserAccount />} />
       </Route>

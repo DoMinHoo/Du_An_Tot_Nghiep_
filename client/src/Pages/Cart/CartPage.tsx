@@ -20,8 +20,8 @@ const CartPage: React.FC = () => {
   const [selectedItems, setSelectedItems] = React.useState<string[]>([]);
 
   // Lấy token hoặc guestId từ localStorage
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
+  const token = sessionStorage.getItem('token') || undefined;
+  const guestId = sessionStorage.getItem('guestId') || undefined;
   const shouldFetchCart = !!token || !!guestId;
 
   // Query để lấy dữ liệu giỏ hàng
@@ -315,7 +315,8 @@ const CartPage: React.FC = () => {
               <input
                 type="checkbox"
                 checked={
-                  !!cart?.items && cart.items.length > 0 &&
+                  !!cart?.items &&
+                  cart.items.length > 0 &&
                   selectedItems.length === cart.items.length
                 }
                 onChange={handleSelectAll}
