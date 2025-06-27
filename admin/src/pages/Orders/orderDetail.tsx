@@ -21,17 +21,18 @@ const { Option } = Select;
 const statusText: Record<string, string> = {
   pending: "Chờ xác nhận",
   confirmed: "Đã xác nhận",
-  shipping: "Đang giao",
-  completed: "Đã giao",
-  canceled: "Đã hủy",
+  shipping: "Đang giao hàng",
+  completed: "Đã giao hàng",
+  canceled: "Đã hủy đơn",
 };
+
 
 const statusColor: Record<string, string> = {
   pending: "default",
   confirmed: "blue",
   shipping: "orange",
   completed: "green",
-  canceled: "red", // ✅ Màu đỏ cho trạng thái đã huỷ
+  canceled: "red",
 };
 
 const getNextAvailableStatuses = (currentStatus: string): string[] => {
@@ -124,12 +125,8 @@ const OrderDetail: React.FC = () => {
         <Descriptions.Item label="Tên khách hàng">
           {shipping.fullName || "N/A"}
         </Descriptions.Item>
-        <Descriptions.Item label="Email">
-          {shipping.email || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Số điện thoại">
-          {shipping.phone || "N/A"}
-        </Descriptions.Item>
+        <Descriptions.Item label="Email">{shipping.email || "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">{shipping.phone || "N/A"}</Descriptions.Item>
         <Descriptions.Item label="Địa chỉ giao hàng">
           {`${shipping.addressLine || ""}, ${shipping.street || ""}, ${shipping.ward || ""}, ${shipping.district || ""}, ${shipping.province || ""}`}
         </Descriptions.Item>
@@ -148,17 +145,19 @@ const OrderDetail: React.FC = () => {
             <Text type="secondary">Không thể cập nhật trạng thái</Text>
           ) : (
             <>
-              <Select
-                value={status}
-                onChange={handleStatusChange}
-                style={{ width: 200 }}
-              >
-                {availableStatuses.map((s) => (
-                  <Option key={s} value={s}>
-                    {statusText[s] || s}
-                  </Option>
-                ))}
-              </Select>
+             <Select
+  value={{ value: status, label: statusText[status] }}
+  onChange={(option) => handleStatusChange(option.value)}
+  style={{ width: 200 }}
+  labelInValue
+>
+  {availableStatuses.map((s) => (
+    <Option key={s} value={s}>
+      {statusText[s] || s}
+    </Option>
+  ))}
+</Select>
+
               {status === "canceled" && (
                 <Select
                   value={note}
@@ -166,28 +165,14 @@ const OrderDetail: React.FC = () => {
                   placeholder="Chọn lý do huỷ đơn hàng"
                   style={{ marginTop: 8, width: 400 }}
                 >
-                  <Option value="Khách hàng không xác nhận đơn">
-                    Khách hàng không xác nhận đơn
-                  </Option>
-                  <Option value="Thông tin giao hàng không hợp lệ">
-                    Thông tin giao hàng không hợp lệ
-                  </Option>
-                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
-                    Sản phẩm hết hàng hoặc ngừng kinh doanh
-                  </Option>
-                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
-                    Nghi ngờ gian lận hoặc giao dịch bất thường
-                  </Option>
-                  <Option value="Khách hàng yêu cầu huỷ đơn">
-                    Khách hàng yêu cầu huỷ đơn
-                  </Option>
+                  <Option value="Khách hàng không xác nhận đơn">Khách hàng không xác nhận đơn</Option>
+                  <Option value="Thông tin giao hàng không hợp lệ">Thông tin giao hàng không hợp lệ</Option>
+                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">Sản phẩm hết hàng hoặc ngừng kinh doanh</Option>
+                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">Nghi ngờ gian lận hoặc giao dịch bất thường</Option>
+                  <Option value="Khách hàng yêu cầu huỷ đơn">Khách hàng yêu cầu huỷ đơn</Option>
                 </Select>
               )}
-              <Button
-                type="primary"
-                onClick={handleUpdateStatus}
-                style={{ marginLeft: 12 }}
-              >
+              <Button type="primary" onClick={handleUpdateStatus} style={{ marginLeft: 12 }}>
                 Cập nhật
               </Button>
             </>
@@ -200,13 +185,52 @@ const OrderDetail: React.FC = () => {
       <List
         bordered
         dataSource={order.items}
-        renderItem={(item: any) => (
-          <List.Item>
-            {item.name} x{item.quantity} –{" "}
-            {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
-          </List.Item>
-        )}
+        renderItem={(item: any) => {
+          const productImage = Array.isArray(item.image) && item.image.length > 0
+            ? item.image[0]
+            : "/default-image.png";
+          return (
+            <List.Item style={{ padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                <div style={{ display: "flex", gap: 16 }}>
+                  <img
+                    src={productImage}
+                    alt={item.name}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      backgroundColor: "#f5f5f5",
+                    }}
+                  />
+                  <div>
+                    <div><strong>{item.name}</strong></div>
+                    <div>Số lượng: {item.quantity}</div>
+                    <div>Đơn giá: {item.salePrice?.toLocaleString("vi-VN")}₫</div>
+                  </div>
+                </div>
+                <div style={{ alignSelf: "center", textAlign: "right" }}>
+                  <strong>
+                    Tổng:{" "}
+                    {item.salePrice && item.quantity
+                      ? (item.salePrice * item.quantity).toLocaleString("vi-VN") + "₫"
+                      : "0₫"}
+                  </strong>
+                </div>
+              </div>
+            </List.Item>
+          );
+        }}
       />
+      <div style={{ marginTop: 16, textAlign: "right" }}>
+        <Text strong style={{ fontSize: 18 }}>
+          Tổng giá tiền:{" "}
+          <span style={{ color: "red" }}>
+            {order.totalAmount.toLocaleString("vi-VN")}₫
+          </span>
+        </Text>
+      </div>
 
       <Divider />
       <Title level={4}>Lịch sử trạng thái</Title>
