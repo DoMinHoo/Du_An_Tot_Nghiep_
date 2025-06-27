@@ -101,27 +101,28 @@ const OrderHistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="text-sm mb-4 space-y-1">
-                <p>
-                  <strong>Người nhận:</strong> {order.shippingAddress.fullName}
-                </p>
-                <p>
-                  <strong>SĐT:</strong> {order.shippingAddress.phone}
-                </p>
-                <p>
-                  <strong>Email:</strong> {order.userId?.email}
-                </p>
-                <p>
-                  <strong>Địa chỉ:</strong>{' '}
-                  {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}
-                </p>
-                <p>
-                  <strong>Thanh toán:</strong>{' '}
-                  {order.paymentMethod === 'cod'
-                    ? 'COD'
-                    : order.paymentMethod.toUpperCase()}
-                </p>
-              </div>
+            <div className="text-sm mb-4 space-y-1">
+  <p>
+    <strong>Người nhận:</strong> {order.shippingAddress.fullName}
+  </p>
+  <p>
+    <strong>SĐT:</strong> {order.shippingAddress.phone}
+  </p>
+  <p>
+    <strong>Email:</strong> {order.shippingAddress.email}
+  </p>
+  <p>
+    <strong>Địa chỉ:</strong>{' '}
+    {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}
+  </p>
+  <p>
+    <strong>Thanh toán:</strong>{' '}
+    {order.paymentMethod === 'cod'
+      ? 'COD'
+      : order.paymentMethod.toUpperCase()}
+  </p>
+</div>
+
 
               <div className="space-y-4">
                 {order.items.map((group: any) => (
