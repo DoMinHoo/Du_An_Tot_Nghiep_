@@ -59,3 +59,4 @@
 >>>>>>> 3bb82cccbf0dee605be227bcd5e655c36bdecb13
 {"level":"info","message":"Không tìm thấy giỏ hàng khách với guestId: dec750ee-efe9-4b5d-be6e-9bba8b8920db hoặc giỏ hàng rỗng","timestamp":"2025-06-25 10:11:04"}
 {"level":"info","message":"Giỏ hàng người dùng với userId: 68482de9d33140e1b15ab182 đã chứa sản phẩm, xóa guestCart: ede5a83d-e672-45ce-8951-662c0a95bd9c","timestamp":"2025-06-25 13:04:05"}
+{"level":"info","message":"Không tìm thấy giỏ hàng khách với guestId: 2a25cd75-be37-4d69-8d37-799ddd0fc1d8 hoặc giỏ hàng rỗng","timestamp":"2025-06-25 18:08:49"}

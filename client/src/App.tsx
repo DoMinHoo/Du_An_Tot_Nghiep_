@@ -12,6 +12,8 @@ import CartPage from './Pages/Cart/CartPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import BannerSlider from './Pages/Banner';
 import OrderHistoryPage from './Pages/OrderHistoryPage';
+// import UserAccount from './Pages/account';
+import UserAccountEdit from './Pages/account';
 
 
 function App() {
@@ -51,6 +53,7 @@ function App() {
 
         <Route path="/checkout" element={<CheckoutPage />} />
        <Route path="/order-history" element={<OrderHistoryPage />} />
+       <Route path="/account" element={<UserAccountEdit />} />
       </Route>
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
