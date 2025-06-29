@@ -83,3 +83,5 @@
 {"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: 56b9b406-512f-46a4-aa7d-e00775072153","timestamp":"2025-06-27 20:45:15"}
 {"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-27 20:52:10"}
 {"level":"error","message":"Lỗi addToCart:","timestamp":"2025-06-27 20:52:12"}
+{"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: caf13c58-c9e2-4341-a368-dd9bf076f097 sang userId: 6853e9cd4a1904a0dea13d4a","timestamp":"2025-06-29 17:07:51"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: e05426d4-f271-47db-98df-7acb1e2a2821","timestamp":"2025-06-29 17:08:59"}
