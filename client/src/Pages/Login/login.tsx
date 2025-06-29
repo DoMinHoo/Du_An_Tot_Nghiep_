@@ -70,7 +70,6 @@ const Login: React.FC = () => {
       if (!user || !token) {
         throw new Error('Thông tin đăng nhập không hợp lệ');
       }
-
       // Lưu thông tin người dùng và token
       sessionStorage.setItem('currentUser', JSON.stringify(user));
       sessionStorage.setItem('token', token);

@@ -20,13 +20,15 @@ const CheckoutPage: React.FC = () => {
   const [ward, setWard] = useState('');
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank' | 'zalopay' | 'momo'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<
+    'cod' | 'bank' | 'zalopay' | 'momo'
+  >('cod');
   const [couponCode, setCouponCode] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
+  const token = sessionStorage.getItem('token') || undefined;
+  const guestId = sessionStorage.getItem('guestId') || undefined;
 
   const passedState = location.state as {
     selectedItems?: string[];
@@ -63,13 +65,16 @@ const CheckoutPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ tên';
-    if (!phone.trim() || !/^\d{9,11}$/.test(phone)) newErrors.phone = 'Số điện thoại không hợp lệ';
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email không hợp lệ';
+    if (!phone.trim() || !/^\d{9,11}$/.test(phone))
+      newErrors.phone = 'Số điện thoại không hợp lệ';
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email))
+      newErrors.email = 'Email không hợp lệ';
     if (!province) newErrors.province = 'Vui lòng chọn tỉnh/thành';
     if (!district) newErrors.district = 'Vui lòng chọn quận/huyện';
     if (!ward) newErrors.ward = 'Vui lòng chọn phường/xã';
     if (!street.trim()) newErrors.street = 'Vui lòng nhập tên đường';
-    if (!detailAddress.trim()) newErrors.detailAddress = 'Vui lòng nhập địa chỉ chi tiết';
+    if (!detailAddress.trim())
+      newErrors.detailAddress = 'Vui lòng nhập địa chỉ chi tiết';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -108,58 +113,120 @@ const CheckoutPage: React.FC = () => {
 
       <div className="lg:w-2/3 pr-0 lg:pr-6 border-b lg:border-b-0 lg:border-r border-gray-200">
         <h1 className="text-2xl font-semibold mb-1">Nội thất LIENTO</h1>
-        <p className="text-sm text-gray-500 mb-4">Giỏ hàng / Thông tin giao hàng</p>
+        <p className="text-sm text-gray-500 mb-4">
+          Giỏ hàng / Thông tin giao hàng
+        </p>
 
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-2">Thông tin giao hàng</h2>
           <form className="space-y-4">
             <div>
-              <input type="text" placeholder="Nguyễn Văn A" className="w-full border rounded px-4 py-2" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-              {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+              <input
+                type="text"
+                placeholder="Nguyễn Văn A"
+                className="w-full border rounded px-4 py-2"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+              {errors.fullName && (
+                <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+              )}
             </div>
             <div>
-              <input type="text" placeholder="0123456789" className="w-full border rounded px-4 py-2" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              <input
+                type="text"
+                placeholder="0123456789"
+                className="w-full border rounded px-4 py-2"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+              )}
             </div>
             <div>
-              <input type="email" placeholder="Email" className="w-full border rounded px-4 py-2" value={email} onChange={(e) => setEmail(e.target.value)} />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full border rounded px-4 py-2"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div className="flex gap-4">
               <div className="w-1/3">
-                <select className="w-full border rounded px-4 py-2" value={province} onChange={(e) => setProvince(e.target.value)}>
+                <select
+                  className="w-full border rounded px-4 py-2"
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                >
                   <option value="">Chọn tỉnh/thành</option>
                   <option value="Hồ Chí Minh">Hồ Chí Minh</option>
                   <option value="Hà Nội">Hà Nội</option>
                 </select>
-                {errors.province && <p className="text-red-500 text-sm mt-1">{errors.province}</p>}
+                {errors.province && (
+                  <p className="text-red-500 text-sm mt-1">{errors.province}</p>
+                )}
               </div>
               <div className="w-1/3">
-                <select className="w-full border rounded px-4 py-2" value={district} onChange={(e) => setDistrict(e.target.value)}>
+                <select
+                  className="w-full border rounded px-4 py-2"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                >
                   <option value="">Chọn quận/huyện</option>
                   <option value="Quận 1">Quận 1</option>
                   <option value="Quận Bình Thạnh">Quận Bình Thạnh</option>
                 </select>
-                {errors.district && <p className="text-red-500 text-sm mt-1">{errors.district}</p>}
+                {errors.district && (
+                  <p className="text-red-500 text-sm mt-1">{errors.district}</p>
+                )}
               </div>
               <div className="w-1/3">
-                <select className="w-full border rounded px-4 py-2" value={ward} onChange={(e) => setWard(e.target.value)}>
+                <select
+                  className="w-full border rounded px-4 py-2"
+                  value={ward}
+                  onChange={(e) => setWard(e.target.value)}
+                >
                   <option value="">Chọn phường/xã</option>
                   <option value="Phường 1">Phường 1</option>
                   <option value="Phường 2">Phường 2</option>
                 </select>
-                {errors.ward && <p className="text-red-500 text-sm mt-1">{errors.ward}</p>}
+                {errors.ward && (
+                  <p className="text-red-500 text-sm mt-1">{errors.ward}</p>
+                )}
               </div>
             </div>
 
             <div>
-              <input type="text" placeholder="Tên đường" className="w-full border rounded px-4 py-2" value={street} onChange={(e) => setStreet(e.target.value)} />
-              {errors.street && <p className="text-red-500 text-sm mt-1">{errors.street}</p>}
+              <input
+                type="text"
+                placeholder="Tên đường"
+                className="w-full border rounded px-4 py-2"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+              />
+              {errors.street && (
+                <p className="text-red-500 text-sm mt-1">{errors.street}</p>
+              )}
             </div>
             <div>
-              <input type="text" placeholder="Địa chỉ chi tiết" className="w-full border rounded px-4 py-2" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} />
-              {errors.detailAddress && <p className="text-red-500 text-sm mt-1">{errors.detailAddress}</p>}
+              <input
+                type="text"
+                placeholder="Địa chỉ chi tiết"
+                className="w-full border rounded px-4 py-2"
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
+              />
+              {errors.detailAddress && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.detailAddress}
+                </p>
+              )}
             </div>
           </form>
         </div>
@@ -169,7 +236,14 @@ const CheckoutPage: React.FC = () => {
           <div className="space-y-3">
             {['cod', 'bank', 'zalopay', 'momo'].map((method) => (
               <label key={method} className="block">
-                <input type="radio" name="payment" value={method} checked={paymentMethod === method} onChange={(e) => setPaymentMethod(e.target.value as any)} className="mr-2" />
+                <input
+                  type="radio"
+                  name="payment"
+                  value={method}
+                  checked={paymentMethod === method}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  className="mr-2"
+                />
                 {method === 'bank' ? (
                   <span>
                     <strong>Thanh toán chuyển khoản qua ngân hàng</strong>
@@ -181,7 +255,12 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </span>
                 ) : (
-                  <>Thanh toán {method === 'cod' ? 'khi nhận hàng (COD)' : `qua ví ${method}`}</>
+                  <>
+                    Thanh toán{' '}
+                    {method === 'cod'
+                      ? 'khi nhận hàng (COD)'
+                      : `qua ví ${method}`}
+                  </>
                 )}
               </label>
             ))}
@@ -189,8 +268,15 @@ const CheckoutPage: React.FC = () => {
         </div>
 
         <div className="text-right space-x-2">
-          <button className="px-4 py-2 border rounded text-gray-600">Giỏ hàng</button>
-          <button onClick={handleSubmitOrder} className="px-4 py-2 bg-blue-600 text-white rounded">Hoàn tất đơn hàng</button>
+          <button className="px-4 py-2 border rounded text-gray-600">
+            Giỏ hàng
+          </button>
+          <button
+            onClick={handleSubmitOrder}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Hoàn tất đơn hàng
+          </button>
         </div>
       </div>
 
@@ -199,25 +285,51 @@ const CheckoutPage: React.FC = () => {
           {isLoading ? (
             <p>Đang tải giỏ hàng...</p>
           ) : cartItems.length ? (
-            cartItems.filter(item => selectedItems.length === 0 || selectedItems.includes(item.variationId._id)).map((item: any, index: number) => (
-              <div key={index} className="flex gap-4">
-                <img src={item.variationId.colorImageUrl} alt="item" className="w-20 h-20 object-cover" />
-                <div>
-                  <p className="font-medium">{item.variationId.name}</p>
-                  <p className="text-gray-500 text-sm">{item.variationId.color}</p>
-                  {item.variationId.finalPrice !== 0 && item.variationId.salePrice !== 0 && item.variationId.salePrice < item.variationId.finalPrice ? (
-                    <p className="font-semibold">{item.variationId.salePrice.toLocaleString()}₫ × {item.quantity}</p>
-                  ) : (
-                    <p className="font-semibold">{item.variationId.finalPrice.toLocaleString()}₫ × {item.quantity}</p>
-                  )}
+            cartItems
+              .filter(
+                (item) =>
+                  selectedItems.length === 0 ||
+                  selectedItems.includes(item.variationId._id)
+              )
+              .map((item: any, index: number) => (
+                <div key={index} className="flex gap-4">
+                  <img
+                    src={item.variationId.colorImageUrl}
+                    alt="item"
+                    className="w-20 h-20 object-cover"
+                  />
+                  <div>
+                    <p className="font-medium">{item.variationId.name}</p>
+                    <p className="text-gray-500 text-sm">
+                      {item.variationId.color}
+                    </p>
+                    {item.variationId.finalPrice !== 0 &&
+                    item.variationId.salePrice !== 0 &&
+                    item.variationId.salePrice < item.variationId.finalPrice ? (
+                      <p className="font-semibold">
+                        {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
+                        {item.quantity}
+                      </p>
+                    ) : (
+                      <p className="font-semibold">
+                        {item.variationId.finalPrice.toLocaleString()}₫ ×{' '}
+                        {item.quantity}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))
           ) : (
             <p>Giỏ hàng trống</p>
           )}
 
-          <input type="text" placeholder="Mã giảm giá..." className="w-full border rounded px-4 py-2" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+          <input
+            type="text"
+            placeholder="Mã giảm giá..."
+            className="w-full border rounded px-4 py-2"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+          />
           <button className="w-full bg-gray-200 py-2 rounded">Sử dụng</button>
 
           <hr />
