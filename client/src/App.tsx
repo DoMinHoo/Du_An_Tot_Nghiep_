@@ -14,7 +14,6 @@ import BannerSlider from './Pages/Banner';
 import OrderHistoryPage from './Pages/OrderHistoryPage';
 import UserAccount from './Pages/account';
 import ThankYouPage from './Pages/ThanhYouPage';
-import ReturnVnpayPage from './Pages/ReturnVnpayPage';
 
 
 
@@ -61,7 +60,6 @@ function App() {
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/set-user" element={<SetUser />} />
-      <Route path="/vnpay/result" element={<ReturnVnpayPage />} />
 
 
     </Routes>
