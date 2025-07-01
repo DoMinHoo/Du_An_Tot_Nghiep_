@@ -101,6 +101,22 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
+  const handleConfirmReceived = async (orderId: string) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/orders/${orderId}`,
+        { status: 'completed', note: 'Khách hàng xác nhận đã nhận hàng' },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      message.success('Xác nhận đã nhận hàng thành công');
+      fetchOrders();
+    } catch (err) {
+      message.error('Xác nhận thất bại');
+    }
+  };
+
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
@@ -228,6 +244,16 @@ const OrderHistoryPage: React.FC = () => {
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Huỷ đơn hàng
+                  </button>
+                </div>
+              )}
+              {order.status === 'shipping' && (
+                <div className="text-right mt-4">
+                  <button
+                    onClick={() => handleConfirmReceived(order._id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    Đã nhận hàng
                   </button>
                 </div>
               )}

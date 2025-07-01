@@ -152,7 +152,7 @@ async function handleReturnFromZalo(req, res) {
 
         if (status === "1") {
             order.paymentStatus = "completed";
-            order.status = "confirmed";
+            order.status = "shipping";
         } else {
             order.paymentStatus = "failed";
             order.status = "canceled";
