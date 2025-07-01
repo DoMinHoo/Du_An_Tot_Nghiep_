@@ -1,10 +1,11 @@
+// ProductDetail.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { fetchProduct, fetchVariations } from '../services/apiService';
-import { addToCart } from '../services/cartService'; // Loại bỏ updateCartItem
+import { addToCart } from '../services/cartService';
 import { formatPrice, isValidPrice } from '../utils/priceUtils';
 import { getImageUrl } from '../utils/imageUtils';
 import type { Product } from '../types/Product';
@@ -13,36 +14,30 @@ import { MdNavigateNext } from 'react-icons/md';
 import { createReview } from '../services/reviewService';
 import { useQuery } from '@tanstack/react-query';
 import { getReviewsByProduct } from '../services/reviewService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PriceAndStockDetails {
-  salePrice?: number;
-  originalPrice?: number;
-  displayPrice?: number;
+  salePrice: number;
+  originalPrice: number;
+  displayPrice: number;
   stockQuantity?: number;
   discountPercentage: number | null;
 }
-
-
-
-
 
 const getPriceAndStockDetails = (
   product: Product | undefined,
   selectedVariation: Variation | null
 ): PriceAndStockDetails => {
-  const salePrice = selectedVariation?.salePrice ?? undefined;
-  const originalPrice = selectedVariation?.finalPrice ?? undefined;
-  const displayPrice = salePrice !== undefined ? salePrice : originalPrice;
+  const salePrice = selectedVariation?.salePrice ?? 0;
+  const originalPrice = selectedVariation?.finalPrice ?? 0;
+  const displayPrice = salePrice !== 0 ? salePrice : originalPrice;
   const stockQuantity = selectedVariation?.stockQuantity;
 
   let discountPercentage: number | null = null;
   if (
     isValidPrice(salePrice) &&
     isValidPrice(originalPrice) &&
-    salePrice !== undefined &&
-    salePrice !== null &&
-    originalPrice !== undefined &&
-    originalPrice !== null &&
+    salePrice !== 0 &&
     salePrice < originalPrice
   ) {
     discountPercentage = Math.round(
@@ -67,60 +62,60 @@ const ProductDetail: React.FC = () => {
     null
   );
   const [mainImage, setMainImage] = useState<string>('');
-  const [quantity, setQuantity] = useState<string>('1'); // Thay number thành string
+  const [quantity, setQuantity] = useState<string>('1');
   const [isImageViewOpen, setIsImageViewOpen] = useState<boolean>(false);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(
     null
   );
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-
   const [rating, setRating] = useState<number>(0);
-const [comment, setComment] = useState<string>('');
-const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [comment, setComment] = useState<string>('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const token = sessionStorage.getItem('token') || undefined;
+  let guestId = sessionStorage.getItem('guestId') || undefined;
+
+  // Tạo guestId mới nếu chưa có và chưa đăng nhập
+  if (!token && !guestId) {
+    guestId = uuidv4();
+    sessionStorage.setItem('guestId', guestId);
+  }
 
   const handleSubmitReview = async () => {
-    console.log("✅ Gửi đánh giá...");
-    console.log("➡️ id:", id);
-console.log("➡️ rating:", rating);
-console.log("➡️ comment:", comment);
-  if (!token) {
-    toast.warning('Bạn cần đăng nhập để đánh giá!');
-    return;
-  }
+    if (!token) {
+      toast.warning('Bạn cần đăng nhập để đánh giá!');
+      return;
+    }
 
-  if (!rating || comment.trim() === '') {
-    toast.warning('Vui lòng nhập đầy đủ nội dung và đánh giá sao!');
-    return;
-  }
+    if (!rating || comment.trim() === '') {
+      toast.warning('Vui lòng nhập đầy đủ nội dung và đánh giá sao!');
+      return;
+    }
 
-  try {
-    setIsSubmittingReview(true);
-    await createReview({
-      product: id!,
-      rating,
-      comment,
-    });
-    toast.success('Gửi đánh giá thành công!');
-    setRating(0);
-    setComment('');
-    // Optional: load lại danh sách review nếu có
-  } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Lỗi khi gửi đánh giá');
-  } finally {
-    setIsSubmittingReview(false);
-  }
+    try {
+      setIsSubmittingReview(true);
+      await createReview({
+        product: id!,
+        rating,
+        comment,
+      });
+      toast.success('Gửi đánh giá thành công!');
+      setRating(0);
+      setComment('');
+      queryClient.invalidateQueries({ queryKey: ['reviews', id] });
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Lỗi khi gửi đánh giá');
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
-  
+
   const { data: reviews = [], refetch: refetchReviews } = useQuery({
     queryKey: ['reviews', id],
     queryFn: () => getReviewsByProduct(id!),
     enabled: !!id,
   });
-
-  // Lấy token và guestId từ localStorage
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
 
   if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
     return (
@@ -150,7 +145,9 @@ console.log("➡️ comment:", comment);
         onError: () => {
           toast.info(
             'Sản phẩm này không có biến thể hoặc lỗi khi tải biến thể',
-            { autoClose: 1000 }
+            {
+              autoClose: 1000,
+            }
           );
         },
       },
@@ -186,8 +183,8 @@ console.log("➡️ comment:", comment);
         variations[0].colorImageUrl
           ? getImageUrl(variations[0].colorImageUrl)
           : product?.image?.[0]
-            ? getImageUrl(product.image[0])
-            : getImageUrl()
+          ? getImageUrl(product.image[0])
+          : getImageUrl()
       );
     } else if (product && !selectedVariation) {
       setMainImage(
@@ -205,8 +202,8 @@ console.log("➡️ comment:", comment);
       variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product?.image?.[0]
-          ? getImageUrl(product.image[0])
-          : getImageUrl()
+        ? getImageUrl(product.image[0])
+        : getImageUrl()
     );
     setQuantity('1');
   };
@@ -365,10 +362,11 @@ console.log("➡️ comment:", comment);
                 key={idx}
                 src={getImageUrl(src)}
                 onClick={() => setMainImage(getImageUrl(src))}
-                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${mainImage === getImageUrl(src)
-                  ? 'border-blue-500'
-                  : 'border-gray-300'
-                  }`}
+                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${
+                  mainImage === getImageUrl(src)
+                    ? 'border-blue-500'
+                    : 'border-gray-300'
+                }`}
                 loading="lazy"
                 alt={`Thumbnail ${idx + 1}`}
               />
@@ -407,17 +405,17 @@ console.log("➡️ comment:", comment);
           <h2 className="text-2xl md:text-3xl font-semibold">{product.name}</h2>
           <div className="flex items-center gap-4 flex-wrap">
             <span className="text-red-600 text-2xl font-bold">
-              {formatPrice(details.displayPrice ?? null)}
+              {formatPrice(details.displayPrice)}
             </span>
+            {details.salePrice !== 0 && (
+              <span className="line-through text-gray-500">
+                {formatPrice(details.originalPrice)}
+              </span>
+            )}
             {details.discountPercentage && (
-              <>
-                <span className="line-through text-gray-500">
-                  {formatPrice(details.originalPrice)}
-                </span>
-                <span className="bg-red-100 text-red-600 text-sm font-medium px-2 py-1 rounded">
-                  -{details.discountPercentage}%
-                </span>
-              </>
+              <span className="bg-red-100 text-red-600 text-sm font-medium px-2 py-1 rounded">
+                -{details.discountPercentage}%
+              </span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -434,10 +432,11 @@ console.log("➡️ comment:", comment);
                   <button
                     key={variation._id}
                     onClick={() => handleVariationSelect(variation)}
-                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${selectedVariation?._id === variation._id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                      }`}
+                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
+                      selectedVariation?._id === variation._id
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
                   >
                     {variation.dimensions}
                   </button>
@@ -454,9 +453,7 @@ console.log("➡️ comment:", comment);
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
-
               {selectedVariation?.material?.name ?? 'Không xác định'}
-
             </p>
             <p>
               <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
@@ -478,7 +475,7 @@ console.log("➡️ comment:", comment);
               <input
                 type="text"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)} // Lưu giá trị trực tiếp
+                onChange={(e) => setQuantity(e.target.value)}
                 className="w-12 text-center py-2 border-x border-gray-300"
                 aria-label="Số lượng"
                 disabled={isUpdating}
@@ -534,13 +531,16 @@ console.log("➡️ comment:", comment);
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-semibold pt-1 ${(details.stockQuantity || 0) > 0
-                ? 'text-green-600'
-                : 'text-red-600'
-                }`}
+              className={`text-sm font-semibold pt-1 ${
+                (details.stockQuantity || 0) > 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}
             >
-              {typeof details.stockQuantity === 'number' && details.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-
+              {typeof details.stockQuantity === 'number' &&
+              details.stockQuantity > 0
+                ? 'Còn hàng'
+                : 'Hết hàng'}
             </p>
           </div>
         </div>
@@ -596,99 +596,95 @@ console.log("➡️ comment:", comment);
         </div>
       )}
       <div className="mt-10 border-t pt-6">
-  <h3 className="text-2xl font-bold text-gray-800 mb-6">Đánh giá sản phẩm</h3>
-
-  {/* Form đánh giá */}
-  <div className="max-w-xl bg-white p-6 rounded-lg shadow border space-y-4">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Chọn số sao:
-      </label>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setRating(star)}
-            className={`text-2xl transition-transform ${
-              rating >= star ? 'text-yellow-400' : 'text-gray-300'
-            } hover:scale-125`}
-            aria-label={`Chọn ${star} sao`}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-    </div>
-
-    <div>
-      <label
-        htmlFor="comment"
-        className="block text-sm font-medium text-gray-700 mb-1"
-      >
-        Nhận xét:
-      </label>
-      <textarea
-        id="comment"
-        rows={4}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Nhập nhận xét của bạn về sản phẩm..."
-        className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-      />
-    </div>
-
-    <button
-      onClick={handleSubmitReview}
-      disabled={isSubmittingReview}
-      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-gray-400 transition-all"
-    >
-      {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
-    </button>
-  </div>
-
-  {/* Hiển thị danh sách đánh giá */}
-  <div className="mt-10">
-    <h4 className="text-xl font-semibold text-gray-800 mb-4">Danh sách đánh giá</h4>
-    {reviews.length > 0 ? (
-      <div className="space-y-4">
-        {reviews.map((review) => (
-          <div
-            key={review._id}
-            className="border rounded-lg p-4 shadow-sm bg-white"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-medium text-gray-800">
-                {review.user?.name || 'Ẩn danh'}
-              </span>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    className={`text-lg ${
-                      star <= review.rating
-                        ? 'text-yellow-400'
-                        : 'text-gray-300'
-                    }`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
+        <h3 className="text-2xl font-bold text-gray-800 mb-6">
+          Đánh giá sản phẩm
+        </h3>
+        <div className="max-w-xl bg-white p-6 rounded-lg shadow border space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Chọn số sao:
+            </label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className={`text-2xl transition-transform ${
+                    rating >= star ? 'text-yellow-400' : 'text-gray-300'
+                  } hover:scale-125`}
+                  aria-label={`Chọn ${star} sao`}
+                >
+                  ★
+                </button>
+              ))}
             </div>
-            <p className="text-gray-700">{review.comment}</p>
           </div>
-        ))}
+          <div>
+            <label
+              htmlFor="comment"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Nhận xét:
+            </label>
+            <textarea
+              id="comment"
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Nhập nhận xét của bạn về sản phẩm..."
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <button
+            onClick={handleSubmitReview}
+            disabled={isSubmittingReview}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-gray-400 transition-all"
+          >
+            {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+          </button>
+        </div>
+        <div className="mt-10">
+          <h4 className="text-xl font-semibold text-gray-800 mb-4">
+            Danh sách đánh giá
+          </h4>
+          {reviews.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="border rounded-lg p-4 shadow-sm bg-white"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-800">
+                      {review.user?.name || 'Ẩn danh'}
+                    </span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`text-lg ${
+                            star <= review.rating
+                              ? 'text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-gray-700">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              Chưa có đánh giá nào cho sản phẩm này.
+            </p>
+          )}
+        </div>
       </div>
-    ) : (
-      <p className="text-sm text-gray-500 italic">
-        Chưa có đánh giá nào cho sản phẩm này.
-      </p>
-    )}
-  </div>
-</div>
-
-
     </div>
   );
 };

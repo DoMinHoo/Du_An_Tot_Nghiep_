@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,7 +12,6 @@ import {
 import CartItemComponent from './CartItem';
 import CartSummary from './CartSummary';
 import type { Cart } from '../../types/Cart';
-
 import { useNavigate } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
@@ -20,20 +19,37 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = React.useState<string[]>([]);
 
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
-
+  // Lấy token hoặc guestId từ localStorage
+  const token = sessionStorage.getItem('token') || undefined;
+  const guestId = sessionStorage.getItem('guestId') || undefined;
   const shouldFetchCart = !!token || !!guestId;
+
+  // Query để lấy dữ liệu giỏ hàng
   const { data, isLoading, error } = useQuery({
     queryKey: ['cart', token, guestId],
     queryFn: () => getCart(token, guestId),
     retry: 2,
     enabled: shouldFetchCart,
+    staleTime: 1000 * 60, // Dữ liệu tươi trong 1 phút
   });
 
   const cart: Cart | undefined = data?.data?.cart;
   const totalPrice: number = data?.data?.totalPrice || 0;
 
+  // Tính tổng tiền của các sản phẩm được chọn
+  const selectedTotalPrice = useMemo(() => {
+    if (!cart?.items || selectedItems.length === 0) return 0;
+
+    return cart.items
+      .filter((item) => selectedItems.includes(item.variationId._id))
+      .reduce((total, item) => {
+        const price =
+          item.variationId.salePrice || item.variationId.finalPrice || 0;
+        return total + price * item.quantity;
+      }, 0);
+  }, [cart?.items, selectedItems]);
+
+  // Mutation để cập nhật số lượng sản phẩm
   const updateMutation = useMutation({
     mutationFn: ({
       variationId,
@@ -44,9 +60,7 @@ const CartPage: React.FC = () => {
     }) => updateCartItem(variationId, quantity, token, guestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Cập nhật số lượng thành công!', {
-        autoClose: 1000,
-      });
+      toast.success('Cập nhật số lượng thành công!', { autoClose: 1000 });
     },
     onError: (err: any) => {
       toast.error(err.message || 'Lỗi khi cập nhật số lượng', {
@@ -56,24 +70,21 @@ const CartPage: React.FC = () => {
     },
   });
 
+  // Mutation để xóa một sản phẩm
   const removeMutation = useMutation({
     mutationFn: (variationId: string) =>
       removeCartItem(variationId, token, guestId),
-    onSuccess: (data, variationId) => {
+    onSuccess: (_, variationId) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       setSelectedItems((prev) => prev.filter((id) => id !== variationId));
-      toast.success('Xóa sản phẩm thành công!', {
-        autoClose: 1000,
-      });
+      toast.success('Xóa sản phẩm thành công!', { autoClose: 1000 });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi xóa sản phẩm', {
-        autoClose: 1000,
-      });
-      // console.error('Lỗi removeCartItem:', err);
+      toast.error(err.message || 'Lỗi khi xóa sản phẩm', { autoClose: 1000 });
     },
   });
 
+  // Mutation để xóa nhiều sản phẩm
   const deleteMultipleMutation = useMutation({
     mutationFn: (variationIds: string[]) =>
       deleteMultipleCartItems(variationIds, token, guestId),
@@ -92,17 +103,53 @@ const CartPage: React.FC = () => {
         err.response?.status === 404
           ? 'Không tìm thấy endpoint /remove-multiple. Vui lòng kiểm tra cấu hình server.'
           : err.message || 'Lỗi khi xóa các sản phẩm';
-      toast.error(errorMessage, {
-        autoClose: 1000,
-      });
-      // console.error('Lỗi deleteMultipleCartItems:', err, {
-      //   variationIds,
-      //   token,
-      //   guestId,
-      // });
+      toast.error(errorMessage, { autoClose: 1000 });
     },
   });
 
+  // Mutation để xóa toàn bộ giỏ hàng
+  const clearMutation = useMutation({
+    mutationFn: () => clearCart(token, guestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setSelectedItems([]);
+      localStorage.removeItem('guestId');
+      toast.success('Xóa giỏ hàng thành công!', { autoClose: 1000 });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Lỗi khi xóa giỏ hàng', { autoClose: 1000 });
+      console.error('Lỗi clearCart:', err);
+    },
+  });
+
+  // Xử lý chọn hoặc bỏ chọn tất cả sản phẩm
+  const handleSelectAll = () => {
+    if (!cart?.items.length) {
+      toast.warn('Giỏ hàng đang trống, không có sản phẩm để chọn!', {
+        autoClose: 1000,
+      });
+      return;
+    }
+
+    if (selectedItems.length === cart?.items.length) {
+      setSelectedItems([]);
+    } else {
+      const allVariationIds =
+        cart?.items.map((item) => item.variationId._id) || [];
+      setSelectedItems(allVariationIds);
+    }
+  };
+
+  // Xử lý chọn/xóa chọn sản phẩm
+  const toggleSelectItem = (variationId: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(variationId)
+        ? prev.filter((id) => id !== variationId)
+        : [...prev, variationId]
+    );
+  };
+
+  // Xử lý xóa các sản phẩm được chọn
   const handleDeleteSelected = () => {
     if (!cart?.items.length) {
       toast.warn('Giỏ hàng đang trống, không có sản phẩm để xóa!', {
@@ -116,36 +163,10 @@ const CartPage: React.FC = () => {
       });
       return;
     }
-    // console.log('Selected variationIds:', selectedItems, {
-    //   token,
-    //   guestId,
-    //   cart,
-    // });
     deleteMultipleMutation.mutate(selectedItems);
   };
-  const clearMutation = useMutation({
-    mutationFn: () => clearCart(token, guestId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      setSelectedItems([]);
-      toast.success('Xóa giỏ hàng thành công!', {
-        autoClose: 1000,
-      });
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi xóa giỏ hàng');
-      console.error('Lỗi clearCart:', err);
-    },
-  });
 
-  const toggleSelectItem = (variationId: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(variationId)
-        ? prev.filter((id) => id !== variationId)
-        : [...prev, variationId]
-    );
-  };
-
+  // Xử lý thanh toán
   const handleCheckout = () => {
     if (!cart?.items.length) {
       toast.warn('Giỏ hàng đang trống, không thể thanh toán!', {
@@ -154,32 +175,29 @@ const CartPage: React.FC = () => {
       return;
     }
     if (selectedItems.length === 0) {
-      toast.warn('Vui lòng chọn sản phẩm để thanh toán!', {
-        autoClose: 1000,
-      });
+      toast.warn('Vui lòng chọn sản phẩm để thanh toán!', { autoClose: 1000 });
       return;
     }
 
     navigate('/checkout', {
       state: {
-        selectedItems: selectedItems,
+        selectedItems,
         cartItems: cart.items,
-        totalPrice: totalPrice,
+        totalPrice: selectedTotalPrice,
       },
-
     });
   };
 
+  // Xử lý xóa toàn bộ giỏ hàng
   const handleClearCart = () => {
     if (!cart?.items.length) {
-      toast.warn('Giỏ hàng đang trống, không cần xóa!', {
-        autoClose: 1000,
-      });
+      toast.warn('Giỏ hàng đang trống, không cần xóa!', { autoClose: 1000 });
       return;
     }
     clearMutation.mutate();
   };
 
+  // Trường hợp không có token hoặc guestId
   if (!shouldFetchCart) {
     return (
       <div className="max-w-5xl mx-auto px-2 py-4">
@@ -214,11 +232,12 @@ const CartPage: React.FC = () => {
     );
   }
 
+  // Trường hợp đang tải933 dữ liệu
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-2 py-4 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class SIX="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-3">
             {Array(3)
               .fill(0)
@@ -247,6 +266,7 @@ const CartPage: React.FC = () => {
     );
   }
 
+  // Trường hợp có lỗi khi lấy dữ liệu
   if (error) {
     return (
       <div className="max-w-5xl mx-auto px-2 py-4">
@@ -267,7 +287,8 @@ const CartPage: React.FC = () => {
               </button>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-600">
-              Lỗi khi lấy giỏ hàng: {error.message}
+              Lỗi khi lấy giỏ hàng:{' '}
+              {(error as Error).message || 'Đã có lỗi xảy ra'}
             </div>
           </div>
           <CartSummary
@@ -281,6 +302,7 @@ const CartPage: React.FC = () => {
     );
   }
 
+  // Trường hợp hiển thị giỏ hàng bình thường
   return (
     <div className="max-w-5xl mx-auto px-2 py-4">
       <ToastContainer />
@@ -289,10 +311,23 @@ const CartPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-md">
-            <span>Có {cart?.items.length || 0} sản phẩm trong giỏ hàng</span>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={
+                  !!cart?.items &&
+                  cart.items.length > 0 &&
+                  selectedItems.length === cart.items.length
+                }
+                onChange={handleSelectAll}
+                className="mr-2"
+                disabled={!cart?.items.length}
+              />
+              <span>Có {cart?.items.length || 0} sản phẩm trong giỏ hàng</span>
+            </div>
             <button
               onClick={handleDeleteSelected}
-              disabled={selectedItems.length === 0 || cart?.items.length === 0}
+              disabled={selectedItems.length === 0 || !cart?.items.length}
               className="text-red-500 font-medium hover:text-red-600 disabled:opacity-40 transition-colors"
             >
               Xóa đã chọn
@@ -336,7 +371,7 @@ const CartPage: React.FC = () => {
           )}
         </div>
         <CartSummary
-          totalPrice={totalPrice}
+          totalPrice={selectedTotalPrice}
           selectedCount={selectedItems.length}
           onCheckout={handleCheckout}
           onClearCart={handleClearCart}

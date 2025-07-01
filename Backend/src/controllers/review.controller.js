@@ -5,24 +5,20 @@ const Review = require("../models/review.model");
 require("../models/review.model");
 // Tạo mới
 exports.createReview = async (req, res) => {
-  console.log("🧑‍💻 req.user:", req.user);
   try {
     const { product, rating, comment } = req.body;
 
-    // ✅ Kiểm tra input bắt buộc
     if (!product || !rating) {
       return res
         .status(400)
         .json({ message: "Thiếu thông tin đánh giá (product, rating)." });
     }
 
-    // 1. Tìm tất cả variationId thuộc product đó
+    // 1. Lấy danh sách tất cả variation thuộc sản phẩm
     const variations = await ProductVariation.find({
       productId: product,
     }).select("_id");
     const variationIds = variations.map((v) => v._id.toString());
-
-    console.log("🧩 variationIds:", variationIds);
 
     if (variationIds.length === 0) {
       return res
@@ -30,19 +26,23 @@ exports.createReview = async (req, res) => {
         .json({ message: "Sản phẩm không có biến thể nào để đánh giá." });
     }
 
-    // 2. Kiểm tra người dùng có đơn hàng hoàn tất chứa variation không
+    // 2. Kiểm tra đơn hàng đã hoàn thành chứa variation của sản phẩm
     const orders = await Order.find({
       userId: req.user.userId,
-      status: { $in: ["completed", "pending"] },
+      status: "completed",
     });
-
-    console.log("🧾 Orders chứa variation:", JSON.stringify(orders, null, 2));
 
     const hasPurchased = orders.some((order) =>
       order.items.some((item) =>
         variationIds.includes(item.variationId.toString())
       )
     );
+
+    if (!hasPurchased) {
+      return res
+        .status(403)
+        .json({ message: "Bạn cần mua sản phẩm để đánh giá." });
+    }
 
     // 3. Kiểm tra đã từng đánh giá sản phẩm chưa
     const alreadyReviewed = await Review.findOne({
@@ -65,10 +65,11 @@ exports.createReview = async (req, res) => {
     });
 
     await review.save();
+
     res.status(201).json(review);
   } catch (error) {
     console.error("❌ Lỗi khi tạo review:", error);
-    res.status(500).json({ message: "Lỗi tạo review", error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 

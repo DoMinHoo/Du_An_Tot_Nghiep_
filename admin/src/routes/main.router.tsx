@@ -1,10 +1,9 @@
 import {
   createBrowserRouter,
   Outlet,
-  type RouteObject
+  type RouteObject,
 } from 'react-router-dom';
 import MainLayout from '../components/Layout/mainLayoutAdmin';
-import DashboardPage from '../pages/Dashboard/dashboard';
 
 import CategoryManager from '../pages/Categories/category';
 import ReviewManager from '../pages/Comment&Review/reviewManager';
@@ -34,7 +33,7 @@ import MaterialAdmin from '../pages/Materials/MaterialsAdmin';
 import ListPromotion from '../pages/Promotions/listPromotion';
 import UpdatePromotion from '../pages/Promotions/updatePromotion';
 import CreatePromotion from '../pages/Promotions/createPromotion';
-
+import Dashboard from '../pages/Dashboard/dashboard';
 
 const routes: RouteObject[] = [
   {
@@ -50,7 +49,7 @@ const routes: RouteObject[] = [
       {
         index: true,
         path: 'dashboard',
-        element: <DashboardPage />,
+        element: <Dashboard />,
       },
       {
         path: 'products',

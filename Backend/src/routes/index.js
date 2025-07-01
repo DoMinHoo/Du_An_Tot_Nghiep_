@@ -9,6 +9,7 @@ const orderRoutes = require("./order.routes");
 const variationRoutes = require("./variation.routes");
 const bannerRoutes = require("./banner.routes");
 const materialsRoutes = require("./materials.routes");
+const statsRoutes = require("./stats.routes");
 
 const promotionRoutes = require("./promotion.route");
 
@@ -26,6 +27,7 @@ router.use('/banners', bannerRoutes);
 router.use("/promotions", promotionRoutes);
 router.use('/carts', cartRoutes);
 router.use('/materials', materialsRoutes);
+router.use('/stats', statsRoutes);
 
 
 
