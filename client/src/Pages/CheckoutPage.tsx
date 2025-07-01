@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { getCart } from '../services/cartService';
@@ -11,14 +11,19 @@ import { getAllPromotions } from '../services/apiPromotion.service';
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
   const [finalAmount, setFinalAmount] = useState<number | null>(null);
-  const { data: promotionList } = useQuery({
+  const { data: promotionListRaw } = useQuery({
     queryKey: ['promotions'],
     queryFn: getAllPromotions,
   });
 
+  const promotionList: any[] = Array.isArray(promotionListRaw) ? promotionListRaw : [];
+
+
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [province, setProvince] = useState('');
   const [district, setDistrict] = useState('');
   const [ward, setWard] = useState('');
@@ -29,8 +34,8 @@ const CheckoutPage: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
+  const token = sessionStorage.getItem('token') || undefined;
+  const guestId = sessionStorage.getItem('guestId') || undefined;
 
   const passedState = location.state as {
     selectedItems?: string[];
@@ -62,6 +67,7 @@ const CheckoutPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+      setTimeout(() => navigate('/thank-you'), 1600);
     },
     onError: () => {
       toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
@@ -74,6 +80,8 @@ const CheckoutPage: React.FC = () => {
     if (!fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ tên';
     if (!phone.trim() || !/^\d{9,11}$/.test(phone))
       newErrors.phone = 'Số điện thoại không hợp lệ';
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email))
+      newErrors.email = 'Email không hợp lệ';
     if (!province) newErrors.province = 'Vui lòng chọn tỉnh/thành';
     if (!district) newErrors.district = 'Vui lòng chọn quận/huyện';
     if (!ward) newErrors.ward = 'Vui lòng chọn phường/xã';
@@ -84,6 +92,9 @@ const CheckoutPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+    
+    
+
 
   const handleSubmitOrder = async () => {
     if (!validate()) return;
@@ -123,7 +134,28 @@ const CheckoutPage: React.FC = () => {
         },
         paymentMethod,
         cartId: fallbackCart._id,
+          couponCode: couponCode || undefined,
       });
+      
+        if (paymentMethod === 'bank') {
+    // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
+    sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+    try {
+      const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+      }
+    } catch (error) {
+      toast.error('Lỗi khi tạo thanh toán VNPAY');
+    }
 
       if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
         const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
@@ -183,6 +215,18 @@ const CheckoutPage: React.FC = () => {
               />
               {errors.phone && (
                 <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+              )}
+            </div>
+            <div>
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full border rounded px-4 py-2"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
               )}
             </div>
 
@@ -347,85 +391,127 @@ const CheckoutPage: React.FC = () => {
             <p>Giỏ hàng trống</p>
           )}
 
-          <input
-            type="text"
-            placeholder="Mã giảm giá..."
-            className="w-full border rounded px-4 py-2"
-            value={couponCode}
-            onChange={(e) => {
-              setCouponCode(e.target.value);
 
-              // Khi xóa hết ô input, tự trả lại giá ban đầu
-              if (e.target.value.trim() === "") {
-                setFinalAmount(null);
-                toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
-              }
-            }}
-          />
+          <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+              <label className="font-semibold text-gray-700 text-sm">Mã giảm giá</label>
+              
+              <div className="flex gap-3 items-center">
+                  <input
+                      type="text"
+                      placeholder="Nhập mã giảm giá..."
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                      value={couponCode}
+                      onChange={(e) => {
+                          setCouponCode(e.target.value);
+                          if (e.target.value.trim() === "") {
+                              setFinalAmount(null);
+                              toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
+                          }
+                      }}
+                  />
+                  <button
+                      className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-900 transition duration-200 active:scale-95"
+                      onClick={async () => {
+                          if (!couponCode.trim()) {
+                              toast.error("Vui lòng nhập mã giảm giá");
+                              return;
+                          }
+                          try {
+                              const res = await fetch("http://localhost:5000/api/promotions/apply", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                      code: couponCode.trim(),
+                                      originalPrice: Number(totalPrice),
+                                  }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) {
+                                  toast.error(data.message || "Áp mã thất bại");
+                                  setFinalAmount(null);
+                                  return;
+                              }
+                              toast.success(data.message || "Áp dụng mã thành công!");
+                              setFinalAmount(data.finalPrice);
+                          } catch {
+                              toast.error("Có lỗi khi áp dụng mã");
+                              setFinalAmount(null);
+                          }
+                      }}
+                  >
+                      Áp dụng
+                  </button>
+              </div>
 
-          <button
-            className="w-full bg-gray-200 py-2 rounded mt-2"
-            onClick={async () => {
-              if (!couponCode.trim()) {
-                toast.error("Vui lòng nhập mã giảm giá");
-                return;
-              }
 
-              try {
-                const res = await fetch("http://localhost:5000/api/promotions/apply", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    code: couponCode.trim(),
-                    originalPrice: Number(totalPrice),
-                  }),
-                });
+              {promotionList?.length > 0 && (
+                  <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 max-h-60 overflow-y-auto">
+                      <p className="font-semibold text-gray-700 text-sm">Chọn mã giảm giá:</p>
+                      
+                      {promotionList.map((promo) => {
+                          const minOrder = promo.minimumOrderValue || 0;
+                          const isExpired = promo.expiryDate && new Date(promo.expiryDate) < new Date();
+                          const notMeetMinOrder = totalPrice < minOrder;
+                          const disabled = isExpired || notMeetMinOrder;
 
-                const data = await res.json();
-
-                if (!res.ok) {
-                  toast.error(data.message || "Áp mã thất bại");
-                  setFinalAmount(null);
-                  return;
-                }
-
-                toast.success(data.message || "Áp dụng mã thành công!");
-                setFinalAmount(data.finalPrice);
-              } catch {
-                toast.error("Có lỗi khi áp dụng mã");
-                setFinalAmount(null);
-              }
-            }}
-          >
-            Sử dụng
-          </button>
-
-          {/* Danh sách mã giảm giá có sẵn */}
-          {promotionList?.length > 0 && (
-            <div className="mt-4 border rounded p-3 space-y-2">
-              <p className="font-medium mb-2">Hoặc chọn nhanh mã giảm giá:</p>
-              {promotionList.map((promo: any) => (
-                <button
-                  key={promo._id}
-                  className="w-full border px-3 py-2 rounded hover:bg-gray-100 text-left"
-                  onClick={() => setCouponCode(promo.code)}
-                >
-                  <div className="flex justify-between">
-                    <span className="font-semibold">{promo.code}</span>
-                    <span className="text-gray-600 text-sm">
-                      {promo.discountType === "percentage"
-                        ? `${promo.discountValue}%`
-                        : `${promo.discountValue.toLocaleString()}₫`}
-                    </span>
+                          return (
+                              <div
+                                  key={promo._id}
+                                  className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
+                                      disabled 
+                                          ? "opacity-50 bg-gray-100" 
+                                          : "hover:bg-blue-50 hover:border-blue-300"
+                                  }`}
+                                  onClick={() => {
+                                      if (disabled) return;
+                                      setCouponCode(promo.code);
+                                  }}
+                              >
+                                  <div className="space-y-1">
+                                      <p className="font-semibold text-blue-600">{promo.code}</p>
+                                      <p className="text-gray-600 text-xs">
+                                          Giảm giá: {" "}
+                                          {promo.discountType === "percentage"
+                                              ? `${promo.discountValue}%`
+                                              : `${promo.discountValue.toLocaleString()}₫`}
+                                      </p>
+                                      {promo.minimumOrderValue && (
+                                          <p className="text-gray-600 text-xs">
+                                              Đơn tối thiểu: {promo.minimumOrderValue.toLocaleString()}₫
+                                          </p>
+                                      )}
+                                      {promo.expiryDate && (
+                                          <p className={`text-xs ${isExpired ? "text-red-500" : "text-gray-600"}`}>
+                                              HSD: {new Date(promo.expiryDate).toLocaleDateString("vi-VN", {
+                                                  day: "2-digit",
+                                                  month: "2-digit",
+                                                  year: "numeric",
+                                              })}
+                                          </p>
+                                      )}
+                                      {isExpired && (
+                                          <p className="text-red-500 text-xs font-medium">Đã hết hạn</p>
+                                      )}
+                                      {notMeetMinOrder && !isExpired && (
+                                          <p className="text-orange-500 text-xs">
+                                              Cần tối thiểu {promo.minimumOrderValue.toLocaleString()}₫
+                                          </p>
+                                      )}
+                                  </div>
+                                  {!disabled && (
+                                      <button
+                                          className="text-blue-600 text-xs font-medium hover:underline"
+                                          onClick={() => setCouponCode(promo.code)}
+                                      >
+                                          Chọn
+                                      </button>
+                                  )}
+                              </div>
+                          );
+                      })}
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-
-
-
+              )}
+          </div>
 
           <hr />
           <div className="flex justify-between">
