@@ -87,32 +87,55 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmitOrder = () => {
-    if (!validate()) return;
+ const handleSubmitOrder = async () => {
+  if (!validate()) return;
 
-    if (!cartItems?.length) {
-      toast.error('Giỏ hàng trống!');
-      return;
-    }
+  if (!cartItems?.length) {
+    toast.error('Giỏ hàng trống!');
+    return;
+  }
 
-    const orderData = {
-      shippingAddress: {
-        fullName,
-        phone,
-        email,
-        addressLine: detailAddress,
-        street,
-        province,
-        district,
-        ward,
-      },
-      paymentMethod,
-      cartId: fallbackCart?._id,
-      couponCode: couponCode || undefined,
-    };
-
-    orderMutation.mutate(orderData);
+  const orderData = {
+    shippingAddress: {
+      fullName,
+      phone,
+      email,
+      addressLine: detailAddress,
+      street,
+      province,
+      district,
+      ward,
+    },
+    paymentMethod,
+    cartId: fallbackCart?._id,
+    couponCode: couponCode || undefined,
   };
+
+  if (paymentMethod === 'bank') {
+    // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
+    sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+    try {
+      const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+      }
+    } catch (error) {
+      toast.error('Lỗi khi tạo thanh toán VNPAY');
+    }
+  } else {
+    // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
+    orderMutation.mutate(orderData);
+  }
+};
+
 
   return (
     <div className="flex flex-col lg:flex-row bg-white p-6 rounded-md">
