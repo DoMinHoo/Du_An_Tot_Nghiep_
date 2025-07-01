@@ -15,6 +15,8 @@ const promotionRoutes = require("./promotion.route");
 
 const cartRoutes = require("./cart.routes")
 
+const paymentZaloRoutes = require('./payment.routes');
+
 
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
@@ -28,6 +30,7 @@ router.use("/promotions", promotionRoutes);
 router.use('/carts', cartRoutes);
 router.use('/materials', materialsRoutes);
 router.use('/stats', statsRoutes);
+router.use('/zalo-payment', paymentZaloRoutes)
 
 
 

@@ -15,7 +15,7 @@ const CheckoutPage: React.FC = () => {
   const { data: promotionList } = useQuery({
     queryKey: ['promotions'],
     queryFn: getAllPromotions,
-});
+  });
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -24,9 +24,7 @@ const CheckoutPage: React.FC = () => {
   const [ward, setWard] = useState('');
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<
-    'cod' | 'bank' | 'zalopay' | 'momo'
-  >('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank_transfer' | 'online_payment'>('cod');
   const [couponCode, setCouponCode] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,6 +43,12 @@ const CheckoutPage: React.FC = () => {
     queryFn: () => getCart(token, guestId),
     enabled: !!token || !!guestId,
   });
+
+  const paymentOptions: { label: string; value: 'cod' | 'bank_transfer' | 'online_payment' }[] = [
+    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+  ];
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
@@ -81,7 +85,7 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     if (!validate()) return;
 
     if (!cartItems?.length) {
@@ -99,23 +103,49 @@ const CheckoutPage: React.FC = () => {
       }
     }
 
-    const orderData = {
-      shippingAddress: {
-        fullName,
-        phone,
-        email,
-        addressLine: detailAddress,
-        street,
-        province,
-        district,
-        ward,
-      },
-      paymentMethod,
-      cartId: fallbackCart?._id,
-      couponCode: couponCode || undefined,
-    };
+    if (!fallbackCart || !fallbackCart._id) {
+      toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
+      return;
+    }
 
-    orderMutation.mutate(orderData);
+    try {
+      // Tạo order thông qua mutateAsync
+      const orderRes = await orderMutation.mutateAsync({
+        shippingAddress: {
+          fullName,
+          phone,
+          email,
+          addressLine: detailAddress,
+          street,
+          province,
+          district,
+          ward,
+        },
+        paymentMethod,
+        cartId: fallbackCart._id,
+      });
+
+      if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
+        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderCode: orderRes.orderCode }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.order_url) {
+          localStorage.setItem("currentOrderCode", orderRes.orderCode);
+          window.location.href = data.order_url;
+        } else {
+          toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
+        }
+      } else {
+        toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+      }
+    } catch {
+      toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
+    }
   };
 
   return (
@@ -233,17 +263,17 @@ const CheckoutPage: React.FC = () => {
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-2">Phương thức thanh toán</h2>
           <div className="space-y-3">
-            {['cod', 'bank', 'zalopay', 'momo'].map((method) => (
-              <label key={method} className="block">
+            {paymentOptions.map((option) => (
+              <label key={option.value} className="block">
                 <input
                   type="radio"
                   name="payment"
-                  value={method}
-                  checked={paymentMethod === method}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  value={option.value}
+                  checked={paymentMethod === option.value}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'cod' | 'bank_transfer' | 'online_payment')}
                   className="mr-2"
                 />
-                {method === 'bank' ? (
+                {option.value === 'bank_transfer' ? (
                   <span>
                     <strong>Thanh toán chuyển khoản qua ngân hàng</strong>
                     <div className="ml-6 text-sm text-gray-600">
@@ -254,12 +284,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </span>
                 ) : (
-                  <>
-                    Thanh toán{' '}
-                    {method === 'cod'
-                      ? 'khi nhận hàng (COD)'
-                      : `qua ví ${method}`}
-                  </>
+                  <>{option.label}</>
                 )}
               </label>
             ))}
@@ -303,8 +328,8 @@ const CheckoutPage: React.FC = () => {
                       {item.variationId.color}
                     </p>
                     {item.variationId.finalPrice !== 0 &&
-                    item.variationId.salePrice !== 0 &&
-                    item.variationId.salePrice < item.variationId.finalPrice ? (
+                      item.variationId.salePrice !== 0 &&
+                      item.variationId.salePrice < item.variationId.finalPrice ? (
                       <p className="font-semibold">
                         {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
                         {item.quantity}
@@ -328,75 +353,75 @@ const CheckoutPage: React.FC = () => {
             className="w-full border rounded px-4 py-2"
             value={couponCode}
             onChange={(e) => {
-                setCouponCode(e.target.value);
+              setCouponCode(e.target.value);
 
-                // Khi xóa hết ô input, tự trả lại giá ban đầu
-                if (e.target.value.trim() === "") {
-                    setFinalAmount(null);
-                    toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
-                }
+              // Khi xóa hết ô input, tự trả lại giá ban đầu
+              if (e.target.value.trim() === "") {
+                setFinalAmount(null);
+                toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
+              }
             }}
-        />
+          />
 
-        <button
+          <button
             className="w-full bg-gray-200 py-2 rounded mt-2"
             onClick={async () => {
-                if (!couponCode.trim()) {
-                    toast.error("Vui lòng nhập mã giảm giá");
-                    return;
+              if (!couponCode.trim()) {
+                toast.error("Vui lòng nhập mã giảm giá");
+                return;
+              }
+
+              try {
+                const res = await fetch("http://localhost:5000/api/promotions/apply", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    code: couponCode.trim(),
+                    originalPrice: Number(totalPrice),
+                  }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                  toast.error(data.message || "Áp mã thất bại");
+                  setFinalAmount(null);
+                  return;
                 }
 
-                try {
-                    const res = await fetch("http://localhost:5000/api/promotions/apply", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            code: couponCode.trim(),
-                            originalPrice: Number(totalPrice),
-                        }),
-                    });
-
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        toast.error(data.message || "Áp mã thất bại");
-                        setFinalAmount(null);
-                        return;
-                    }
-
-                    toast.success(data.message || "Áp dụng mã thành công!");
-                    setFinalAmount(data.finalPrice);
-                } catch {
-                    toast.error("Có lỗi khi áp dụng mã");
-                    setFinalAmount(null);
-                }
+                toast.success(data.message || "Áp dụng mã thành công!");
+                setFinalAmount(data.finalPrice);
+              } catch {
+                toast.error("Có lỗi khi áp dụng mã");
+                setFinalAmount(null);
+              }
             }}
-        >
+          >
             Sử dụng
-        </button>
+          </button>
 
-        {/* Danh sách mã giảm giá có sẵn */}
-        {promotionList?.length > 0 && (
+          {/* Danh sách mã giảm giá có sẵn */}
+          {promotionList?.length > 0 && (
             <div className="mt-4 border rounded p-3 space-y-2">
-                <p className="font-medium mb-2">Hoặc chọn nhanh mã giảm giá:</p>
-                {promotionList.map((promo: any) => (
-                    <button
-                        key={promo._id}
-                        className="w-full border px-3 py-2 rounded hover:bg-gray-100 text-left"
-                        onClick={() => setCouponCode(promo.code)}
-                    >
-                        <div className="flex justify-between">
-                            <span className="font-semibold">{promo.code}</span>
-                            <span className="text-gray-600 text-sm">
-                                {promo.discountType === "percentage"
-                                    ? `${promo.discountValue}%`
-                                    : `${promo.discountValue.toLocaleString()}₫`}
-                            </span>
-                        </div>
-                    </button>
-                ))}
+              <p className="font-medium mb-2">Hoặc chọn nhanh mã giảm giá:</p>
+              {promotionList.map((promo: any) => (
+                <button
+                  key={promo._id}
+                  className="w-full border px-3 py-2 rounded hover:bg-gray-100 text-left"
+                  onClick={() => setCouponCode(promo.code)}
+                >
+                  <div className="flex justify-between">
+                    <span className="font-semibold">{promo.code}</span>
+                    <span className="text-gray-600 text-sm">
+                      {promo.discountType === "percentage"
+                        ? `${promo.discountValue}%`
+                        : `${promo.discountValue.toLocaleString()}₫`}
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
-        )}
+          )}
 
 
 
