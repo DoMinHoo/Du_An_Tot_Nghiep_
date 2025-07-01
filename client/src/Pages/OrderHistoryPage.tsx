@@ -77,52 +77,8 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
-
-  const handleRetryPayment = async (orderCode: string) => {
-    try {
-      message.loading({ content: "Đang tạo lại link thanh toán...", key: "retry" });
-
-      const res = await axios.post(
-        "http://localhost:5000/api/zalo-payment/create-payment",
-        { orderCode },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (res.data.order_url) {
-        message.success({ content: "Chuyển hướng đến ZaloPay...", key: "retry" });
-        // Lưu orderCode vào localStorage để trang /payment/status còn nhận biết được
-        localStorage.setItem("currentOrderCode", orderCode);
-        // Redirect
-        window.location.href = res.data.order_url;
-      } else {
-        message.error("Không lấy được link thanh toán.");
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("Tạo lại thanh toán thất bại.");
-    }
-  };
-
-  const handleConfirmReceived = async (orderId: string) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/orders/${orderId}`,
-        { status: 'completed', note: 'Khách hàng xác nhận đã nhận hàng' },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      message.success('Xác nhận đã nhận hàng thành công');
-      fetchOrders();
-    } catch (err) {
-      message.error('Xác nhận thất bại');
-    }
-  };
-
-  if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
-
+  if (loading)
+    return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -223,16 +179,7 @@ const OrderHistoryPage: React.FC = () => {
               </div>
 
               {order.status === 'pending' && (
-                <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                  {order.paymentMethod === 'online_payment' && (
-                    <button
-                      onClick={() => handleRetryPayment(order.orderCode)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Thanh toán lại qua ZaloPay
-                    </button>
-                  )}
-
+                <div className="text-right mt-4 flex items-center justify-end gap-4">
                   <select
                     value={cancelReasonsMap[order._id] || ''}
                     onChange={(e) =>
@@ -251,22 +198,11 @@ const OrderHistoryPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
-
                   <button
                     onClick={() => handleCancelOrder(order._id)}
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Huỷ đơn hàng
-                  </button>
-                </div>
-              )}
-              {order.status === 'shipping' && (
-                <div className="text-right mt-4">
-                  <button
-                    onClick={() => handleConfirmReceived(order._id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Đã nhận hàng
                   </button>
                 </div>
               )}

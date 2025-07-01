@@ -17,9 +17,7 @@ const CheckoutPage: React.FC = () => {
     queryKey: ['promotions'],
     queryFn: getAllPromotions,
   });
-
   const promotionList: any[] = Array.isArray(promotionListRaw) ? promotionListRaw : [];
-
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,7 +27,9 @@ const CheckoutPage: React.FC = () => {
   const [ward, setWard] = useState('');
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank_transfer' | 'online_payment'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<
+    'cod' | 'bank' | 'zalopay' | 'momo'
+  >('cod');
   const [couponCode, setCouponCode] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,12 +48,6 @@ const CheckoutPage: React.FC = () => {
     queryFn: () => getCart(token, guestId),
     enabled: !!token || !!guestId,
   });
-
-  const paymentOptions: { label: string; value: 'cod' | 'bank_transfer' | 'online_payment' }[] = [
-    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-  ];
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
@@ -92,52 +86,32 @@ const CheckoutPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-    
-    
 
+ const handleSubmitOrder = async () => {
+  if (!validate()) return;
 
-  const handleSubmitOrder = async () => {
-    if (!validate()) return;
+  if (!cartItems?.length) {
+    toast.error('Giỏ hàng trống!');
+    return;
+  }
 
-    if (!cartItems?.length) {
-      toast.error('Giỏ hàng trống!');
-      return;
-    }
+  const orderData = {
+    shippingAddress: {
+      fullName,
+      phone,
+      email,
+      addressLine: detailAddress,
+      street,
+      province,
+      district,
+      ward,
+    },
+    paymentMethod,
+    cartId: fallbackCart?._id,
+    couponCode: couponCode || undefined,
+  };
 
-    let email = 'guest@example.com';
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.email) email = payload.email;
-      } catch {
-        console.warn('Không thể lấy email từ token');
-      }
-    }
-
-    if (!fallbackCart || !fallbackCart._id) {
-      toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
-      return;
-    }
-
-    try {
-      // Tạo order thông qua mutateAsync
-      const orderRes = await orderMutation.mutateAsync({
-        shippingAddress: {
-          fullName,
-          phone,
-          email,
-          addressLine: detailAddress,
-          street,
-          province,
-          district,
-          ward,
-        },
-        paymentMethod,
-        cartId: fallbackCart._id,
-          couponCode: couponCode || undefined,
-      });
-      
-        if (paymentMethod === 'bank') {
+  if (paymentMethod === 'bank') {
     // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
     sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
     try {
@@ -156,29 +130,12 @@ const CheckoutPage: React.FC = () => {
     } catch (error) {
       toast.error('Lỗi khi tạo thanh toán VNPAY');
     }
+  } else {
+    // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
+    orderMutation.mutate(orderData);
+  }
+};
 
-      if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
-        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderCode: orderRes.orderCode }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.order_url) {
-          localStorage.setItem("currentOrderCode", orderRes.orderCode);
-          window.location.href = data.order_url;
-        } else {
-          toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
-        }
-      } else {
-        toast.success('Đặt hàng thành công!', { autoClose: 1500 });
-      }
-    } catch {
-      toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
-    }
-  };
 
   return (
     <div className="flex flex-col lg:flex-row bg-white p-6 rounded-md">
@@ -307,17 +264,17 @@ const CheckoutPage: React.FC = () => {
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-2">Phương thức thanh toán</h2>
           <div className="space-y-3">
-            {paymentOptions.map((option) => (
-              <label key={option.value} className="block">
+            {['cod', 'bank', 'zalopay', 'momo'].map((method) => (
+              <label key={method} className="block">
                 <input
                   type="radio"
                   name="payment"
-                  value={option.value}
-                  checked={paymentMethod === option.value}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cod' | 'bank_transfer' | 'online_payment')}
+                  value={method}
+                  checked={paymentMethod === method}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
                   className="mr-2"
                 />
-                {option.value === 'bank_transfer' ? (
+                {method === 'bank' ? (
                   <span>
                     <strong>Thanh toán chuyển khoản qua ngân hàng</strong>
                     <div className="ml-6 text-sm text-gray-600">
@@ -328,7 +285,12 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </span>
                 ) : (
-                  <>{option.label}</>
+                  <>
+                    Thanh toán{' '}
+                    {method === 'cod'
+                      ? 'khi nhận hàng (COD)'
+                      : `qua ví ${method}`}
+                  </>
                 )}
               </label>
             ))}
@@ -372,8 +334,8 @@ const CheckoutPage: React.FC = () => {
                       {item.variationId.color}
                     </p>
                     {item.variationId.finalPrice !== 0 &&
-                      item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice < item.variationId.finalPrice ? (
+                    item.variationId.salePrice !== 0 &&
+                    item.variationId.salePrice < item.variationId.finalPrice ? (
                       <p className="font-semibold">
                         {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
                         {item.quantity}
@@ -390,7 +352,6 @@ const CheckoutPage: React.FC = () => {
           ) : (
             <p>Giỏ hàng trống</p>
           )}
-
 
           <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
               <label className="font-semibold text-gray-700 text-sm">Mã giảm giá</label>
@@ -442,7 +403,6 @@ const CheckoutPage: React.FC = () => {
                       Áp dụng
                   </button>
               </div>
-
 
               {promotionList?.length > 0 && (
                   <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 max-h-60 overflow-y-auto">
