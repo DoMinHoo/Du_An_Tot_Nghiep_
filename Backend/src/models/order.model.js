@@ -86,10 +86,6 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: '',
   }, // Lý do huy
-
-  app_trans_id: { type: String, unique: true },
-  paymentTransactionId: { type: String },  // lưu mã giao dịch ZaloPay
-  paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
   items: [itemSchema],
   statusHistory: [statusHistorySchema],
 }, {
