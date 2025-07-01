@@ -19,23 +19,24 @@ exports.applyPromotion = async (req, res) => {
       return res.status(400).json({ message: "Mã khuyến mãi đã đạt giới hạn sử dụng." });
     }
 
-    if (promotion.minOrderValue && originalPrice < promotion.minOrderValue) {
+    const orderPrice = Number(originalPrice); // ✅ ép kiểu tại đây
+
+    if (promotion.minOrderValue && orderPrice < promotion.minOrderValue) {
       return res.status(400).json({
         message: `Đơn hàng phải tối thiểu ${promotion.minOrderValue} để áp dụng mã này.`,
       });
     }
 
-    let finalPrice = originalPrice;
+    let finalPrice = orderPrice;
 
     if (promotion.discountType === "percentage") {
-      finalPrice = originalPrice * (1 - promotion.discountValue / 100);
+      finalPrice = orderPrice * (1 - promotion.discountValue / 100);
     } else {
-      finalPrice = originalPrice - promotion.discountValue;
+      finalPrice = orderPrice - promotion.discountValue;
     }
 
     finalPrice = Math.max(0, finalPrice);
 
-    // Tăng lượt dùng (nếu có giới hạn)
     if (promotion.usageLimit > 0) {
       promotion.usedCount += 1;
       await promotion.save();
@@ -43,7 +44,7 @@ exports.applyPromotion = async (req, res) => {
 
     res.json({
       message: "Áp dụng mã thành công!",
-      originalPrice,
+      originalPrice: orderPrice,
       finalPrice,
       promotionApplied: promotion.code,
     });
@@ -51,6 +52,7 @@ exports.applyPromotion = async (req, res) => {
     res.status(500).json({ message: "Lỗi máy chủ.", error: error.message });
   }
 };
+
 
 exports.createPromotion = async (req, res) => {
   try {

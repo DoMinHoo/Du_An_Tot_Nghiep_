@@ -8,6 +8,7 @@ import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
 
 const CheckoutPage: React.FC = () => {
+
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -316,7 +317,60 @@ const CheckoutPage: React.FC = () => {
                         {item.quantity}
                       </p>
                     )}
-                  </div>
+
+                    <input
+                        type="text"
+                        placeholder="Mã giảm giá..."
+                        className="w-full border rounded px-4 py-2"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        />
+                        <button
+                        className="w-full bg-gray-200 py-2 rounded mt-2"
+                        onClick={async () => {
+                            try {
+                            const res = await fetch("http://localhost:5000/api/promotions/apply", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                code: couponCode,
+                                originalPrice: Number(totalPrice),
+                                }),
+                            });
+
+                            const data = await res.json();
+
+                            if (!res.ok) {
+                                toast.error(data.message || "Áp mã thất bại");
+                                return;
+                            }
+
+                            toast.success(data.message || "Áp dụng mã thành công!");
+                            setFinalAmount(data.finalPrice); 
+                            } catch {
+                            toast.error("Có lỗi khi áp dụng mã");
+                            }
+                        }}
+                        >
+                        Sử dụng
+                        </button>
+
+
+                    <hr />
+                    <div className="flex justify-between">
+                        <span>Tạm tính:</span>
+                        <span>{totalPrice.toLocaleString()}₫</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Phí vận chuyển:</span>
+                        <span>—</span>
+                    </div>
+                    <hr />
+                    <div className="flex justify-between font-semibold text-red-500 text-lg">
+                        <span>Tổng cộng:</span>
+                        <span>{(finalAmount ?? totalPrice).toLocaleString()}₫</span>
+                    </div>
+
                 </div>
               ))
           ) : (
