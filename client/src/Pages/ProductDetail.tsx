@@ -1,3 +1,4 @@
+// ProductDetail.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import { MdNavigateNext } from 'react-icons/md';
 import { createReview } from '../services/reviewService';
 import { useQuery } from '@tanstack/react-query';
 import { getReviewsByProduct } from '../services/reviewService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PriceAndStockDetails {
   salePrice: number;
@@ -26,9 +28,9 @@ const getPriceAndStockDetails = (
   product: Product | undefined,
   selectedVariation: Variation | null
 ): PriceAndStockDetails => {
-  const salePrice = selectedVariation?.salePrice ?? 0; // Mặc định 0 nếu undefined/null
-  const originalPrice = selectedVariation?.finalPrice ?? 0; // Mặc định 0 nếu undefined/null
-  const displayPrice = salePrice !== 0 ? salePrice : originalPrice; // Dùng salePrice nếu khác 0, ngược lại dùng originalPrice
+  const salePrice = selectedVariation?.salePrice ?? 0;
+  const originalPrice = selectedVariation?.finalPrice ?? 0;
+  const displayPrice = salePrice !== 0 ? salePrice : originalPrice;
   const stockQuantity = selectedVariation?.stockQuantity;
 
   let discountPercentage: number | null = null;
@@ -71,14 +73,16 @@ const ProductDetail: React.FC = () => {
   const [comment, setComment] = useState<string>('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const token = localStorage.getItem('token') || undefined;
-  const guestId = localStorage.getItem('guestId') || undefined;
+  const token = sessionStorage.getItem('token') || undefined;
+  let guestId = sessionStorage.getItem('guestId') || undefined;
+
+  // Tạo guestId mới nếu chưa có và chưa đăng nhập
+  if (!token && !guestId) {
+    guestId = uuidv4();
+    sessionStorage.setItem('guestId', guestId);
+  }
 
   const handleSubmitReview = async () => {
-    // console.log("✅ Gửi đánh giá...");
-    // console.log("➡️ id:", id);
-    // console.log("➡️ rating:", rating);
-    // console.log("➡️ comment:", comment);
     if (!token) {
       toast.warning('Bạn cần đăng nhập để đánh giá!');
       return;
@@ -141,7 +145,9 @@ const ProductDetail: React.FC = () => {
         onError: () => {
           toast.info(
             'Sản phẩm này không có biến thể hoặc lỗi khi tải biến thể',
-            { autoClose: 1000 }
+            {
+              autoClose: 1000,
+            }
           );
         },
       },

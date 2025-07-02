@@ -12,7 +12,9 @@ import CartPage from './Pages/Cart/CartPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import BannerSlider from './Pages/Banner';
 import OrderHistoryPage from './Pages/OrderHistoryPage';
-import CheckPayment from './Pages/CheckPayment';
+import UserAccount from './Pages/account';
+import ThankYouPage from './Pages/ThanhYouPage';
+
 
 
 function App() {
@@ -51,12 +53,14 @@ function App() {
         />
 
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order-history" element={<OrderHistoryPage />} />
-        <Route path="/check-payment" element={<CheckPayment />} />
+        <Route path='/thank-you' element={<ThankYouPage />} />
+       <Route path="/order-history" element={<OrderHistoryPage />} />
+       <Route path="/account" element={<UserAccount />} />
       </Route>
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/set-user" element={<SetUser />} />
+
 
     </Routes>
   );

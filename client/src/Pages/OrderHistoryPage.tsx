@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { message } from 'antd';
+import { getImageUrl } from '../utils/imageUtils';
 
 const cancelReasons = [
   'Thay đổi nhu cầu mua hàng',
@@ -13,12 +14,14 @@ const cancelReasons = [
 const OrderHistoryPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
+  const [cancelReasonsMap, setCancelReasonsMap] = useState<
+    Record<string, string>
+  >({});
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem('currentUser') || '{}');
+      return JSON.parse(sessionStorage.getItem('currentUser') || '{}');
     } catch {
       return {};
     }
@@ -74,50 +77,8 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
-  const handleRetryPayment = async (orderCode: string) => {
-    try {
-      message.loading({ content: "Đang tạo lại link thanh toán...", key: "retry" });
-
-      const res = await axios.post(
-        "http://localhost:5000/api/zalo-payment/create-payment",
-        { orderCode },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (res.data.order_url) {
-        message.success({ content: "Chuyển hướng đến ZaloPay...", key: "retry" });
-        // Lưu orderCode vào localStorage để trang /payment/status còn nhận biết được
-        localStorage.setItem("currentOrderCode", orderCode);
-        // Redirect
-        window.location.href = res.data.order_url;
-      } else {
-        message.error("Không lấy được link thanh toán.");
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("Tạo lại thanh toán thất bại.");
-    }
-  };
-
-  const handleConfirmReceived = async (orderId: string) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/orders/${orderId}`,
-        { status: 'completed', note: 'Khách hàng xác nhận đã nhận hàng' },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      message.success('Xác nhận đã nhận hàng thành công');
-      fetchOrders();
-    } catch (err) {
-      message.error('Xác nhận thất bại');
-    }
-  };
-
-  if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
+  if (loading)
+    return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -134,7 +95,9 @@ const OrderHistoryPage: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <p className="text-lg font-medium">Mã đơn: {order.orderCode}</p>
+                  <p className="text-lg font-medium">
+                    Mã đơn: {order.orderCode}
+                  </p>
                   <p className="text-sm text-gray-600">
                     Ngày đặt: {new Date(order.createdAt).toLocaleString()}
                   </p>
@@ -152,7 +115,7 @@ const OrderHistoryPage: React.FC = () => {
                   <strong>SĐT:</strong> {order.shippingAddress.phone}
                 </p>
                 <p>
-                  <strong>Email:</strong> {order.userId?.email}
+                  <strong>Email:</strong> {order.shippingAddress.email}
                 </p>
                 <p>
                   <strong>Địa chỉ:</strong>{' '}
@@ -183,17 +146,23 @@ const OrderHistoryPage: React.FC = () => {
                           className="flex gap-4 items-center pt-2 mt-2"
                         >
                           <img
-                            src={v.colorImageUrl}
+                            src={getImageUrl(v.colorImageUrl)}
                             alt={v.name}
                             className="w-16 h-16 object-cover rounded"
                           />
                           <div className="flex-1">
                             <p className="font-medium">{v.name}</p>
-                            <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
-                            <p className="text-sm text-gray-500">SKU: {v.sku}</p>
+                            <p className="text-gray-500 text-sm">
+                              Màu: {v.colorName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              SKU: {v.sku}
+                            </p>
                           </div>
                           <div className="text-right">
-                            <p>{price.toLocaleString()}₫ x {v.quantity}</p>
+                            <p>
+                              {price.toLocaleString()}₫ x {v.quantity}
+                            </p>
                             <p className="font-semibold text-red-500">
                               {(price * v.quantity).toLocaleString()}₫
                             </p>
@@ -210,16 +179,7 @@ const OrderHistoryPage: React.FC = () => {
               </div>
 
               {order.status === 'pending' && (
-                <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                  {order.paymentMethod === 'online_payment' && (
-                    <button
-                      onClick={() => handleRetryPayment(order.orderCode)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Thanh toán lại qua ZaloPay
-                    </button>
-                  )}
-
+                <div className="text-right mt-4 flex items-center justify-end gap-4">
                   <select
                     value={cancelReasonsMap[order._id] || ''}
                     onChange={(e) =>
@@ -238,22 +198,11 @@ const OrderHistoryPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
-
                   <button
                     onClick={() => handleCancelOrder(order._id)}
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Huỷ đơn hàng
-                  </button>
-                </div>
-              )}
-              {order.status === 'shipping' && (
-                <div className="text-right mt-4">
-                  <button
-                    onClick={() => handleConfirmReceived(order._id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Đã nhận hàng
                   </button>
                 </div>
               )}

@@ -239,7 +239,6 @@ exports.createOrder = async (req, res) => {
             success: true,
             message: 'Tạo đơn hàng thành công',
             order: savedOrder,
-            orderCode: savedOrder.orderCode, // Trả về orderCode
         });
     } catch (err) {
         console.error('Lỗi createOrder:', err);
@@ -254,85 +253,60 @@ exports.createOrder = async (req, res) => {
 
 // Lấy chi tiết đơn hàng
 exports.getOrderById = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        if (!mongoose.isValidObjectId(id)) {
-            return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
-        }
-
-        const order = await Order.findById(id)
-            .populate({
-                path: 'userId',
-                select: 'name email'
-            })
-            .populate({
-                path: 'items.variationId',
-                select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
-                populate: {
-                    path: 'productId',
-                    select: 'name brand descriptionShort image',
-                    match: { isDeleted: false, status: 'active' }
-                }
-            });
-
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
-        }
-
-        // Nhóm items theo productId
-        const groupedItems = order.items.reduce((acc, item) => {
-            if (!item.variationId || !item.variationId.productId) {
-                return acc;
-            }
-            const productId = item.variationId.productId._id.toString();
-            let group = acc.find(g => g.productId === productId);
-            if (!group) {
-                group = {
-                    productId,
-                    name: item.variationId.productId.name,
-                    brand: item.variationId.productId.brand,
-                    descriptionShort: item.variationId.productId.descriptionShort,
-                    image: item.variationId.productId.image,
-                    variations: [],
-                    totalQuantity: 0,
-                    totalPrice: 0
-                };
-                acc.push(group);
-            }
-            group.variations.push({
-                variationId: item.variationId._id,
-                name: item.variationId.name,
-                sku: item.variationId.sku,
-                dimensions: item.variationId.dimensions,
-                finalPrice: item.variationId.finalPrice,
-                salePrice: item.salePrice,
-                stockQuantity: item.variationId.stockQuantity,
-                colorName: item.variationId.colorName,
-                colorHexCode: item.variationId.colorHexCode,
-                colorImageUrl: item.variationId.colorImageUrl,
-                materialVariation: item.variationId.materialVariation,
-                quantity: item.quantity,
-                subtotal: item.salePrice * item.quantity
-            });
-            group.totalQuantity += item.quantity;
-            group.totalPrice += item.salePrice * item.quantity;
-            return acc;
-        }, []);
-
-        res.status(200).json({
-            success: true,
-            message: 'Lấy chi tiết đơn hàng thành công',
-            data: {
-                ...order.toObject(),
-                items: groupedItems
-            }
-        });
-    } catch (err) {
-        console.error('Lỗi lấy chi tiết đơn hàng:', err);
-        res.status(500).json({ message: 'Lỗi server', error: err.message });
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
     }
+
+    const order = await Order.findById(id)
+      .populate({
+        path: 'userId',
+        select: 'name email'
+      })
+      .populate({
+        path: 'items.variationId',
+        select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
+        populate: {
+          path: 'productId',
+          select: 'name brand descriptionShort image',
+          match: { isDeleted: false, status: 'active' }
+        }
+      });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+    }
+
+    // Tạo mảng items đơn giản (không group)
+    const mappedItems = order.items.map((item) => {
+      if (!item.variationId || !item.variationId.productId) return null;
+
+      return {
+        variationId: item.variationId._id,
+        quantity: item.quantity,
+        salePrice: item.salePrice,
+        name: item.variationId.productId.name,
+        image: item.variationId.productId.image,
+        subtotal: item.salePrice * item.quantity
+      };
+    }).filter(Boolean);
+
+    res.status(200).json({
+      success: true,
+      message: 'Lấy chi tiết đơn hàng thành công',
+      data: {
+        ...order.toObject(),
+        items: mappedItems
+      }
+    });
+  } catch (err) {
+    console.error('Lỗi lấy chi tiết đơn hàng:', err);
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
 };
+
 
 // Cập nhật đơn hàng
 exports.updateOrder = async (req, res) => {
@@ -575,30 +549,4 @@ const calculateFinalPrice = async (items, promoCode) => {
     return { originalPrice, finalPrice, discountAmount };
 };
 
-
-exports.getOrderStatus = async (req, res) => {
-    try {
-        const { orderCode } = req.query;
-
-        if (!orderCode) {
-            return res.status(400).json({ message: "Missing orderCode" });
-        }
-
-        // Tìm theo trường orderCode của bạn
-        const order = await Order.findOne({ orderCode: orderCode.trim() });
-
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
-        res.json({
-            paymentStatus: order.paymentStatus,
-            orderStatus: order.status
-        });
-
-    } catch (error) {
-        console.error("Error fetching order status:", error);
-        res.status(500).json({ message: "Internal server error", error: error.message });
-    }
-}
 
