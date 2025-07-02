@@ -14,13 +14,11 @@ export interface CreateOrderPayload {
   };
   paymentMethod: 'cod' | 'bank_transfer' | 'online_payment';
   cartId: string;
-  couponCode?: string; // Thêm dòng này
 }
 
 export interface OrderResponse {
   success: boolean;
   message: string;
-  orderCode: string;
   order: {
     _id: string;
     orderCode: string;
