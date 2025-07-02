@@ -134,7 +134,7 @@ exports.getOrders = async (req, res) => {
 // Tạo đơn hàng từ giỏ hàng
 exports.createOrder = async (req, res) => {
     try {
-        const { shippingAddress, paymentMethod, cartId } = req.body;
+        const { shippingAddress, paymentMethod, cartId, finalAmount, couponCode } = req.body;
 
         // Xác thực địa chỉ giao hàng
         const { fullName, phone, email, addressLine, street, province, district, ward } = shippingAddress || {};
@@ -202,7 +202,25 @@ exports.createOrder = async (req, res) => {
             salePrice: item.variationId.salePrice || item.variationId.finalPrice,
         }));
 
-        const totalAmount = items.reduce((total, item) => total + item.salePrice * item.quantity, 0);
+        let totalAmount = items.reduce((total, item) => total + item.salePrice * item.quantity, 0);
+
+        // Nếu frontend gửi finalAmount (áp mã giảm giá), dùng giá đó
+        if (finalAmount && Number(finalAmount) > 0) {
+            totalAmount = Number(finalAmount);
+        }
+
+        let promotionInfo = undefined;
+
+        if (couponCode) {
+            const promotion = await Promotion.findOne({ code: couponCode.trim() });
+            if (promotion) {
+                promotionInfo = {
+                    code: promotion.code,
+                    discountType: promotion.discountType,
+                    discountValue: promotion.discountValue,
+                };
+            }
+        }
 
         const newOrder = new Order({
             userId: req.user?.userId || null, // Có thể null nếu là guest
@@ -216,6 +234,7 @@ exports.createOrder = async (req, res) => {
             paymentMethod,
             items,
             status: 'pending',
+            promotion: promotionInfo,
             statusHistory: [
                 {
                     status: 'pending',
@@ -254,58 +273,58 @@ exports.createOrder = async (req, res) => {
 
 // Lấy chi tiết đơn hàng
 exports.getOrderById = async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-    if (!mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
-    }
-
-    const order = await Order.findById(id)
-      .populate({
-        path: 'userId',
-        select: 'name email'
-      })
-      .populate({
-        path: 'items.variationId',
-        select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
-        populate: {
-          path: 'productId',
-          select: 'name brand descriptionShort image',
-          match: { isDeleted: false, status: 'active' }
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
         }
-      });
 
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+        const order = await Order.findById(id)
+            .populate({
+                path: 'userId',
+                select: 'name email'
+            })
+            .populate({
+                path: 'items.variationId',
+                select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
+                populate: {
+                    path: 'productId',
+                    select: 'name brand descriptionShort image',
+                    match: { isDeleted: false, status: 'active' }
+                }
+            });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+        }
+
+        // Tạo mảng items đơn giản (không group)
+        const mappedItems = order.items.map((item) => {
+            if (!item.variationId || !item.variationId.productId) return null;
+
+            return {
+                variationId: item.variationId._id,
+                quantity: item.quantity,
+                salePrice: item.salePrice,
+                name: item.variationId.productId.name,
+                image: item.variationId.productId.image,
+                subtotal: item.salePrice * item.quantity
+            };
+        }).filter(Boolean);
+
+        res.status(200).json({
+            success: true,
+            message: 'Lấy chi tiết đơn hàng thành công',
+            data: {
+                ...order.toObject(),
+                items: mappedItems
+            }
+        });
+    } catch (err) {
+        console.error('Lỗi lấy chi tiết đơn hàng:', err);
+        res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
-
-    // Tạo mảng items đơn giản (không group)
-    const mappedItems = order.items.map((item) => {
-      if (!item.variationId || !item.variationId.productId) return null;
-
-      return {
-        variationId: item.variationId._id,
-        quantity: item.quantity,
-        salePrice: item.salePrice,
-        name: item.variationId.productId.name,
-        image: item.variationId.productId.image,
-        subtotal: item.salePrice * item.quantity
-      };
-    }).filter(Boolean);
-
-    res.status(200).json({
-      success: true,
-      message: 'Lấy chi tiết đơn hàng thành công',
-      data: {
-        ...order.toObject(),
-        items: mappedItems
-      }
-    });
-  } catch (err) {
-    console.error('Lỗi lấy chi tiết đơn hàng:', err);
-    res.status(500).json({ message: 'Lỗi server', error: err.message });
-  }
 };
 
 
