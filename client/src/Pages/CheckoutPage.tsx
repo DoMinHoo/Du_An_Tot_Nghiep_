@@ -139,6 +139,34 @@ const CheckoutPage: React.FC = () => {
       });
 
 
+      if (paymentMethod === 'bank_transfer') {
+        // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
+        sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
+        try {
+          const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
+          });
+
+          const data = await res.json();
+          if (res.ok && data.paymentUrl) {
+            window.location.href = data.paymentUrl;
+          } else {
+            toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+          }
+        } catch (error) {
+          toast.error('Lỗi khi tạo thanh toán VNPAY');
+        }
+      } else {
+        // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
+        orderMutation.mutate(orderRes);
+      }
+
+
+      
+
+
       if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
         const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
           method: 'POST',

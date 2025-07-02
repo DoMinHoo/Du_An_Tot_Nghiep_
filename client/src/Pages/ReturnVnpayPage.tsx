@@ -6,7 +6,7 @@ import { toast } from "react-toastify"
 import { createOrder } from "../services/orderService"
 import Header from "../Components/Common/Header"
 import Footer from "../Components/Common/Footer"
-import { Card, Button, Result, Descriptions, Badge, Spin, Typography, Space, Row, Col, Alert } from "antd"
+import { Card, Button, Result, Descriptions, Badge, Spin, Typography, Space, Row, Col, Alert, Table } from "antd"
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -37,6 +37,7 @@ const ReturnVnpayPage = () => {
 
   const [loading, setLoading] = useState(true)
   const [orderCreated, setOrderCreated] = useState(false)
+  const [orderDetail, setOrderDetail] = useState<any>(null)
 
   useEffect(() => {
     if (status === "success") {
@@ -46,6 +47,12 @@ const ReturnVnpayPage = () => {
         ? JSON.parse(sessionStorage.getItem("shippingAddress") as string)
         : {}
       const cartId = sessionStorage.getItem("cartId") || ""
+
+      // Lấy thông tin đơn hàng đã lưu khi tạo đơn (nếu có)
+      const pendingOrder = sessionStorage.getItem("pendingOrder")
+      if (pendingOrder) {
+        setOrderDetail(JSON.parse(pendingOrder))
+      }
 
       const orderData = {
         paymentMethod: "online_payment",
@@ -139,6 +146,35 @@ const ReturnVnpayPage = () => {
       </div>
     )
   }
+
+  // Cột hiển thị sản phẩm
+  const columns = [
+    {
+      title: "Sản phẩm",
+      dataIndex: "productName",
+      key: "productName",
+      render: (text: string) => <b>{text}</b>,
+    },
+    {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "center" as const,
+    },
+    {
+      title: "Đơn giá",
+      dataIndex: "price",
+      key: "price",
+      align: "right" as const,
+      render: (price: number) => `${Number(price).toLocaleString()}₫`,
+    },
+    {
+      title: "Thành tiền",
+      key: "total",
+      align: "right" as const,
+      render: (_: any, record: any) => `${(record.price * record.quantity).toLocaleString()}₫`,
+    },
+  ]
 
   return (
     <div>
@@ -285,6 +321,42 @@ const ReturnVnpayPage = () => {
                 </Col>
               </Row>
             </Card>
+
+            {/* Order Detail */}
+            {orderDetail && orderDetail.items && orderDetail.items.length > 0 && (
+              <Card
+                title={
+                  <Space>
+                    <ShoppingOutlined style={{ color: "#1890ff" }} />
+                    <span>Chi tiết đơn hàng</span>
+                  </Space>
+                }
+                style={{ marginTop: 24 }}
+              >
+                <Table
+                  dataSource={orderDetail.items.map((item: any, idx: number) => ({
+                    ...item,
+                    key: idx,
+                  }))}
+                  columns={columns}
+                  pagination={false}
+                  bordered
+                  summary={pageData => {
+                    const total = pageData.reduce((sum, row) => sum + row.price * row.quantity, 0)
+                    return (
+                      <Table.Summary.Row>
+                        <Table.Summary.Cell index={0} colSpan={3} align="right">
+                          <b>Tổng cộng</b>
+                        </Table.Summary.Cell>
+                        <Table.Summary.Cell index={1} align="right">
+                          <b>{total.toLocaleString()}₫</b>
+                        </Table.Summary.Cell>
+                      </Table.Summary.Row>
+                    )
+                  }}
+                />
+              </Card>
+            )}
 
             {/* Order Status */}
             {orderCreated && (
