@@ -239,6 +239,7 @@ exports.createOrder = async (req, res) => {
             success: true,
             message: 'Tạo đơn hàng thành công',
             order: savedOrder,
+            orderCode: savedOrder.orderCode, // Trả về orderCode
         });
     } catch (err) {
         console.error('Lỗi createOrder:', err);
@@ -549,4 +550,30 @@ const calculateFinalPrice = async (items, promoCode) => {
     return { originalPrice, finalPrice, discountAmount };
 };
 
+
+exports.getOrderStatus = async (req, res) => {
+    try {
+        const { orderCode } = req.query;
+
+        if (!orderCode) {
+            return res.status(400).json({ message: "Missing orderCode" });
+        }
+
+        // Tìm theo trường orderCode của bạn
+        const order = await Order.findOne({ orderCode: orderCode.trim() });
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        res.json({
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.status
+        });
+
+    } catch (error) {
+        console.error("Error fetching order status:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+}
 
