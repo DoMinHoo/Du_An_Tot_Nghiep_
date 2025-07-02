@@ -219,6 +219,15 @@ const OrderHistoryPage: React.FC = () => {
               </div>
 
               <div className="text-right mt-4 text-lg font-semibold text-red-600">
+                <p>
+                  <strong>Mã giảm giá:</strong>{" "}
+                  {order.promotion?.code
+                    ? `${order.promotion.code} (${order.promotion.discountType === "percentage"
+                      ? `${order.promotion.discountValue}%`
+                      : `${order.promotion.discountValue.toLocaleString()}₫`
+                    })`
+                    : "Không áp dụng"}
+                </p>
                 Tổng cộng: {order.totalAmount.toLocaleString()}₫
               </div>
 
