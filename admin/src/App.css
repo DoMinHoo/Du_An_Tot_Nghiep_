@@ -32,24 +32,75 @@ a {
 /* Flex container for inputs and select */
 .input-group {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-/* Input and select wrapper */
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-/* Label styles */
 .input-label {
   font-size: 14px;
   font-weight: 500;
-  color: #374151; /* Màu xám đậm tương ứng với Tailwind text-gray-700 */
+  color: #333;
+  margin-bottom: 5px;
 }
 
+.input {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 160px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.btn.btn-secondary {
+  margin-top: 28px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background-color: #6c757d;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+@media (max-width: 600px) {
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .input {
+    width: 100%;
+  }
+
+  .btn.btn-secondary {
+    width: 100%;
+    padding: 10px;
+  }
+}
 /* Input and select styles */
 .input,
 .select {

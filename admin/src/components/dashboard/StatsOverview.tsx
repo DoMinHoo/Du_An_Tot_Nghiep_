@@ -1,3 +1,4 @@
+// components/dashboard/StatsOverview.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchStats } from '../../Services/api';
 import type { StatsOverview } from '../../Types/dashboard';
@@ -21,20 +22,23 @@ ChartJS.register(
   Legend
 );
 
-const StatsOverview: React.FC = () => {
+interface StatsOverviewProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const StatsOverview: React.FC<StatsOverviewProps> = ({
+  startDate,
+  endDate,
+}) => {
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>();
-  const [endDate, setEndDate] = useState<string>();
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetchStats.overview({
-        startDate,
-        endDate,
-      });
+      const response = await fetchStats.overview({ startDate, endDate });
       if (response.data.success) {
         setStats(response.data.data);
         setError(null);
@@ -74,57 +78,33 @@ const StatsOverview: React.FC = () => {
   };
 
   return (
-    <div className="container-no-shadow">
-      <h2 className="heading-2xl">Tổng quan thống kê</h2>
-      <div className="input-group">
-        <div className="input-wrapper">
-          <label htmlFor="startDate" className="input-label">
-            Ngày bắt đầu
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="input"
-          />
-        </div>
-        <div className="input-wrapper">
-          <label htmlFor="endDate" className="input-label">
-            Ngày kết thúc
-          </label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="input"
-          />
-        </div>
-      </div>
+    <div className="card">
+      <h3 className="card-title">Tổng quan thống kê</h3>
       {loading ? (
         <p>Đang tải...</p>
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : stats ? (
-        <div className="grid">
-          <div className="card">
-            <h3 className="heading-3">Tổng số đơn hàng</h3>
-            <p className="text-xl">{stats.totalOrders}</p>
+        <div className="stats-overview">
+          <div className="stat-item">
+            <h4>Tổng số đơn hàng</h4>
+            <p className="stat-value">{stats.totalOrders}</p>
           </div>
-          <div className="card">
-            <h3 className="heading-3">Tổng doanh thu</h3>
-            <p className="text-xl">{stats.totalRevenue.toLocaleString()} VND</p>
+          <div className="stat-item">
+            <h4>Tổng doanh thu</h4>
+            <p className="stat-value">
+              {stats.totalRevenue.toLocaleString()} VND
+            </p>
           </div>
-          <div className="card">
-            <h3 className="heading-3">Tổng số khách hàng</h3>
-            <p className="text-xl">{stats.totalUsers}</p>
+          <div className="stat-item">
+            <h4>Tổng số khách hàng</h4>
+            <p className="stat-value">{stats.totalUsers}</p>
           </div>
-          <div className="card">
-            <h3 className="heading-3">Tổng sản phẩm bán</h3>
-            <p className="text-xl">{stats.totalProductsSold}</p>
+          <div className="stat-item">
+            <h4>Tổng sản phẩm bán</h4>
+            <p className="stat-value">{stats.totalProductsSold}</p>
           </div>
-          <div className="card grid-full">
+          <div className="chart-container">
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>

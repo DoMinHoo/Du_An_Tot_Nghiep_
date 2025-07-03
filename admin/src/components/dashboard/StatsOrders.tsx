@@ -1,3 +1,4 @@
+// components/dashboard/StatsOrders.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchStats } from '../../Services/api';
 import type { StatsOrders } from '../../Types/dashboard';
@@ -21,20 +22,20 @@ ChartJS.register(
   Legend
 );
 
-const StatsOrders: React.FC = () => {
+interface StatsOrdersProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const StatsOrders: React.FC<StatsOrdersProps> = ({ startDate, endDate }) => {
   const [stats, setStats] = useState<StatsOrders | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>();
-  const [endDate, setEndDate] = useState<string>();
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetchStats.orders({
-        startDate,
-        endDate,
-      });
+      const response = await fetchStats.orders({ startDate, endDate });
       if (response.data.success) {
         setStats(response.data.data);
         setError(null);
@@ -76,32 +77,6 @@ const StatsOrders: React.FC = () => {
   return (
     <div className="container">
       <h2 className="heading-2xl">Thống kê đơn hàng</h2>
-      <div className="input-group">
-        <div className="input-wrapper">
-          <label htmlFor="startDate" className="input-label">
-            Ngày bắt đầu
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="input"
-          />
-        </div>
-        <div className="input-wrapper">
-          <label htmlFor="endDate" className="input-label">
-            Ngày kết thúc
-          </label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="input"
-          />
-        </div>
-      </div>
       {loading ? (
         <p>Đang tải...</p>
       ) : error ? (

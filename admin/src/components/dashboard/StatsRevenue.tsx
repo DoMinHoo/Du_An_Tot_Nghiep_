@@ -1,3 +1,4 @@
+// components/dashboard/StatsRevenue.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchStats } from '../../Services/api';
 import type { StatsRevenue } from '../../Types/dashboard';
@@ -21,24 +22,20 @@ ChartJS.register(
   Legend
 );
 
-const StatsRevenue: React.FC = () => {
+interface StatsRevenueProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const StatsRevenue: React.FC<StatsRevenueProps> = ({ startDate, endDate }) => {
   const [stats, setStats] = useState<StatsRevenue | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>();
-  // new Date(new Date().setDate(new Date().getDate() - 7))
-  // .toISOString()
-  // .split('T')[0]
-  const [endDate, setEndDate] = useState<string>();
-  // new Date().toISOString().split('T')[0]
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetchStats.revenue({
-        startDate,
-        endDate,
-      });
+      const response = await fetchStats.revenue({ startDate, endDate });
       if (response.data.success) {
         setStats(response.data.data);
         setError(null);
@@ -80,38 +77,12 @@ const StatsRevenue: React.FC = () => {
   return (
     <div className="container">
       <h2 className="heading-2xl">Thống kê doanh thu</h2>
-      <div className="input-group">
-        <div className="input-wrapper">
-          <label htmlFor="startDate" className="input-label">
-            Ngày bắt đầu
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="input"
-          />
-        </div>
-        <div className="input-wrapper">
-          <label htmlFor="endDate" className="input-label">
-            Ngày kết thúc
-          </label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="input"
-          />
-        </div>
-      </div>
       {loading ? (
         <p>Đang tải...</p>
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : stats ? (
-        <div className="grid">
+        <div className="grid width-full">
           <div className="card">
             <h3 className="heading-3">Doanh thu theo danh mục</h3>
             <Bar data={chartData} options={chartOptions} />
