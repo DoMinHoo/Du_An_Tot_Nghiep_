@@ -16,8 +16,9 @@ import OrderHistoryPage from './Pages/OrderHistoryPage';
 import CheckPayment from './Pages/CheckPayment';
 
 import UserAccount from './Pages/account';
-import ThankYouPage from './Pages/ThanhYouPage';
+import ThankYouPage from './Pages/ThankYouPage';
 import ReturnVnpayPage from './Pages/ReturnVnpayPage';
+import ContactPage from './Pages/Contact';
 
 
 
@@ -63,7 +64,8 @@ function App() {
         <Route path="/check-payment" element={<CheckPayment />} />
 
         <Route path='/thank-you' element={<ThankYouPage />} />
-       <Route path="/account" element={<UserAccount />} />
+        <Route path="/account" element={<UserAccount />} />
+        <Route path="/contact" element={<ContactPage />} />
 
       </Route>
       <Route path="/signin" element={<Register />} />
