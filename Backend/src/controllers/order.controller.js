@@ -9,6 +9,7 @@ const Cart = require('../models/cart.model');
 const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
 const User = require('../models/user.model');
+const { sendPaymentSuccessEmail, sendOrderSuccessEmail } = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
 
 
 
@@ -364,6 +365,10 @@ exports.updateOrder = async (req, res) => {
                     }
                 }
             }
+            // Gửi email khi COD chuyển sang shipping để hỏi xác nhận nhận hàng
+            if (status === 'completed' && order.paymentMethod === 'cod') {
+                await sendPaymentSuccessEmail(id);
+            }
 
             // Cập nhật riêng status + statusHistory, tránh validate toàn bộ schema
             const updateData = {
@@ -595,4 +600,3 @@ exports.getOrderStatus = async (req, res) => {
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 }
-

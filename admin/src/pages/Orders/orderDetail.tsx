@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Layout,
   Typography,
@@ -11,34 +11,34 @@ import {
   List,
   message,
   Spin,
-} from "antd";
-import { getOrderById, updateOrder } from "../../Services/orders.service";
+} from 'antd';
+import { getOrderById, updateOrder } from '../../Services/orders.service';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const statusText: Record<string, string> = {
-  pending: "Chờ xác nhận",
-  confirmed: "Đã xác nhận",
-  shipping: "Đang giao hàng",
-  completed: "Đã giao hàng",
-  canceled: "Đã hủy đơn",
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  shipping: 'Đang giao hàng',
+  completed: 'Đã giao hàng',
+  canceled: 'Đã hủy đơn',
 };
 
 const statusColor: Record<string, string> = {
-  pending: "default",
-  confirmed: "blue",
-  shipping: "orange",
-  completed: "green",
-  canceled: "red",
+  pending: 'default',
+  confirmed: 'blue',
+  shipping: 'orange',
+  completed: 'green',
+  canceled: 'red',
 };
 
 const getNextAvailableStatuses = (currentStatus: string): string[] => {
   const transitions: Record<string, string[]> = {
-    pending: ["confirmed", "canceled"],
-    confirmed: ["shipping", "canceled"],
-    shipping: ["completed", "canceled"],
+    pending: ['confirmed', 'canceled'],
+    confirmed: ['shipping', 'canceled'],
+    shipping: ['completed', 'canceled'],
     completed: [],
     canceled: [],
   };
@@ -50,8 +50,10 @@ const OrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [status, setStatus] = useState<{ value: string; label: string } | null>(null);
-  const [note, setNote] = useState<string>("");
+  const [status, setStatus] = useState<{ value: string; label: string } | null>(
+    null
+  );
+  const [note, setNote] = useState<string>('');
 
   const fetchOrder = async () => {
     try {
@@ -64,16 +66,16 @@ const OrderDetail: React.FC = () => {
         label: statusText[currentStatus] || currentStatus,
       });
 
-      if (currentStatus === "canceled") {
+      if (currentStatus === 'canceled') {
         const cancelEntry = data.statusHistory?.find(
-          (entry: any) => entry.status === "canceled"
+          (entry: any) => entry.status === 'canceled'
         );
         if (cancelEntry?.note) {
           setNote(cancelEntry.note);
         }
       }
     } catch (error) {
-      message.error("Không thể tải chi tiết đơn hàng");
+      message.error('Không thể tải chi tiết đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -85,8 +87,8 @@ const OrderDetail: React.FC = () => {
 
   const handleStatusChange = (option: { value: string; label: string }) => {
     setStatus(option);
-    if (option.value !== "canceled") {
-      setNote("");
+    if (option.value !== 'canceled') {
+      setNote('');
     }
   };
 
@@ -94,27 +96,27 @@ const OrderDetail: React.FC = () => {
     if (!status) return;
     const allowedStatuses = getNextAvailableStatuses(order.status);
     if (!allowedStatuses.includes(status.value)) {
-      message.warning("Trạng thái không hợp lệ. Không thể cập nhật.");
+      message.warning('Trạng thái không hợp lệ. Không thể cập nhật.');
       return;
     }
 
-    if (status.value === "canceled" && !note.trim()) {
-      message.warning("Vui lòng nhập lý do huỷ đơn hàng");
+    if (status.value === 'canceled' && !note.trim()) {
+      message.warning('Vui lòng nhập lý do huỷ đơn hàng');
       return;
     }
 
     try {
       await updateOrder(id!, { status: status.value, note });
-      message.success("Cập nhật trạng thái thành công");
-      navigate("/admin/orders", { state: { shouldRefresh: true } });
+      message.success('Cập nhật trạng thái thành công');
+      navigate('/admin/orders', { state: { shouldRefresh: true } });
     } catch (error) {
-      message.error("Cập nhật trạng thái thất bại");
+      message.error('Cập nhật trạng thái thất bại');
     }
   };
 
   if (loading || !order) {
     return (
-      <div style={{ textAlign: "center", padding: 50 }}>
+      <div style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
       </div>
     );
@@ -124,29 +126,47 @@ const OrderDetail: React.FC = () => {
   const shipping = order.shippingAddress || {};
 
   return (
-    <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <Content style={{ margin: '24px', background: '#fff', padding: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Title level={3} style={{ margin: 0 }}>
           Chi tiết đơn hàng #{order.orderCode}
         </Title>
-        <Button onClick={() => navigate("/admin/orders")}>← Quay lại danh sách</Button>
+        <Button onClick={() => navigate('/admin/orders')}>
+          ← Quay lại danh sách
+        </Button>
       </div>
 
-      <Descriptions bordered column={1} style={{ marginBottom: 24, marginTop: 16 }}>
+      <Descriptions
+        bordered
+        column={1}
+        style={{ marginBottom: 24, marginTop: 16 }}
+      >
         <Descriptions.Item label="Tên khách hàng">
-          {shipping.fullName || "N/A"}
+          {shipping.fullName || 'N/A'}
         </Descriptions.Item>
-        <Descriptions.Item label="Email">{shipping.email || "N/A"}</Descriptions.Item>
-        <Descriptions.Item label="Số điện thoại">{shipping.phone || "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Email">
+          {shipping.email || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">
+          {shipping.phone || 'N/A'}
+        </Descriptions.Item>
         <Descriptions.Item label="Địa chỉ giao hàng">
-          {`${shipping.addressLine || ""}, ${shipping.street || ""}, ${shipping.ward || ""}, ${shipping.district || ""}, ${shipping.province || ""}`}
+          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${
+            shipping.ward || ''
+          }, ${shipping.district || ''}, ${shipping.province || ''}`}
         </Descriptions.Item>
         <Descriptions.Item label="Trạng thái hiện tại">
           <Tag color={statusColor[order.status]}>
             {statusText[order.status] || order.status}
           </Tag>
         </Descriptions.Item>
-        {order.status === "canceled" && note && (
+        {order.status === 'canceled' && note && (
           <Descriptions.Item label="Lý do huỷ đơn hàng">
             <Text type="danger">{note}</Text>
           </Descriptions.Item>
@@ -170,22 +190,36 @@ const OrderDetail: React.FC = () => {
                 ))}
               </Select>
 
-              {status?.value === "canceled" && (
+              {status?.value === 'canceled' && (
                 <Select
                   value={note}
                   onChange={(value) => setNote(value)}
                   placeholder="Chọn lý do huỷ đơn hàng"
                   style={{ marginTop: 8, width: 400 }}
                 >
-                  <Option value="Khách hàng không xác nhận đơn">Khách hàng không xác nhận đơn</Option>
-                  <Option value="Thông tin giao hàng không hợp lệ">Thông tin giao hàng không hợp lệ</Option>
-                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">Sản phẩm hết hàng hoặc ngừng kinh doanh</Option>
-                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">Nghi ngờ gian lận hoặc giao dịch bất thường</Option>
-                  <Option value="Khách hàng yêu cầu huỷ đơn">Khách hàng yêu cầu huỷ đơn</Option>
+                  <Option value="Khách hàng không xác nhận đơn">
+                    Khách hàng không xác nhận đơn
+                  </Option>
+                  <Option value="Thông tin giao hàng không hợp lệ">
+                    Thông tin giao hàng không hợp lệ
+                  </Option>
+                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
+                    Sản phẩm hết hàng hoặc ngừng kinh doanh
+                  </Option>
+                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
+                    Nghi ngờ gian lận hoặc giao dịch bất thường
+                  </Option>
+                  <Option value="Khách hàng yêu cầu huỷ đơn">
+                    Khách hàng yêu cầu huỷ đơn
+                  </Option>
                 </Select>
               )}
 
-              <Button type="primary" onClick={handleUpdateStatus} style={{ marginLeft: 12 }}>
+              <Button
+                type="primary"
+                onClick={handleUpdateStatus}
+                style={{ marginLeft: 12 }}
+              >
                 Cập nhật
               </Button>
             </>
@@ -199,28 +233,39 @@ const OrderDetail: React.FC = () => {
         bordered
         dataSource={order.items}
         renderItem={(item: any) => {
-          const productImage = Array.isArray(item.image) && item.image.length > 0
-            ? item.image[0]
-            : "/default-image.png";
+          const productImage =
+            Array.isArray(item.image) && item.image.length > 0
+              ? item.image[0]
+              : '/default-image.png';
           return (
             <List.Item style={{ padding: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", gap: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 16 }}>
                   <img
-                    src={productImage}
+                    src={`http://localhost:5000${productImage}`}
                     alt={item.name}
                     style={{
                       width: 80,
                       height: 80,
-                      objectFit: "cover",
+                      objectFit: 'cover',
                       borderRadius: 8,
-                      backgroundColor: "#f5f5f5",
+                      backgroundColor: '#f5f5f5',
                     }}
                   />
                   <div>
-                    <div><strong>{item.name}</strong></div>
+                    <div>
+                      <strong>{item.name}</strong>
+                    </div>
                     <div>Số lượng: {item.quantity}</div>
-                    <div>Đơn giá: {item.salePrice?.toLocaleString("vi-VN")}₫</div>
+                    <div>
+                      Đơn giá: {item.salePrice?.toLocaleString('vi-VN')}₫
+                    </div>
                   </div>
                 </div>
               </div>
@@ -228,11 +273,11 @@ const OrderDetail: React.FC = () => {
           );
         }}
       />
-      <div style={{ marginTop: 16, textAlign: "right" }}>
+      <div style={{ marginTop: 16, textAlign: 'right' }}>
         <Text strong style={{ fontSize: 18 }}>
-          Tổng giá tiền:{" "}
-          <span style={{ color: "red" }}>
-            {order.totalAmount.toLocaleString("vi-VN")}₫
+          Tổng giá tiền:{' '}
+          <span style={{ color: 'red' }}>
+            {order.totalAmount.toLocaleString('vi-VN')}₫
           </span>
         </Text>
       </div>
@@ -244,8 +289,8 @@ const OrderDetail: React.FC = () => {
         dataSource={order.statusHistory}
         renderItem={(entry: any) => (
           <List.Item>
-            <Text strong>{statusText[entry.status] || entry.status}</Text> –{" "}
-            {new Date(entry.changedAt).toLocaleString("vi-VN")}
+            <Text strong>{statusText[entry.status] || entry.status}</Text> –{' '}
+            {new Date(entry.changedAt).toLocaleString('vi-VN')}
           </List.Item>
         )}
       />
