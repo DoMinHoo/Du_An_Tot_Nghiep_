@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './Components/Layout/MainLayout';
 import Home from './Pages/Home';
-import About from './Pages/About';
+
 import ProductDetail from './Pages/ProductDetail';
 import CategoryPage from './Pages/CategoryPage';
 import Register from './Pages/Register/register';
@@ -19,6 +19,7 @@ import UserAccount from './Pages/account';
 import ThankYouPage from './Pages/ThankYouPage';
 import ReturnVnpayPage from './Pages/ReturnVnpayPage';
 import ContactPage from './Pages/Contact';
+import AboutPage from './Pages/About';
 
 
 
@@ -36,7 +37,7 @@ function App() {
             </>
           }
         />
-        <Route path="about" element={<About />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<CartPage />} />
         <Route
