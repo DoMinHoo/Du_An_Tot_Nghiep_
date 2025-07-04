@@ -26,7 +26,6 @@ const statusText: Record<string, string> = {
   canceled: "Đã hủy đơn",
 };
 
-
 const statusColor: Record<string, string> = {
   pending: "default",
   confirmed: "blue",
@@ -51,7 +50,7 @@ const OrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<{ value: string; label: string } | null>(null);
   const [note, setNote] = useState<string>("");
 
   const fetchOrder = async () => {
@@ -59,8 +58,13 @@ const OrderDetail: React.FC = () => {
       setLoading(true);
       const data = await getOrderById(id!);
       setOrder(data);
-      setStatus(data.status);
-      if (data.status === "canceled") {
+      const currentStatus = data.status;
+      setStatus({
+        value: currentStatus,
+        label: statusText[currentStatus] || currentStatus,
+      });
+
+      if (currentStatus === "canceled") {
         const cancelEntry = data.statusHistory?.find(
           (entry: any) => entry.status === "canceled"
         );
@@ -79,27 +83,28 @@ const OrderDetail: React.FC = () => {
     fetchOrder();
   }, [id]);
 
-  const handleStatusChange = (value: string) => {
-    setStatus(value);
-    if (value !== "canceled") {
+  const handleStatusChange = (option: { value: string; label: string }) => {
+    setStatus(option);
+    if (option.value !== "canceled") {
       setNote("");
     }
   };
 
   const handleUpdateStatus = async () => {
+    if (!status) return;
     const allowedStatuses = getNextAvailableStatuses(order.status);
-    if (!allowedStatuses.includes(status)) {
+    if (!allowedStatuses.includes(status.value)) {
       message.warning("Trạng thái không hợp lệ. Không thể cập nhật.");
       return;
     }
 
-    if (status === "canceled" && !note.trim()) {
+    if (status.value === "canceled" && !note.trim()) {
       message.warning("Vui lòng nhập lý do huỷ đơn hàng");
       return;
     }
 
     try {
-      await updateOrder(id!, { status, note });
+      await updateOrder(id!, { status: status.value, note });
       message.success("Cập nhật trạng thái thành công");
       navigate("/admin/orders", { state: { shouldRefresh: true } });
     } catch (error) {
@@ -120,8 +125,14 @@ const OrderDetail: React.FC = () => {
 
   return (
     <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-      <Title level={3}>Chi tiết đơn hàng #{order.orderCode}</Title>
-      <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Title level={3} style={{ margin: 0 }}>
+          Chi tiết đơn hàng #{order.orderCode}
+        </Title>
+        <Button onClick={() => navigate("/admin/orders")}>← Quay lại danh sách</Button>
+      </div>
+
+      <Descriptions bordered column={1} style={{ marginBottom: 24, marginTop: 16 }}>
         <Descriptions.Item label="Tên khách hàng">
           {shipping.fullName || "N/A"}
         </Descriptions.Item>
@@ -145,20 +156,21 @@ const OrderDetail: React.FC = () => {
             <Text type="secondary">Không thể cập nhật trạng thái</Text>
           ) : (
             <>
-             <Select
-  value={{ value: status, label: statusText[status] }}
-  onChange={(option) => handleStatusChange(option.value)}
-  style={{ width: 200 }}
-  labelInValue
->
-  {availableStatuses.map((s) => (
-    <Option key={s} value={s}>
-      {statusText[s] || s}
-    </Option>
-  ))}
-</Select>
+              <Select
+                labelInValue
+                value={status}
+                onChange={handleStatusChange}
+                style={{ width: 250 }}
+                placeholder="Chọn trạng thái mới"
+              >
+                {availableStatuses.map((s) => (
+                  <Option key={s} value={s}>
+                    {statusText[s] || s}
+                  </Option>
+                ))}
+              </Select>
 
-              {status === "canceled" && (
+              {status?.value === "canceled" && (
                 <Select
                   value={note}
                   onChange={(value) => setNote(value)}
@@ -172,6 +184,7 @@ const OrderDetail: React.FC = () => {
                   <Option value="Khách hàng yêu cầu huỷ đơn">Khách hàng yêu cầu huỷ đơn</Option>
                 </Select>
               )}
+
               <Button type="primary" onClick={handleUpdateStatus} style={{ marginLeft: 12 }}>
                 Cập nhật
               </Button>
@@ -209,14 +222,6 @@ const OrderDetail: React.FC = () => {
                     <div>Số lượng: {item.quantity}</div>
                     <div>Đơn giá: {item.salePrice?.toLocaleString("vi-VN")}₫</div>
                   </div>
-                </div>
-                <div style={{ alignSelf: "center", textAlign: "right" }}>
-                  <strong>
-                    Tổng:{" "}
-                    {item.salePrice && item.quantity
-                      ? (item.salePrice * item.quantity).toLocaleString("vi-VN") + "₫"
-                      : "0₫"}
-                  </strong>
                 </div>
               </div>
             </List.Item>

@@ -11,12 +11,18 @@ const cancelReasons = [
   'Thông tin đơn hàng sai (địa chỉ, số điện thoại, v.v.)',
 ];
 
+const statusText: Record<string, string> = {
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  shipping: 'Đang giao hàng',
+  completed: 'Đã giao hàng',
+  canceled: 'Đã hủy đơn',
+};
+
 const OrderHistoryPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancelReasonsMap, setCancelReasonsMap] = useState<
-    Record<string, string>
-  >({});
+  const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
 
   const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
@@ -77,13 +83,12 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
-
   const handleRetryPayment = async (orderCode: string) => {
     try {
-      message.loading({ content: "Đang tạo lại link thanh toán...", key: "retry" });
+      message.loading({ content: 'Đang tạo lại liên kết thanh toán...', key: 'retry' });
 
       const res = await axios.post(
-        "http://localhost:5000/api/zalo-payment/create-payment",
+        'http://localhost:5000/api/zalo-payment/create-payment',
         { orderCode },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -91,17 +96,15 @@ const OrderHistoryPage: React.FC = () => {
       );
 
       if (res.data.order_url) {
-        message.success({ content: "Chuyển hướng đến ZaloPay...", key: "retry" });
-        // Lưu orderCode vào localStorage để trang /payment/status còn nhận biết được
-        localStorage.setItem("currentOrderCode", orderCode);
-        // Redirect
+        message.success({ content: 'Chuyển hướng đến ZaloPay...', key: 'retry' });
+        localStorage.setItem('currentOrderCode', orderCode);
         window.location.href = res.data.order_url;
       } else {
-        message.error("Không lấy được link thanh toán.");
+        message.error('Không lấy được liên kết thanh toán.');
       }
     } catch (err) {
       console.error(err);
-      message.error("Tạo lại thanh toán thất bại.");
+      message.error('Tạo lại thanh toán thất bại.');
     }
   };
 
@@ -123,7 +126,6 @@ const OrderHistoryPage: React.FC = () => {
 
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h2 className="text-2xl font-semibold mb-6">Lịch sử đơn hàng</h2>
@@ -139,56 +141,31 @@ const OrderHistoryPage: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <p className="text-lg font-medium">
-                    Mã đơn: {order.orderCode}
-                  </p>
+                  <p className="text-lg font-medium">Mã đơn: {order.orderCode}</p>
                   <p className="text-sm text-gray-600">
-                    Ngày đặt: {new Date(order.createdAt).toLocaleString()}
+                    Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
                   </p>
                 </div>
                 <div className="text-sm px-3 py-1 rounded bg-gray-100 text-gray-800">
-                  <strong>{order.status.toUpperCase()}</strong>
+                  <strong>{statusText[order.status] || order.status}</strong>
                 </div>
               </div>
 
               <div className="text-sm mb-4 space-y-1">
-                <p>
-                  <strong>Người nhận:</strong> {order.shippingAddress.fullName}
-                </p>
-                <p>
-                  <strong>SĐT:</strong> {order.shippingAddress.phone}
-                </p>
-                <p>
-                  <strong>Email:</strong> {order.shippingAddress.email}
-                </p>
-                <p>
-                  <strong>Địa chỉ:</strong>{' '}
-                  {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}
-                </p>
-                <p>
-                  <strong>Thanh toán:</strong>{' '}
-                  {order.paymentMethod === 'cod'
-                    ? 'COD'
-                    : order.paymentMethod.toUpperCase()}
-                </p>
+                <p><strong>Người nhận:</strong> {order.shippingAddress.fullName}</p>
+                <p><strong>SĐT:</strong> {order.shippingAddress.phone}</p>
+                <p><strong>Email:</strong> {order.shippingAddress.email}</p>
+                <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
+                <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</p>
               </div>
 
               <div className="space-y-4">
                 {order.items.map((group: any) => (
-                  <div
-                    key={group.productId}
-                    className="border rounded-md p-3 bg-gray-50"
-                  >
+                  <div key={group.productId} className="border rounded-md p-3 bg-gray-50">
                     {group.variations.map((v: any) => {
-                      const price = getEffectivePrice(
-                        v.salePrice,
-                        v.finalPrice
-                      );
+                      const price = getEffectivePrice(v.salePrice, v.finalPrice);
                       return (
-                        <div
-                          key={v.variationId}
-                          className="flex gap-4 items-center pt-2 mt-2"
-                        >
+                        <div key={v.variationId} className="flex gap-4 items-center pt-2 mt-2">
                           <img
                             src={getImageUrl(v.colorImageUrl)}
                             alt={v.name}
@@ -196,17 +173,11 @@ const OrderHistoryPage: React.FC = () => {
                           />
                           <div className="flex-1">
                             <p className="font-medium">{v.name}</p>
-                            <p className="text-gray-500 text-sm">
-                              Màu: {v.colorName}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              SKU: {v.sku}
-                            </p>
+                            <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
+                            <p className="text-sm text-gray-500">SKU: {v.sku}</p>
                           </div>
                           <div className="text-right">
-                            <p>
-                              {price.toLocaleString()}₫ x {v.quantity}
-                            </p>
+                            <p>{price.toLocaleString()}₫ x {v.quantity}</p>
                             <p className="font-semibold text-red-500">
                               {(price * v.quantity).toLocaleString()}₫
                             </p>
@@ -220,13 +191,12 @@ const OrderHistoryPage: React.FC = () => {
 
               <div className="text-right mt-4 text-lg font-semibold text-red-600">
                 <p>
-                  <strong>Mã giảm giá:</strong>{" "}
+                  <strong>Mã giảm giá:</strong>{' '}
                   {order.promotion?.code
-                    ? `${order.promotion.code} (${order.promotion.discountType === "percentage"
+                    ? `${order.promotion.code} (${order.promotion.discountType === 'percentage'
                       ? `${order.promotion.discountValue}%`
-                      : `${order.promotion.discountValue.toLocaleString()}₫`
-                    })`
-                    : "Không áp dụng"}
+                      : `${order.promotion.discountValue.toLocaleString()}₫`})`
+                    : 'Không áp dụng'}
                 </p>
                 Tổng cộng: {order.totalAmount.toLocaleString()}₫
               </div>
@@ -253,7 +223,7 @@ const OrderHistoryPage: React.FC = () => {
                     className="border px-3 py-1 rounded text-sm"
                     style={{ minWidth: 250 }}
                   >
-                    <option value="">Chọn lý do huỷ đơn</option>
+                    <option value="">Chọn lý do hủy đơn</option>
                     {cancelReasons.map((reason) => (
                       <option key={reason} value={reason}>
                         {reason}
@@ -265,17 +235,18 @@ const OrderHistoryPage: React.FC = () => {
                     onClick={() => handleCancelOrder(order._id)}
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
-                    Huỷ đơn hàng
+                    Hủy đơn hàng
                   </button>
                 </div>
               )}
+
               {order.status === 'shipping' && (
                 <div className="text-right mt-4">
                   <button
                     onClick={() => handleConfirmReceived(order._id)}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                   >
-                    Đã nhận hàng
+                    Xác nhận đã nhận hàng
                   </button>
                 </div>
               )}
