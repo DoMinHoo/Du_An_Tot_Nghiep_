@@ -77,54 +77,32 @@ exports.getProfile = async (req, res) => {
 };
 
 
-
 exports.updateProfiles = async (req, res) => {
-  const { error } = updateUserSchema.validate(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
-  const { name, email, phone, address, avatarUrl, dateOfBirth, gender } = req.body;
-  const userId = req.user.userId;
+  const userId = req.user?.userId;
+  const { name, address, phone, gender, dateBirth, avatarUrl } = req.body;
 
   try {
-    // Kiểm tra xem email có bị trùng với người khác không
-    if (email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser && existingUser._id.toString() !== userId) {
-        return res.status(400).json({ message: 'Email đã được sử dụng bởi người khác' });
-      }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
     }
 
-    // Tạo đối tượng chứa các trường được cập nhật
-    const updatedFields = {};
+    user.name = name || user.name;
+    user.address = address || user.address;
+    user.phone = phone || user.phone;
+    user.gender = gender || user.gender;
+    user.dateBirth = dateBirth || user.dateBirth;
+    user.avatarUrl = avatarUrl || user.avatarUrl;
 
-    if (name && name !== "") updatedFields.name = name;
-    if (email && email !== "") updatedFields.email = email;
-    if (phone && phone !== "") updatedFields.phone = phone;
-    if (address && address !== "") updatedFields.address = address;
-    if (avatarUrl && avatarUrl !== "") updatedFields.avatarUrl = avatarUrl;
-    if (dateOfBirth) updatedFields.dateOfBirth = dateOfBirth;
-    if (gender) updatedFields.gender = gender;
+    await user.save();
 
-    // Kiểm tra xem có trường nào cần cập nhật không
-    if (Object.keys(updatedFields).length === 0) {
-      return res.status(400).json({ message: 'Không có thông tin nào để cập nhật' });
-    }
-
-    // Cập nhật thông tin người dùng
-    const updatedUser = await User.findByIdAndUpdate(userId, updatedFields, { new: true });
-
-    // Kiểm tra nếu người dùng không tồn tại
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
-    }
-
-    // Gửi phản hồi với dữ liệu đã cập nhật
-    return res.status(200).json(updatedUser);
-
-  } catch (err) {
-    console.error('Lỗi khi cập nhật thông tin:', err);
-    return res.status(500).json({ message: 'Có lỗi xảy ra khi cập nhật thông tin tài khoản' });
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin thành công',
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi cập nhật', error: error.message });
   }
-};
-
+};  
 
