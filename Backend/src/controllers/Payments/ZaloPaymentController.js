@@ -174,7 +174,7 @@ const axios = require('axios');
 const CryptoJS = require('crypto-js');
 const moment = require('moment');
 const Order = require('../../models/order.model');
-const sendPaymentSuccessEmail = require('../../untils/sendPaymentSuccessEmail');
+const {sendPaymentSuccessEmail} = require('../../untils/sendPaymentSuccessEmail');
 
 const config = {
     app_id: "2553",
@@ -235,7 +235,7 @@ async function initiatePayment(req, res) {
     }
 }
 
-async function handlePaymentCallback(req, res) {
+async function handlePaymentCallback(req, res) { // Xử lý callback thanh toán từ ZaloPay
     const { data, mac } = req.body;
     const hmac = CryptoJS.HmacSHA256(data, config.key2).toString();
     if (mac !== hmac) return res.status(400).send("Invalid MAC");
@@ -252,7 +252,6 @@ async function handlePaymentCallback(req, res) {
         if (return_code === 1) {
             order.paymentStatus = "completed";
             order.status = "confirmed";
-            await sendPaymentSuccessEmail(order._id); // Gửi email xác nhận
         } else {
             order.paymentStatus = "failed";
             order.status = "canceled";
@@ -261,7 +260,11 @@ async function handlePaymentCallback(req, res) {
         order.paymentTransactionId = zp_trans_id;
         order.paymentData = decodedData;
         await order.save();
-
+        // Gửi email xác nhận
+        const emailResult = await sendPaymentSuccessEmail(order._id);
+        if (!emailResult.success) {
+            console.error('Failed to send payment success email:', emailResult.message);
+        }
         res.status(200).send("OK");
     } catch (err) {
         console.error("Error processing callback:", err);
@@ -269,7 +272,7 @@ async function handlePaymentCallback(req, res) {
     }
 }
 
-async function handleReturnFromZalo(req, res) {
+async function handleReturnFromZalo(req, res) { // Xử lý trả về từ ZaloPay
     const { apptransid, status } = req.body;
     if (!apptransid) return res.status(400).json({ success: false, message: "Missing apptransid" });
 
@@ -280,7 +283,11 @@ async function handleReturnFromZalo(req, res) {
         if (status === "1") {
             order.paymentStatus = "completed";
             order.status = "shipping";
-            await sendPaymentSuccessEmail(order._id); // Gửi email xác nhận
+            await order.save();
+                const emailResult = await sendPaymentSuccessEmail(order._id);
+                if (!emailResult.success) {
+                    console.error('Failed to send payment success email:', emailResult.message);
+                }
         } else {
             order.paymentStatus = "failed";
             order.status = "canceled";
