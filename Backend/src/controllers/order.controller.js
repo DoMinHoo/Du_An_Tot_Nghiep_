@@ -175,9 +175,15 @@ exports.getOrders = async (req, res) => {
             path: 'items.variationId',
             select: 'finalPrice salePrice stockQuantity productId',
             populate: {
+<<<<<<< HEAD
             path: 'productId',
             select: 'name',
             match: { isDeleted: false, status: 'active' },
+=======
+                path: 'productId',
+                select: 'name',
+                match: { isDeleted: false, status: 'active' },
+>>>>>>> 6f27d3ce669c688df0da4b5d021e4cf42efa1301
             },
         });
     
