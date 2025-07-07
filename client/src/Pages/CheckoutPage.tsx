@@ -117,9 +117,6 @@ const CheckoutPage: React.FC = () => {
       }
     }
 
-    if (!finalEmail) finalEmail = 'guest@example.com';
-
-
     if (!fallbackCart || !fallbackCart._id) {
       toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
       return;
