@@ -168,21 +168,40 @@ const CartPage: React.FC = () => {
 
   // Xử lý thanh toán
   const handleCheckout = () => {
-    if (!cart?.items.length) {
+    // Kiểm tra nếu giỏ hàng không tồn tại hoặc trống
+    if (!cart || !cart.items || cart.items.length === 0) {
       toast.warn('Giỏ hàng đang trống, không thể thanh toán!', {
         autoClose: 1000,
       });
       return;
     }
+
+    // Kiểm tra nếu không có sản phẩm nào được chọn
     if (selectedItems.length === 0) {
-      toast.warn('Vui lòng chọn sản phẩm để thanh toán!', { autoClose: 1000 });
+      toast.warn('Vui lòng chọn ít nhất một sản phẩm để thanh toán!', {
+        autoClose: 1000,
+      });
       return;
     }
 
+    // Lọc các sản phẩm được chọn
+    const checkedItems = cart.items.filter((item) =>
+      selectedItems.includes(item.variationId._id)
+    );
+
+    // Kiểm tra nếu không có sản phẩm nào được lọc (trường hợp lỗi bất ngờ)
+    if (checkedItems.length === 0) {
+      toast.error('Lỗi: Không tìm thấy sản phẩm được chọn!', {
+        autoClose: 1000,
+      });
+      return;
+    }
+
+    // Điều hướng đến trang thanh toán với dữ liệu chính xác
     navigate('/checkout', {
       state: {
         selectedItems,
-        cartItems: cart.items,
+        cartItems: checkedItems,
         totalPrice: selectedTotalPrice,
       },
     });
