@@ -142,10 +142,8 @@ exports.getOrders = async (req, res) => {
         const { fullName, phone, email, addressLine, street, province, district, ward } = shippingAddress || {};
         if (!fullName || !phone || !email || !addressLine || !street || !province || !district || !ward) {
             return res.status(400).json({
-
-                success: false,
-                message: 'Địa chỉ giao hàng chưa đầy đủ',
-
+            success: false,
+            message: 'Địa chỉ giao hàng chưa đầy đủ',
             });
         }
     
@@ -156,6 +154,7 @@ exports.getOrders = async (req, res) => {
             message: 'Phương thức thanh toán không hợp lệ',
             });
         }
+    
         // Kiểm tra cartId và selectedItems
         if (!cartId) {
             return res.status(400).json({
@@ -163,7 +162,6 @@ exports.getOrders = async (req, res) => {
             message: 'Thiếu thông tin giỏ hàng',
             });
         }
-
     
         if (!selectedItems || !Array.isArray(selectedItems) || selectedItems.length === 0) {
             return res.status(400).json({
@@ -172,7 +170,6 @@ exports.getOrders = async (req, res) => {
             });
         }
     
-
         // Lấy thông tin giỏ hàng
         const cart = await Cart.findById(cartId).populate({
             path: 'items.variationId',
@@ -190,12 +187,11 @@ exports.getOrders = async (req, res) => {
             message: 'Giỏ hàng trống hoặc không tồn tại',
             });
         }
-
+    
         // Lọc các sản phẩm được chọn
         const selectedCartItems = cart.items.filter((item) =>
             selectedItems.includes(item.variationId._id.toString())
         );
-
     
         if (selectedCartItems.length === 0) {
             return res.status(400).json({
@@ -204,7 +200,6 @@ exports.getOrders = async (req, res) => {
             });
         }
     
-
         // Kiểm tra tồn kho từng sản phẩm được chọn
         for (const item of selectedCartItems) {
             if (!item.variationId || !item.variationId.productId) {
@@ -221,7 +216,7 @@ exports.getOrders = async (req, res) => {
             });
             }
         }
-
+    
         // Tạo danh sách items cho đơn hàng từ các sản phẩm được chọn
         const items = selectedCartItems.map((item) => ({
             variationId: item.variationId._id,
@@ -230,13 +225,12 @@ exports.getOrders = async (req, res) => {
         }));
     
         let totalAmount = items.reduce((total, item) => total + item.salePrice * item.quantity, 0);
-
+    
         // Áp dụng mã giảm giá nếu có
         let promotionInfo;
         if (couponCode) {
             const promotion = await Promotion.findOne({ code: couponCode.trim(), isActive: true });
             if (promotion && (!promotion.expiryDate || new Date() <= new Date(promotion.expiryDate))) {
-
             let discountAmount = 0;
             if (promotion.discountType === 'percentage') {
                 discountAmount = (totalAmount * promotion.discountValue) / 100;
@@ -251,12 +245,12 @@ exports.getOrders = async (req, res) => {
             };
             }
         }
-
+    
         // Sử dụng finalAmount từ frontend nếu có
         if (finalAmount && Number(finalAmount) > 0) {
             totalAmount = Number(finalAmount);
         }
-
+    
         // Tạo đơn hàng mới
         const newOrder = new Order({
             userId: req.user?.userId || null,
@@ -278,19 +272,17 @@ exports.getOrders = async (req, res) => {
             },
             ],
         });
-
+    
         // Giảm tồn kho cho các sản phẩm được chọn
         for (const item of items) {
             await ProductVariation.findByIdAndUpdate(item.variationId, {
             $inc: { stockQuantity: -item.quantity },
             });
         }
-
     
         // Lưu đơn hàng
         const savedOrder = await newOrder.save();
     
-
         // Cập nhật giỏ hàng: xóa các sản phẩm được chọn
         cart.items = cart.items.filter((item) => !selectedItems.includes(item.variationId._id.toString()));
         if (cart.items.length === 0) {
@@ -298,7 +290,7 @@ exports.getOrders = async (req, res) => {
         } else {
             await cart.save();
         }
-
+    
         // Gửi phản hồi
         return res.status(201).json({
             success: true,
@@ -328,7 +320,6 @@ exports.getOrders = async (req, res) => {
     
         const order = await Order.findById(id)
             .populate({
-
             path: 'userId',
             select: 'name email',
             })
@@ -340,13 +331,11 @@ exports.getOrders = async (req, res) => {
                 select: 'name brand descriptionShort image',
                 match: { isDeleted: false, status: 'active' },
             },
-
             });
     
         if (!order) {
             return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
         }
-
     
         const mappedItems = order.items
             .map((item) => {
@@ -364,15 +353,12 @@ exports.getOrders = async (req, res) => {
             })
             .filter(Boolean);
     
-
         res.status(200).json({
             success: true,
             message: 'Lấy chi tiết đơn hàng thành công',
             data: {
-
             ...order.toObject(),
             items: mappedItems,
-
             },
         });
         } catch (err) {
