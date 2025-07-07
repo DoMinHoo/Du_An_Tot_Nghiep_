@@ -107,17 +107,15 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    let finalEmail = email?.trim();
-    if (!finalEmail && token) {
+    let email = 'guest@example.com';
+    if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.email) finalEmail = payload.email;
+        if (payload.email) email = payload.email;
       } catch {
         console.warn('Không thể lấy email từ token');
       }
     }
-
-    if (!finalEmail) finalEmail = 'guest@example.com';
 
     if (!fallbackCart || !fallbackCart._id) {
       toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
@@ -129,7 +127,7 @@ const CheckoutPage: React.FC = () => {
         shippingAddress: {
           fullName,
           phone,
-          email: finalEmail,
+          email,
           addressLine: detailAddress,
           street,
           province,
@@ -156,30 +154,21 @@ const CheckoutPage: React.FC = () => {
           }
         );
 
-          const data = await res.json();
-          if (res.ok && data.paymentUrl) {
-            window.location.href = data.paymentUrl;
-          } else {
-            toast.error(data.error || 'Không tạo được thanh toán VNPAY');
-          }
-        } catch (error) {
-          toast.error('Lỗi khi tạo thanh toán VNPAY');
+        const data = await res.json();
+        if (res.ok && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          toast.error(data.error || 'Không tạo được thanh toán VNPAY');
         }
-      } else {
-        // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
-        orderMutation.mutate(orderRes);
-      }
-
-
-      
-
-
-      if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
-        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderCode: orderRes.orderCode }),
-        });
+      } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
+        const res = await fetch(
+          'http://localhost:5000/api/zalo-payment/create-payment',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderCode: orderRes.orderCode }),
+          }
+        );
 
         const data = await res.json();
         if (res.ok && data.order_url) {
