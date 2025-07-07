@@ -183,7 +183,7 @@ const config = {
     endpoint: "https://sb-openapi.zalopay.vn/v2/create",
 };
 
-async function initiatePayment(req, res) {
+async function initiatePayment(req, res) { // Xử lý yêu cầu thanh toán
     const { orderCode } = req.body;
 
     try {
