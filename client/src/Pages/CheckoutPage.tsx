@@ -104,15 +104,17 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    let email = 'guest@example.com';
-    if (token) {
+    let finalEmail = email?.trim();
+    if (!finalEmail && token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.email) email = payload.email;
+        if (payload.email) finalEmail = payload.email;
       } catch {
         console.warn('Không thể lấy email từ token');
       }
     }
+
+    if (!finalEmail) finalEmail = 'guest@example.com';
 
     if (!fallbackCart || !fallbackCart._id) {
       toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
@@ -125,7 +127,7 @@ const CheckoutPage: React.FC = () => {
         shippingAddress: {
           fullName,
           phone,
-          email,
+          email: finalEmail,
           addressLine: detailAddress,
           street,
           province,
@@ -164,7 +166,7 @@ const CheckoutPage: React.FC = () => {
       }
 
 
-      
+
 
 
       if (paymentMethod === 'online_payment' && orderRes?.orderCode) {

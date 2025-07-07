@@ -169,7 +169,7 @@ exports.createOrder = async (req, res) => {
                 path: 'productId',
                 select: 'name',
                 match: { isDeleted: false, status: 'active' },
-            }, 
+            },
         });
 
         if (!cart || cart.items.length === 0) {
