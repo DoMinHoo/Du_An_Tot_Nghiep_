@@ -113,7 +113,6 @@ const CheckoutPage: React.FC = () => {
         console.warn('Không thể lấy email từ token');
       }
     }
-
     if (!finalEmail) finalEmail = 'guest@example.com';
 
     if (!fallbackCart || !fallbackCart._id) {
@@ -122,8 +121,7 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
-      // Tạo order thông qua mutateAsync
-      const orderRes = await orderMutation.mutateAsync({
+      const orderData = {
         shippingAddress: {
           fullName,
           phone,
@@ -138,54 +136,48 @@ const CheckoutPage: React.FC = () => {
         cartId: fallbackCart._id,
         couponCode: couponCode || undefined,
         finalAmount: finalAmount ?? totalPrice,
-      });
+        selectedItems, // Đảm bảo gửi selectedItems
+      };
 
+      const orderRes = await orderMutation.mutateAsync(orderData);
 
       if (paymentMethod === 'bank_transfer') {
-        // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
         sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
-        try {
-          const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+        const res = await fetch(
+          'http://localhost:5000/api/vnpay/create-payment',
+          {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
-          });
-
-          const data = await res.json();
-          if (res.ok && data.paymentUrl) {
-            window.location.href = data.paymentUrl;
-          } else {
-            toast.error(data.error || 'Không tạo được thanh toán VNPAY');
           }
-        } catch (error) {
-          toast.error('Lỗi khi tạo thanh toán VNPAY');
-        }
-      } else {
-        // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
-        orderMutation.mutate(orderRes);
-      }
-
-
-
-
-
-      if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
-        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderCode: orderRes.orderCode }),
-        });
+        );
 
         const data = await res.json();
+        if (res.ok && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+        }
+      } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
+        const res = await fetch(
+          'http://localhost:5000/api/zalo-payment/create-payment',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderCode: orderRes.orderCode }),
+          }
+        );
 
+        const data = await res.json();
         if (res.ok && data.order_url) {
-          localStorage.setItem("currentOrderCode", orderRes.orderCode);
+          localStorage.setItem('currentOrderCode', orderRes.orderCode);
           window.location.href = data.order_url;
         } else {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
       } else {
         toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+        setTimeout(() => navigate('/thank-you'), 1600);
       }
     } catch {
       toast.error('Đặt hàng thất bại!', { autoClose: 1500 });

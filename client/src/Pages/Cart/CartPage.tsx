@@ -179,13 +179,16 @@ const CartPage: React.FC = () => {
       return;
     }
 
+    // Lọc ra các sản phẩm được chọn
+    const checkedItems = cart.items.filter(item => selectedItems.includes(item.variationId._id));
     navigate('/checkout', {
       state: {
         selectedItems,
-        cartItems: cart.items,
+        cartItems: checkedItems,
         totalPrice: selectedTotalPrice,
       },
     });
+
   };
 
   // Xử lý xóa toàn bộ giỏ hàng
