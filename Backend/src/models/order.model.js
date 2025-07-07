@@ -95,7 +95,7 @@ const orderSchema = new mongoose.Schema({
     code: { type: String },
     discountType: { type: String, enum: ['percentage', 'fixed'], default: null },
     discountValue: { type: Number, default: 0 },
-  },
+  }, // Thông tin khuyến mãi áp dụng
   items: [itemSchema],
   statusHistory: [statusHistorySchema],
 }, {

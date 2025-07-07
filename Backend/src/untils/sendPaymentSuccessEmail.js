@@ -61,7 +61,7 @@ const sendPaymentSuccessEmail = async (orderId) => {
                         <p><strong>Thành tiền:</strong> ${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</p>
                     </div>
                 `).join('')}
-                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoặc ${order.shippingAddress.phone}.</p>
+                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoac <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
                 <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
             `,
             attachments: order.items.map(item => ({
@@ -99,7 +99,7 @@ const sendOrderSuccessEmail = async (orderId) => {
         const mailOptions = {
             from: process.env.EMAIL_USER1,
             to: email,
-             subject: 'Xác nhận thanh toán thành công - Đơn hàng #' + order.orderCode,
+            subject: 'Xác nhận thanh toán thành công - Đơn hàng #' + order.orderCode,
             html: `
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã mua sắm!</h2>
                 <p>Chào ${order.shippingAddress.fullName},</p>
@@ -121,7 +121,7 @@ const sendOrderSuccessEmail = async (orderId) => {
                         <p><strong>Thành tiền:</strong> ${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</p>
                     </div>
                 `).join('')}
-                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a> hoặc ${order.shippingAddress.phone}.</p>
+                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoac <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
                 <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
             `,
             attachments: order.items.map(item => ({
