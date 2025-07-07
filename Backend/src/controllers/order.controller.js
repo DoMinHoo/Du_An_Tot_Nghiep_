@@ -367,7 +367,7 @@ exports.updateOrder = async (req, res) => {
             }
             // Gửi email khi COD chuyển sang shipping để hỏi xác nhận nhận hàng
             if (status === 'completed' && order.paymentMethod === 'cod') {
-                await sendPaymentSuccessEmail(id);
+                await sendOrderSuccessEmail(id);
             }
 
             // Cập nhật riêng status + statusHistory, tránh validate toàn bộ schema
