@@ -7,7 +7,7 @@ const { protect } = require('../middlewares/auth.middleware');
 router.post('/register', userCtrl.register);
 router.post('/login', userCtrl.login);
 router.post('/forgot-password', userCtrl.forgotPassword);
-router.put('/change-password', protect, userCtrl.changePassword);
+router.put('/change-password', protect(), userCtrl.changePassword);
 router.get('/login/admin', protect('admin'), (req, res) => {
     res.json({ message: 'Chào mừng bạn đến trang Admin' });
 });
