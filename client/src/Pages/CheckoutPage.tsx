@@ -122,7 +122,6 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-
     try {
       const orderData = {
         shippingAddress: {
