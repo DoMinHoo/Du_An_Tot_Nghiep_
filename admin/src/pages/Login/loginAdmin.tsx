@@ -70,6 +70,11 @@ const Login: React.FC = () => {
         throw new Error('Thông tin đăng nhập không hợp lệ');
       }
 
+        const role = user?.roleId?.trim().toLowerCase();
+if (role !== 'admin') {
+  throw new Error('Chỉ tài khoản quản trị (admin) mới được đăng nhập');
+}
+
       localStorage.setItem('currentUser', JSON.stringify(user));
       localStorage.setItem('token', token);
       localStorage.removeItem('guestId');
@@ -92,7 +97,7 @@ const Login: React.FC = () => {
 
           const cartResponse = await mergeResponse.json();
           if (!cartResponse.success) {
-            logger.warn(`Hợp nhất giỏ hàng thất bại: ${cartResponse.message}`);
+logger.warn(`Hợp nhất giỏ hàng thất bại: ${cartResponse.message}`);
             toast.warn(cartResponse.message || 'Không thể hợp nhất giỏ hàng', {
               position: 'top-right',
               autoClose: 3000,
@@ -121,13 +126,8 @@ const Login: React.FC = () => {
         autoClose: 1500,
       });
 
-      const role = user?.role?.trim().toLowerCase();
       setTimeout(() => {
-        if (role === 'admin') {
-          navigate('/admin/products');
-        } else {
-          navigate('/');
-        }
+        navigate('/admin/products');
       }, 1500);
     } catch (err: any) {
       const errorMessage =
@@ -208,7 +208,7 @@ const Login: React.FC = () => {
 
           .input-field:focus {
             border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
           }
 
           .privacy-text {
@@ -316,7 +316,7 @@ const Login: React.FC = () => {
               Khách hàng mới? <a href="/signin">Tạo tài khoản</a>
             </p>
             <p>
-              Quên mật khẩu? <a href="/forgot">Khôi phục mật khẩu</a>
+Quên mật khẩu? <a href="/forgot">Khôi phục mật khẩu</a>
             </p>
           </div>
         </div>

@@ -18,8 +18,9 @@ const CheckoutPage: React.FC = () => {
     queryFn: getAllPromotions,
   });
 
-  const promotionList: any[] = Array.isArray(promotionListRaw) ? promotionListRaw : [];
-
+  const promotionList: any[] = Array.isArray(promotionListRaw)
+    ? promotionListRaw
+    : [];
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,7 +30,9 @@ const CheckoutPage: React.FC = () => {
   const [ward, setWard] = useState('');
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank_transfer' | 'online_payment'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<
+    'cod' | 'bank_transfer' | 'online_payment'
+  >('cod');
   const [couponCode, setCouponCode] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,7 +52,10 @@ const CheckoutPage: React.FC = () => {
     enabled: !!token || !!guestId,
   });
 
-  const paymentOptions: { label: string; value: 'cod' | 'bank_transfer' | 'online_payment' }[] = [
+  const paymentOptions: {
+    label: string;
+    value: 'cod' | 'bank_transfer' | 'online_payment';
+  }[] = [
     { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
     { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
     { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
@@ -93,9 +99,6 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-
-
-
   const handleSubmitOrder = async () => {
     if (!validate()) return;
 
@@ -120,8 +123,7 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
-      // Tạo order thông qua mutateAsync
-      const orderRes = await orderMutation.mutateAsync({
+      const orderData = {
         shippingAddress: {
           fullName,
           phone,
@@ -136,54 +138,48 @@ const CheckoutPage: React.FC = () => {
         cartId: fallbackCart._id,
         couponCode: couponCode || undefined,
         finalAmount: finalAmount ?? totalPrice,
-      });
+        selectedItems, // Đảm bảo gửi selectedItems
+      };
 
+      const orderRes = await orderMutation.mutateAsync(orderData);
 
       if (paymentMethod === 'bank_transfer') {
-        // Lưu orderData vào sessionStorage để ReturnVnpayPage sử dụng
         sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
-        try {
-          const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+        const res = await fetch(
+          'http://localhost:5000/api/vnpay/create-payment',
+          {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
-          });
-
-          const data = await res.json();
-          if (res.ok && data.paymentUrl) {
-            window.location.href = data.paymentUrl;
-          } else {
-            toast.error(data.error || 'Không tạo được thanh toán VNPAY');
           }
-        } catch (error) {
-          toast.error('Lỗi khi tạo thanh toán VNPAY');
-        }
-      } else {
-        // Thanh toán COD, momo, zalopay → gọi tạo đơn như cũ
-        orderMutation.mutate(orderRes);
-      }
-
-
-      
-
-
-      if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
-        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderCode: orderRes.orderCode }),
-        });
+        );
 
         const data = await res.json();
+        if (res.ok && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+        }
+      } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
+        const res = await fetch(
+          'http://localhost:5000/api/zalo-payment/create-payment',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderCode: orderRes.orderCode }),
+          }
+        );
 
+        const data = await res.json();
         if (res.ok && data.order_url) {
-          localStorage.setItem("currentOrderCode", orderRes.orderCode);
+          localStorage.setItem('currentOrderCode', orderRes.orderCode);
           window.location.href = data.order_url;
         } else {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
       } else {
         toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+        setTimeout(() => navigate('/thank-you'), 1600);
       }
     } catch {
       toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
@@ -192,14 +188,14 @@ const CheckoutPage: React.FC = () => {
 
   const applyCoupon = async (code: string) => {
     if (!code.trim()) {
-      toast.error("Vui lòng nhập mã giảm giá");
+      toast.error('Vui lòng nhập mã giảm giá');
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/promotions/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('http://localhost:5000/api/promotions/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: code.trim(),
           originalPrice: Number(totalPrice),
@@ -207,14 +203,14 @@ const CheckoutPage: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.message || "Áp mã thất bại");
+        toast.error(data.message || 'Áp mã thất bại');
         setFinalAmount(null);
         return;
       }
-      toast.success(data.message || "Áp dụng mã thành công!");
+      toast.success(data.message || 'Áp dụng mã thành công!');
       setFinalAmount(data.finalPrice);
     } catch {
-      toast.error("Có lỗi khi áp dụng mã");
+      toast.error('Có lỗi khi áp dụng mã');
       setFinalAmount(null);
     }
   };
@@ -353,7 +349,14 @@ const CheckoutPage: React.FC = () => {
                   name="payment"
                   value={option.value}
                   checked={paymentMethod === option.value}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cod' | 'bank_transfer' | 'online_payment')}
+                  onChange={(e) =>
+                    setPaymentMethod(
+                      e.target.value as
+                        | 'cod'
+                        | 'bank_transfer'
+                        | 'online_payment'
+                    )
+                  }
                   className="mr-2"
                 />
                 {option.value === 'bank_transfer' ? (
@@ -411,8 +414,8 @@ const CheckoutPage: React.FC = () => {
                       {item.variationId.color}
                     </p>
                     {item.variationId.finalPrice !== 0 &&
-                      item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice < item.variationId.finalPrice ? (
+                    item.variationId.salePrice !== 0 &&
+                    item.variationId.salePrice < item.variationId.finalPrice ? (
                       <p className="font-semibold">
                         {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
                         {item.quantity}
@@ -430,9 +433,10 @@ const CheckoutPage: React.FC = () => {
             <p>Giỏ hàng trống</p>
           )}
 
-
           <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            <label className="font-semibold text-gray-700 text-sm">Mã giảm giá</label>
+            <label className="font-semibold text-gray-700 text-sm">
+              Mã giảm giá
+            </label>
 
             <div className="flex gap-3 items-center">
               <input
@@ -442,9 +446,9 @@ const CheckoutPage: React.FC = () => {
                 value={couponCode}
                 onChange={(e) => {
                   setCouponCode(e.target.value);
-                  if (e.target.value.trim() === "") {
+                  if (e.target.value.trim() === '') {
                     setFinalAmount(null);
-                    toast.info("Đã xóa mã giảm giá, giá gốc được áp dụng lại");
+                    toast.info('Đã xóa mã giảm giá, giá gốc được áp dụng lại');
                   }
                 }}
               />
@@ -456,57 +460,74 @@ const CheckoutPage: React.FC = () => {
               </button>
             </div>
 
-
             {promotionList?.length > 0 && (
               <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 max-h-60 overflow-y-auto">
-                <p className="font-semibold text-gray-700 text-sm">Chọn mã giảm giá:</p>
+                <p className="font-semibold text-gray-700 text-sm">
+                  Chọn mã giảm giá:
+                </p>
 
                 {promotionList.map((promo) => {
                   const minOrder = promo.minimumOrderValue || 0;
-                  const isExpired = promo.expiryDate && new Date(promo.expiryDate) < new Date();
+                  const isExpired =
+                    promo.expiryDate && new Date(promo.expiryDate) < new Date();
                   const notMeetMinOrder = totalPrice < minOrder;
                   const disabled = isExpired || notMeetMinOrder;
 
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
-                        ? "opacity-50 bg-gray-100"
-                        : "hover:bg-blue-50 hover:border-blue-300"
-                        }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
+                        disabled
+                          ? 'opacity-50 bg-gray-100'
+                          : 'hover:bg-blue-50 hover:border-blue-300'
+                      }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
                       }}
                     >
                       <div className="space-y-1">
-                        <p className="font-semibold text-blue-600">{promo.code}</p>
+                        <p className="font-semibold text-blue-600">
+                          {promo.code}
+                        </p>
                         <p className="text-gray-600 text-xs">
-                          Giảm giá: {" "}
-                          {promo.discountType === "percentage"
+                          Giảm giá:{' '}
+                          {promo.discountType === 'percentage'
                             ? `${promo.discountValue}%`
                             : `${promo.discountValue.toLocaleString()}₫`}
                         </p>
                         {promo.minimumOrderValue && (
                           <p className="text-gray-600 text-xs">
-                            Đơn tối thiểu: {promo.minimumOrderValue.toLocaleString()}₫
+                            Đơn tối thiểu:{' '}
+                            {promo.minimumOrderValue.toLocaleString()}₫
                           </p>
                         )}
                         {promo.expiryDate && (
-                          <p className={`text-xs ${isExpired ? "text-red-500" : "text-gray-600"}`}>
-                            HSD: {new Date(promo.expiryDate).toLocaleDateString("vi-VN", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })}
+                          <p
+                            className={`text-xs ${
+                              isExpired ? 'text-red-500' : 'text-gray-600'
+                            }`}
+                          >
+                            HSD:{' '}
+                            {new Date(promo.expiryDate).toLocaleDateString(
+                              'vi-VN',
+                              {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                              }
+                            )}
                           </p>
                         )}
                         {isExpired && (
-                          <p className="text-red-500 text-xs font-medium">Đã hết hạn</p>
+                          <p className="text-red-500 text-xs font-medium">
+                            Đã hết hạn
+                          </p>
                         )}
                         {notMeetMinOrder && !isExpired && (
                           <p className="text-orange-500 text-xs">
-                            Cần tối thiểu {promo.minimumOrderValue.toLocaleString()}₫
+                            Cần tối thiểu{' '}
+                            {promo.minimumOrderValue.toLocaleString()}₫
                           </p>
                         )}
                       </div>
@@ -547,6 +568,5 @@ const CheckoutPage: React.FC = () => {
     </div>
   );
 };
-
 
 export default CheckoutPage;
