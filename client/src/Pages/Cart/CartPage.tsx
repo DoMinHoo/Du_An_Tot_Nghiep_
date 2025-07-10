@@ -197,7 +197,10 @@ const CartPage: React.FC = () => {
       return;
     }
 
-    // Điều hướng đến trang thanh toán với dữ liệu chính xác
+
+    // Lọc ra các sản phẩm được chọn
+
+
     navigate('/checkout', {
       state: {
         selectedItems,
@@ -205,6 +208,7 @@ const CartPage: React.FC = () => {
         totalPrice: selectedTotalPrice,
       },
     });
+
   };
 
   // Xử lý xóa toàn bộ giỏ hàng
