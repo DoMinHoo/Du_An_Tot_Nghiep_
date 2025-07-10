@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { message } from 'antd';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { getImageUrl } from '../utils/imageUtils';
 
 const cancelReasons = [
@@ -44,6 +45,7 @@ const OrderHistoryPage: React.FC = () => {
       setOrders(res.data.data || []);
     } catch (error) {
       console.error('Lỗi khi lấy đơn hàng:', error);
+      toast.error('Không thể tải đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -63,11 +65,27 @@ const OrderHistoryPage: React.FC = () => {
     const reason = cancelReasonsMap[orderId];
 
     if (!reason) {
-      message.warning('Vui lòng chọn lý do hủy đơn hàng');
+      toast.warning('Vui lòng chọn lý do hủy đơn hàng');
       return;
     }
 
     try {
+      const { data } = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const latestStatus = data?.data?.status;
+
+      if (latestStatus !== 'pending') {
+        if (latestStatus === 'confirmed') {
+          toast.warning('Đơn hàng đã được xác nhận, không thể huỷ nữa.');
+        } else {
+          toast.warning(`Không thể huỷ đơn hàng ở trạng thái "${statusText[latestStatus] || latestStatus}"`);
+        }
+        fetchOrders();
+        return;
+      }
+
       await axios.put(
         `http://localhost:5000/api/orders/${orderId}`,
         { status: 'canceled', note: reason },
@@ -75,17 +93,18 @@ const OrderHistoryPage: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      message.success('Đã hủy đơn hàng');
+      toast.success('Đã hủy đơn hàng');
       setCancelReasonsMap((prev) => ({ ...prev, [orderId]: '' }));
       fetchOrders();
-    } catch (err) {
-      message.error('Hủy đơn hàng thất bại');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Hủy đơn hàng thất bại');
     }
   };
 
   const handleRetryPayment = async (orderCode: string) => {
     try {
-      message.loading({ content: 'Đang tạo lại liên kết thanh toán...', key: 'retry' });
+      toast.info('Đang tạo lại liên kết thanh toán...');
 
       const res = await axios.post(
         'http://localhost:5000/api/zalo-payment/create-payment',
@@ -96,15 +115,15 @@ const OrderHistoryPage: React.FC = () => {
       );
 
       if (res.data.order_url) {
-        message.success({ content: 'Chuyển hướng đến ZaloPay...', key: 'retry' });
+        toast.success('Chuyển hướng đến ZaloPay...');
         localStorage.setItem('currentOrderCode', orderCode);
         window.location.href = res.data.order_url;
       } else {
-        message.error('Không lấy được liên kết thanh toán.');
+        toast.error('Không lấy được liên kết thanh toán.');
       }
     } catch (err) {
       console.error(err);
-      message.error('Tạo lại thanh toán thất bại.');
+      toast.error('Tạo lại thanh toán thất bại.');
     }
   };
 
@@ -117,10 +136,10 @@ const OrderHistoryPage: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      message.success('Xác nhận đã nhận hàng thành công');
+      toast.success('Xác nhận đã nhận hàng thành công');
       fetchOrders();
     } catch (err) {
-      message.error('Xác nhận thất bại');
+      toast.error('Xác nhận thất bại');
     }
   };
 
@@ -128,6 +147,7 @@ const OrderHistoryPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <ToastContainer />
       <h2 className="text-2xl font-semibold mb-6">Lịch sử đơn hàng</h2>
 
       {orders.length === 0 ? (

@@ -70,11 +70,9 @@ const Login: React.FC = () => {
       if (!user || !token) {
         throw new Error('Thông tin đăng nhập không hợp lệ');
       }
-      // Lưu thông tin người dùng và token
+
       sessionStorage.setItem('currentUser', JSON.stringify(user));
       sessionStorage.setItem('token', token);
-
-      // Xóa guestId sau khi đăng nhập thành công
       sessionStorage.removeItem('guestId');
 
       logger.info(`Đăng nhập thành công cho userId: ${user._id}`);
@@ -96,7 +94,7 @@ const Login: React.FC = () => {
           const cartResponse = await mergeResponse.json();
           if (!cartResponse.success) {
             logger.warn(`Hợp nhất giỏ hàng thất bại: ${cartResponse.message}`);
-            toast.warn(cartResponse.message || 'Không thể hợp nhất giỏ hàng', {
+toast.warn(cartResponse.message || 'Không thể hợp nhất giỏ hàng', {
               position: 'top-right',
               autoClose: 3000,
             });
@@ -119,19 +117,23 @@ const Login: React.FC = () => {
         }
       }
 
-      toast.success('Đăng nhập thành công!', {
-        position: 'top-right',
-        autoClose: 1500,
-      });
+ 
 
-      const role = user?.role?.trim().toLowerCase();
-      setTimeout(() => {
-        if (role === 'admin') {
-          navigate('/admin/products');
-        } else {
-          navigate('/');
-        }
-      }, 1500);
+      // ✅ Chỉ cho phép role client
+      const role = user?.roleId?.trim().toLowerCase();
+if (role !== 'client') {
+  throw new Error('Chỉ tài khoản khách hàng (client) mới được đăng nhập');
+}
+
+toast.success('Đăng nhập thành công!', {
+  position: 'top-right',
+  autoClose: 1500,
+});
+
+setTimeout(() => {
+  navigate('/');
+}, 1500);
+
     } catch (err: any) {
       const errorMessage =
         err.message || 'Đăng nhập thất bại. Vui lòng thử lại!';
@@ -185,7 +187,7 @@ const Login: React.FC = () => {
           <p className="text-xs text-gray-500">
             Website được bảo vệ bởi reCAPTCHA và{' '}
             <a href="#" className="text-blue-600 hover:underline">
-              Chính sách bảo mật
+Chính sách bảo mật
             </a>{' '}
             và{' '}
             <a href="#" className="text-blue-600 hover:underline">
