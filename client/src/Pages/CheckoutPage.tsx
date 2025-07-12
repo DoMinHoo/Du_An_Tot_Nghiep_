@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -46,6 +46,25 @@ const CheckoutPage: React.FC = () => {
     totalPrice?: number;
   };
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem('shippingInfo');
+    if (saved) {
+      try {
+        const info = JSON.parse(saved);
+        setFullName(info.fullName || '');
+        setPhone(info.phone || '');
+        setEmail(info.email || '');
+        setProvince(info.province || '');
+        setDistrict(info.district || '');
+        setWard(info.ward || '');
+        setStreet(info.street || '');
+        setDetailAddress(info.detailAddress || '');
+      } catch (error) {
+        console.warn('Không thể đọc dữ liệu shippingInfo:', error);
+      }
+    }
+  }, []);
+
   const { data, isLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: () => getCart(token, guestId),
@@ -56,10 +75,10 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
-      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-    ];
+    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+  ];
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
@@ -73,6 +92,7 @@ const CheckoutPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+      sessionStorage.removeItem('pendingOrderInfo'); // Clear pending order
       setTimeout(() => navigate('/thank-you'), 1600);
     },
     onError: () => {
@@ -123,29 +143,44 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    const orderData = {
+      shippingAddress: {
+        fullName,
+        phone,
+        email: finalEmail,
+        addressLine: detailAddress,
+        street,
+        province,
+        district,
+        ward,
+      },
+      paymentMethod,
+      cartId: fallbackCart._id,
+      couponCode: couponCode || undefined,
+      finalAmount: finalAmount ?? totalPrice,
+      selectedItems,
+    };
+
+    // Save shipping info
+    sessionStorage.setItem(
+      'shippingInfo',
+      JSON.stringify({
+        fullName,
+        phone,
+        email: finalEmail,
+        province,
+        district,
+        ward,
+        street,
+        detailAddress,
+      })
+    );
+
     try {
-      const orderData = {
-        shippingAddress: {
-          fullName,
-          phone,
-          email: finalEmail,
-          addressLine: detailAddress,
-          street,
-          province,
-          district,
-          ward,
-        },
-        paymentMethod,
-        cartId: fallbackCart._id,
-        couponCode: couponCode || undefined,
-        finalAmount: finalAmount ?? totalPrice,
-        selectedItems, // Đảm bảo gửi selectedItems
-      };
-
-      const orderRes = await orderMutation.mutateAsync(orderData);
-
       if (paymentMethod === 'bank_transfer') {
-        sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
+        // Store order data for VNPAY
+        sessionStorage.setItem('pendingOrderInfo', JSON.stringify(orderData));
+
         const res = await fetch(
           'http://localhost:5000/api/vnpay/create-payment',
           {
@@ -157,11 +192,12 @@ const CheckoutPage: React.FC = () => {
 
         const data = await res.json();
         if (res.ok && data.paymentUrl) {
-          window.location.href = data.paymentUrl;
+          window.location.href = data.paymentUrl; // Redirect to VNPAY
         } else {
           toast.error(data.error || 'Không tạo được thanh toán VNPAY');
         }
-      } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
+      } else if (paymentMethod === 'online_payment') {
+        const orderRes = await orderMutation.mutateAsync(orderData);
         const res = await fetch(
           'http://localhost:5000/api/zalo-payment/create-payment',
           {
@@ -179,11 +215,11 @@ const CheckoutPage: React.FC = () => {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
       } else {
-        toast.success('Đặt hàng thành công!', { autoClose: 1500 });
-        setTimeout(() => navigate('/thank-you'), 1600);
+        // For COD, create order immediately
+        await orderMutation.mutateAsync(orderData);
       }
     } catch {
-      toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
+      toast.error('Có lỗi xảy ra, vui lòng thử lại!');
     }
   };
 

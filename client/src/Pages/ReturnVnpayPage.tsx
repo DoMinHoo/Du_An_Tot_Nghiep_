@@ -69,7 +69,7 @@ const ReturnVnpayPage = () => {
           setLoading(false)
         })
         .catch(() => {
-          toast.error("Lỗi tạo đơn sau khi thanh toán")
+          // toast.error("Lỗi tạo đơn sau khi thanh toán")
           setLoading(false)
         })
     } else {
