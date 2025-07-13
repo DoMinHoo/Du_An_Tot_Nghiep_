@@ -18,6 +18,7 @@ const CheckoutPage: React.FC = () => {
     queryFn: getAllPromotions,
   });
 
+
   const promotionList: any[] = Array.isArray(promotionListRaw)
     ? promotionListRaw
     : [];
@@ -86,6 +87,8 @@ const CheckoutPage: React.FC = () => {
   const selectedItems = passedState?.selectedItems || [];
   const cartItems = passedState?.cartItems || fallbackCart?.items || [];
   const totalPrice = passedState?.totalPrice ?? fallbackTotalPrice;
+  const discountAmount = finalAmount ? totalPrice - finalAmount : 0;
+
 
   const orderMutation = useMutation({
     mutationFn: (orderData: any) => createOrder(orderData, token, guestId),
@@ -589,6 +592,13 @@ const CheckoutPage: React.FC = () => {
             <span>Tạm tính:</span>
             <span>{totalPrice.toLocaleString()}₫</span>
           </div>
+          {finalAmount !== null && (
+          <div className="flex justify-between text-green-600">
+            <span>Giảm giá:</span>
+            <span>-{discountAmount.toLocaleString()}₫</span>
+          </div>
+        )}
+
           <div className="flex justify-between">
             <span>Phí vận chuyển:</span>
             <span>—</span>
