@@ -25,6 +25,7 @@ const OrderHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
 
+  const FIXED_SHIPPING_FEE = 30000;
   const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
     try {
@@ -143,6 +144,15 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
+  const getDiscountAmount = (order: any): number => {
+    if (!order.promotion) return 0;
+    const originalTotal = order.totalAmount + FIXED_SHIPPING_FEE;
+    if (order.promotion.discountType === 'percentage') {
+      return Math.floor((originalTotal * order.promotion.discountValue) / 100);
+    }
+    return order.promotion.discountValue;
+  };
+
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
@@ -209,7 +219,7 @@ const OrderHistoryPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="text-right mt-4 text-lg font-semibold text-red-600">
+              <div className="text-right mt-4 text-sm leading-6 text-gray-800">
                 <p>
                   <strong>Mã giảm giá:</strong>{' '}
                   {order.promotion?.code
@@ -218,7 +228,21 @@ const OrderHistoryPage: React.FC = () => {
                       : `${order.promotion.discountValue.toLocaleString()}₫`})`
                     : 'Không áp dụng'}
                 </p>
-                Tổng cộng: {order.totalAmount.toLocaleString()}₫
+
+                <p>
+                  <strong>Giá trị giảm:</strong>{' '}
+                  {getDiscountAmount(order).toLocaleString()}₫
+                </p>
+
+                <p>
+                  <strong>Phí vận chuyển:</strong> {FIXED_SHIPPING_FEE.toLocaleString()}₫
+                </p>
+
+                <hr className="my-2" />
+
+                <p className="text-lg font-semibold text-red-600">
+                  Tổng cộng: {(order.totalAmount + FIXED_SHIPPING_FEE).toLocaleString()}₫
+                </p>
               </div>
 
               {order.status === 'pending' && (
