@@ -106,3 +106,4 @@
 {"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-06 20:18:05"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 5e60d32c-444e-4437-b8e0-f79a8bdd6a48 hoặc giỏ hàng rỗng","timestamp":"2025-07-06 20:18:09"}
 
+{"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: a2e9e9db-9432-4350-8465-3e623df865e3","timestamp":"2025-07-13 12:45:06"}
