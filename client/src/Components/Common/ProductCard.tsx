@@ -8,7 +8,7 @@ import {
   calculateDiscount,
   isValidPrice,
 } from '../../utils/priceUtils';
-import { Link, useNavigate } from 'react-router-dom'; // Thêm useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types/Product';
 import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
@@ -26,7 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // Hook để điều hướng
+  const navigate = useNavigate();
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -38,6 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     sessionStorage.setItem('guestId', guestId);
   }
 
+  // Tải thông tin biến thể của sản phẩm
   useEffect(() => {
     let isMounted = true;
 
@@ -60,13 +61,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             const availableVariation = variations.find(
               (v) => v.stockQuantity > 0
             );
-            if (availableVariation) {
-              setVariation(availableVariation);
-              setHasVariations(true);
-            } else {
-              setVariation(variations[0]);
-              setHasVariations(true);
-            }
+            setVariation(availableVariation || variations[0]);
+            setHasVariations(true);
           } else {
             setVariation(null);
             setHasVariations(false);
@@ -82,18 +78,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       }
     };
 
-    if (product._id && /^[0-9a-fA-F]{24}$/.test(product._id)) {
-      checkVariations();
-    } else {
-      setHasVariations(false);
-      setLoading(false);
-    }
+    checkVariations();
 
     return () => {
       isMounted = false;
     };
   }, [product._id]);
 
+  // Mutation để thêm sản phẩm vào giỏ hàng
   const addToCartMutation = useMutation({
     mutationFn: ({
       variationId,
@@ -114,56 +106,53 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     onSettled: () => setIsUpdating(false),
   });
 
+  // Xử lý thêm vào giỏ hàng
   const handleAddToCart = async () => {
-    if (!hasVariations || !variation) {
-      toast.error('Sản phẩm không có biến thể hợp lệ!', { autoClose: 1000 });
+    if (!hasVariations || !variation || variation.stockQuantity <= 0) {
+      toast.error(
+        !hasVariations || !variation
+          ? 'Sản phẩm không có biến thể hợp lệ!'
+          : 'Sản phẩm đã hết hàng!',
+        { autoClose: 1000 }
+      );
       return;
     }
 
     setIsUpdating(true);
-    try {
-      await addToCartMutation.mutateAsync({
-        variationId: variation._id,
-        quantity: 1,
-      });
-    } catch (err) {
-      // Lỗi đã được xử lý trong onError
-    }
+    addToCartMutation.mutate({ variationId: variation._id, quantity: 1 });
   };
 
+  // Xử lý thanh toán ngay
   const handleCheckout = async () => {
-    if (!hasVariations || !variation) {
-      toast.error('Sản phẩm không có biến thể hợp lệ!', { autoClose: 1000 });
-      return;
-    }
-
-    if (variation.stockQuantity <= 0) {
-      toast.error('Sản phẩm đã hết hàng!', { autoClose: 1000 });
+    if (!hasVariations || !variation || variation.stockQuantity <= 0) {
+      toast.error(
+        !hasVariations || !variation
+          ? 'Sản phẩm không có biến thể hợp lệ!'
+          : 'Sản phẩm đã hết hàng!',
+        { autoClose: 1000 }
+      );
       return;
     }
 
     setIsUpdating(true);
     try {
-      // Thêm sản phẩm vào giỏ hàng
       await addToCartMutation.mutateAsync({
         variationId: variation._id,
         quantity: 1,
       });
 
-      // Xác định URL hình ảnh
       const imageUrl = variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product.image && product.image.length > 0
         ? getImageUrl(product.image[0])
         : getImageUrl();
 
-      // Tạo dữ liệu cho trang thanh toán
       const checkedItem = {
         variationId: {
           _id: variation._id,
           salePrice: variation.salePrice ?? 0,
           finalPrice: variation.finalPrice ?? 0,
-          colorImageUrl: imageUrl, // Sử dụng imageUrl đã xử lý
+          colorImageUrl: imageUrl,
           name: product.name || 'Unnamed Product',
           color: variation.colorName || 'Không xác định',
           stockQuantity: variation.stockQuantity || 0,
@@ -173,7 +162,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       const totalPrice = (variation.salePrice || variation.finalPrice || 0) * 1;
 
-      // Điều hướng đến trang thanh toán
       navigate('/checkout', {
         state: {
           selectedItems: [variation._id],
@@ -181,11 +169,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           totalPrice,
         },
       });
-    } catch (err) {
+    } catch {
       // Lỗi đã được xử lý trong onError của mutation
     }
   };
 
+  // Hiển thị toast khi thêm vào giỏ hàng thành công
   useEffect(() => {
     if (showSuccessToast) {
       toast.success('Thêm vào giỏ hàng thành công!', {
@@ -195,6 +184,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
   }, [showSuccessToast]);
 
+  // Hiển thị giao diện loading
   if (loading) {
     return (
       <div className="animate-pulse bg-gray-100 h-[360px] rounded-lg">
@@ -208,31 +198,40 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     );
   }
 
+  // Kiểm tra dữ liệu sản phẩm không hợp lệ
   if (!product._id || !product.name || !Array.isArray(product.image)) {
     return null;
   }
 
-  let effectiveSalePrice = null;
-  let effectiveFinalPrice = null;
-
-  if (hasVariations && variation) {
-    effectiveSalePrice = isValidPrice(variation.salePrice)
-      ? variation.salePrice ?? 0
+  // Xác định giá và trạng thái giảm giá
+  const effectiveSalePrice =
+    hasVariations &&
+    variation &&
+    isValidPrice(variation.salePrice) &&
+    variation.salePrice > 0
+      ? variation.salePrice
       : null;
-    effectiveFinalPrice = isValidPrice(variation.finalPrice)
+  const effectiveFinalPrice =
+    hasVariations && variation && isValidPrice(variation.finalPrice)
       ? variation.finalPrice
       : null;
-  }
 
-  if (!effectiveSalePrice && !effectiveFinalPrice) {
+  // Không hiển thị nếu không có giá hợp lệ
+  if (!effectiveFinalPrice) {
     return null;
   }
 
-  const discountPercentage = calculateDiscount(
-    effectiveSalePrice,
-    effectiveFinalPrice
-  );
+  // Xác định giá hiển thị và trạng thái giảm giá
+  const displayPrice = effectiveSalePrice ?? effectiveFinalPrice;
+  const hasDiscount =
+    effectiveSalePrice &&
+    effectiveFinalPrice &&
+    effectiveSalePrice < effectiveFinalPrice;
+  const discountPercentage = hasDiscount
+    ? calculateDiscount(effectiveSalePrice, effectiveFinalPrice)
+    : 0;
 
+  // Kiểm tra sản phẩm mới
   const isNew = product.createdAt
     ? new Date(product.createdAt) >
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -246,7 +245,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           New
         </span>
       )}
-      {discountPercentage > 0 && (
+      {hasDiscount && discountPercentage > 0 && (
         <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
           -{discountPercentage}%
         </span>
@@ -278,28 +277,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </h3>
         <div className="mt-2 flex items-center gap-2">
           <span className="text-red-600 font-bold text-lg">
-            {formatPrice(effectiveSalePrice || effectiveFinalPrice)}
+            {formatPrice(displayPrice)}
           </span>
-          {effectiveSalePrice != 0 &&
-            effectiveSalePrice &&
-            effectiveFinalPrice && (
-              <del className="text-gray-400 text-sm">
-                {formatPrice(effectiveFinalPrice)}
-              </del>
-            )}
+          {hasDiscount && effectiveFinalPrice && (
+            <del className="text-gray-400 text-sm">
+              {formatPrice(effectiveFinalPrice)}
+            </del>
+          )}
         </div>
         <div className="mt-4 flex gap-2">
           <button
             className="flex-1 bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
             onClick={handleAddToCart}
-            disabled={isUpdating || !hasVariations || !variation}
+            disabled={
+              isUpdating ||
+              !hasVariations ||
+              !variation ||
+              variation.stockQuantity <= 0
+            }
           >
             {isUpdating ? 'Đang thêm...' : 'Thêm vào giỏ'}
           </button>
           <button
             className="flex-1 bg-green-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400"
             onClick={handleCheckout}
-            disabled={isUpdating || !hasVariations || !variation}
+            disabled={
+              isUpdating ||
+              !hasVariations ||
+              !variation ||
+              variation.stockQuantity <= 0
+            }
           >
             {isUpdating ? 'Đang xử lý...' : 'Thanh toán'}
           </button>
