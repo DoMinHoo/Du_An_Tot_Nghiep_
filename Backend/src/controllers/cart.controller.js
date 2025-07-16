@@ -455,92 +455,108 @@
     }
     };
 
-    exports.getCart = async (req, res) => {
+exports.getCart = async (req, res) => {
     try {
         const userId = req.user?.userId;
         let guestId = req.headers['x-guest-id']?.trim();
 
         if (!userId && !guestId) {
-        return res.status(400).json({
-            success: false,
-            message: 'Vui lòng cung cấp userId hoặc guestId',
-        });
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp userId hoặc guestId',
+            });
         }
 
         let cart;
         const populateOptions = {
-        path: 'items.variationId',
-        select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
-        populate: {
-            path: 'productId',
-            select: 'name image isDeleted status',
-            match: { isDeleted: false, status: 'active' },
-        },
+            path: 'items.variationId',
+            select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl material',
+            populate: [
+                {
+                    path: 'productId',
+                    select: 'name image isDeleted status',
+                    match: { isDeleted: false, status: 'active' },
+                },
+                {
+                    path: 'material',
+                    select: 'name',
+                }
+            ],
         };
 
         if (userId) {
-        cart = await Cart.findOne({ userId }).populate(populateOptions);
-        if (cart && cart.userId.toString() !== userId) {
-            logger.warn(`Truy cập trái phép vào giỏ hàng của userId khác: ${userId}`);
-            return res.status(403).json({
-            success: false,
-            message: 'Không có quyền truy cập giỏ hàng này',
-            });
-        }
+            cart = await Cart.findOne({ userId }).populate(populateOptions);
+            if (cart && cart.userId.toString() !== userId) {
+                logger.warn(`Truy cập trái phép vào giỏ hàng của userId khác: ${userId}`);
+                return res.status(403).json({
+                    success: false,
+                    message: 'Không có quyền truy cập giỏ hàng này',
+                });
+            }
         } else {
-        cart = await Cart.findOne({ guestId, userId: null }).populate(populateOptions);
+            cart = await Cart.findOne({ guestId, userId: null }).populate(populateOptions);
         }
 
         if (!cart) {
-        return res.status(200).json({
-            success: true,
-            message: 'Giỏ hàng chưa được tạo',
-            data: {
-            cart: { items: [] },
-            totalPrice: 0,
-            guestId: userId ? null : guestId || uuidv4(),
-            },
-        });
+            return res.status(200).json({
+                success: true,
+                message: 'Giỏ hàng chưa được tạo',
+                data: {
+                    cart: { items: [] },
+                    totalPrice: 0,
+                    guestId: userId ? null : guestId || uuidv4(),
+                },
+            });
         }
 
         cart.items = cart.items.filter((item) => item.variationId && item.variationId.productId);
 
         const baseImageUrl = process.env.IMAGE_BASE_URL || 'http://localhost:5000';
         cart.items = cart.items.map((item) => {
-        if (item.variationId && item.variationId.colorImageUrl) {
-            item.variationId.colorImageUrl = item.variationId.colorImageUrl.startsWith('http')
-            ? item.variationId.colorImageUrl
-            : `${baseImageUrl}${item.variationId.colorImageUrl}`;
-        } else {
-            item.variationId.colorImageUrl = `${baseImageUrl}/default-image.jpg`;
-        }
-        return item;
+            if (item.variationId) {
+                // Handle colorImageUrl
+                item.variationId.colorImageUrl = item.variationId.colorImageUrl
+                    ? item.variationId.colorImageUrl.startsWith('http')
+                        ? item.variationId.colorImageUrl
+                        : `${baseImageUrl}${item.variationId.colorImageUrl}`
+                    : `${baseImageUrl}/default-image.jpg`;
+
+                // Handle material display
+                if (item.variationId.material) {
+                    item.variationId.material = typeof item.variationId.material === 'object'
+                        ? item.variationId.material.name
+                        : item.variationId.material;
+                } else {
+                    item.variationId.material = 'Không xác định';
+                }
+            }
+            return item;
         });
 
         await cart.save();
 
         const totalPrice = cart.items.reduce((total, item) => {
-        const price = item.variationId.salePrice || item.variationId.finalPrice;
-        return total + price * item.quantity;
+            const price = item.variationId.salePrice || item.variationId.finalPrice;
+            return total + price * item.quantity;
         }, 0);
 
         res.status(200).json({
-        success: true,
-        message: 'Lấy giỏ hàng thành công',
-        data: {
-            cart,
-            totalPrice,
-            guestId: userId ? null : guestId,
-        },
+            success: true,
+            message: 'Lấy giỏ hàng thành công',
+            data: {
+                cart,
+                totalPrice,
+                guestId: userId ? null : guestId,
+            },
         });
     } catch (error) {
         logger.error('Lỗi getCart:', error.message);
         res.status(500).json({
-        success: false,
-        message: 'Lỗi server: ' + error.message,
+            success: false,
+            message: 'Lỗi server: ' + error.message,
         });
     }
-    };
+};
 
         exports.mergeCart = async (req, res) => {
             try {

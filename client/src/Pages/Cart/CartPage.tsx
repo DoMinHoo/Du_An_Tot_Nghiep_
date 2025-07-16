@@ -34,7 +34,6 @@ const CartPage: React.FC = () => {
   });
 
   const cart: Cart | undefined = data?.data?.cart;
-  const totalPrice: number = data?.data?.totalPrice || 0;
 
   // Tính tổng tiền của các sản phẩm được chọn
   const selectedTotalPrice = useMemo(() => {
@@ -197,9 +196,7 @@ const CartPage: React.FC = () => {
       return;
     }
 
-
     // Lọc ra các sản phẩm được chọn
-
 
     navigate('/checkout', {
       state: {
@@ -208,7 +205,6 @@ const CartPage: React.FC = () => {
         totalPrice: selectedTotalPrice,
       },
     });
-
   };
 
   // Xử lý xóa toàn bộ giỏ hàng

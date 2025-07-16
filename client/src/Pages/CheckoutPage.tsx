@@ -57,10 +57,10 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
-      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-    ];
+    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+  ];
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
@@ -153,7 +153,9 @@ const CheckoutPage: React.FC = () => {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: (finalAmount ?? totalPrice) + SHIPPING_FEE }),
+            body: JSON.stringify({
+              amount: (finalAmount ?? totalPrice) + SHIPPING_FEE,
+            }),
           }
         );
 
@@ -196,7 +198,6 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
-
       const res = await fetch('http://localhost:5000/api/promotions/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -358,9 +359,9 @@ const CheckoutPage: React.FC = () => {
                   onChange={(e) =>
                     setPaymentMethod(
                       e.target.value as
-                      | 'cod'
-                      | 'bank_transfer'
-                      | 'online_payment'
+                        | 'cod'
+                        | 'bank_transfer'
+                        | 'online_payment'
                     )
                   }
                   className="mr-2"
@@ -410,9 +411,16 @@ const CheckoutPage: React.FC = () => {
               .map((item: any, index: number) => (
                 <div key={index} className="flex gap-4">
                   <img
-                    src={item.variationId.colorImageUrl}
-                    alt="item"
-                    className="w-20 h-20 object-cover"
+                    src={
+                      item.variationId.colorImageUrl
+                        ? item.variationId.colorImageUrl
+                        : '/placeholder.png'
+                    }
+                    alt={item.variationId.name || 'Sản phẩm'}
+                    className="w-20 h-20 object-cover rounded border"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.png';
+                    }}
                   />
                   <div>
                     <p className="font-medium">{item.variationId.name}</p>
@@ -420,8 +428,8 @@ const CheckoutPage: React.FC = () => {
                       {item.variationId.color}
                     </p>
                     {item.variationId.finalPrice !== 0 &&
-                      item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice < item.variationId.finalPrice ? (
+                    item.variationId.salePrice !== 0 &&
+                    item.variationId.salePrice < item.variationId.finalPrice ? (
                       <p className="font-semibold">
                         {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
                         {item.quantity}
@@ -482,10 +490,11 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
-                        ? 'opacity-50 bg-gray-100'
-                        : 'hover:bg-blue-50 hover:border-blue-300'
-                        }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
+                        disabled
+                          ? 'opacity-50 bg-gray-100'
+                          : 'hover:bg-blue-50 hover:border-blue-300'
+                      }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -509,8 +518,9 @@ const CheckoutPage: React.FC = () => {
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
-                              }`}
+                            className={`text-xs ${
+                              isExpired ? 'text-red-500' : 'text-gray-600'
+                            }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(

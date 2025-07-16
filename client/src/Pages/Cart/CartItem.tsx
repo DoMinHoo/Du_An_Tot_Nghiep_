@@ -22,11 +22,11 @@ const CartItemComponent: React.FC<CartItemProps> = ({
   const name = item.variationId?.name || 'Sản phẩm không xác định';
   const dimensions = item.variationId?.dimensions || 'N/A';
   const materialVariation =
-    typeof item.variationId?.material === 'string'
-      ? item.variationId.material
-      : typeof item.variationId?.material === 'object' && item.variationId.material?.name
+    item.variationId?.material &&
+    typeof item.variationId.material === 'object' &&
+    'name' in item.variationId.material
       ? item.variationId.material.name
-      : 'N/A';
+      : 'Không xác định';
   const salePrice = item.variationId?.salePrice ?? 0; // Mặc định 0 nếu undefined/null
   const finalPrice = item.variationId?.finalPrice ?? 0; // Mặc định 0 nếu undefined/null
   const displayPrice = salePrice !== 0 ? salePrice : finalPrice; // Dùng salePrice nếu khác 0, ngược lại dùng finalPrice
