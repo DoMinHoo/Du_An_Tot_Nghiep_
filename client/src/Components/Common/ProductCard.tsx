@@ -208,6 +208,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     hasVariations &&
     variation &&
     isValidPrice(variation.salePrice) &&
+    variation.salePrice != null &&
     variation.salePrice > 0
       ? variation.salePrice
       : null;
