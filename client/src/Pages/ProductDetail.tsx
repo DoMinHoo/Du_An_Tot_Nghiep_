@@ -453,7 +453,15 @@ const ProductDetail: React.FC = () => {
             </p>
             <p>
               <strong>Chất liệu:</strong>{' '}
-              {selectedVariation?.material?.name ?? 'Không xác định'}
+              {selectedVariation?.material &&
+              typeof selectedVariation.material === 'object' &&
+              'name' in selectedVariation.material
+                ? selectedVariation.material.name
+                : 'Không xác định'}
+            </p>
+            <p>
+              <strong>Mau sắc:</strong>{' '}
+              {selectedVariation?.colorName || 'Không xác định'}{' '}
             </p>
             <p>
               <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}

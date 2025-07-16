@@ -174,7 +174,7 @@ const axios = require('axios');
 const CryptoJS = require('crypto-js');
 const moment = require('moment');
 const Order = require('../../models/order.model');
-const {sendPaymentSuccessEmail} = require('../../untils/sendPaymentSuccessEmail');
+const { sendPaymentSuccessEmail } = require('../../untils/sendPaymentSuccessEmail');
 
 const config = {
     app_id: "2553",
@@ -206,7 +206,7 @@ async function initiatePayment(req, res) { // Xử lý yêu cầu thanh toán
         const orderData = {
             app_id: config.app_id,
             app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
-            app_user: order.userId.toString(),
+            app_user: order.userId ? order.userId.toString() : 'guest',
             app_time: Date.now(),
             item: JSON.stringify(items),
             embed_data: JSON.stringify(embed_data),
@@ -284,10 +284,10 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
             order.paymentStatus = "completed";
             order.status = "shipping";
             await order.save();
-                const emailResult = await sendPaymentSuccessEmail(order._id);
-                if (!emailResult.success) {
-                    console.error('Failed to send payment success email:', emailResult.message);
-                }
+            const emailResult = await sendPaymentSuccessEmail(order._id);
+            if (!emailResult.success) {
+                console.error('Failed to send payment success email:', emailResult.message);
+            }
         } else {
             order.paymentStatus = "failed";
             order.status = "canceled";

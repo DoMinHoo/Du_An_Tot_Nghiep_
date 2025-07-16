@@ -52,16 +52,37 @@ const sendPaymentSuccessEmail = async (orderId) => {
                     <li><strong>Trạng thái:</strong> ${order.status}</li>
                 </ul>
                 <h3>Chi tiết sản phẩm:</h3>
-                ${order.items.map(item => `
-                    <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
-                        <img src="cid:${item.variationId._id}" alt="${item.variationId.name}" style="width: 100px; height: auto;">
-                        <p><strong>Tên sản phẩm:</strong> ${item.variationId.name}</p>
-                        <p><strong>Số lượng:</strong> ${item.quantity}</p>
-                        <p><strong>Đơn giá:</strong> ${item.salePrice.toLocaleString('vi-VN')} VNĐ</p>
-                        <p><strong>Thành tiền:</strong> ${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</p>
-                    </div>
-                `).join('')}
-                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoac <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Hình ảnh</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên sản phẩm</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Số lượng</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Đơn giá</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;" colspan="4">Tổng cộng</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left">${order.totalAmount.toLocaleString('vi-VN')} VNĐ</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        ${order.items.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                    <img src="cid:${item.variationId._id}" alt="${item.variationId.name}" style="width: 100px; height: auto;">
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.variationId.name}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.salePrice.toLocaleString('vi-VN')} VNĐ</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoặc <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
                 <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
             `,
             attachments: order.items.map(item => ({
@@ -100,11 +121,11 @@ const sendOrderSuccessEmail = async (orderId) => {
             from: process.env.EMAIL_USER1,
             to: email,
             subject: 'Xác nhận thanh toán thành công - Đơn hàng #' + order.orderCode,
-            html: `
+           html: `
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã mua sắm!</h2>
                 <p>Chào ${order.shippingAddress.fullName},</p>
                 <p>Chúng tôi xin thông báo rằng thanh toán cho đơn hàng <strong>#${order.orderCode}</strong> đã được thực hiện thành công.</p>
-                <h3>Thông tin đơn hàng:</h3>
+                <hh3>Thông tin đơn hàng:</h3>
                 <ul>
                     <li><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                     <li><strong>Tổng tiền:</strong> ${order.totalAmount.toLocaleString('vi-VN')} VNĐ</li>
@@ -112,16 +133,37 @@ const sendOrderSuccessEmail = async (orderId) => {
                     <li><strong>Trạng thái:</strong> ${order.status}</li>
                 </ul>
                 <h3>Chi tiết sản phẩm:</h3>
-                ${order.items.map(item => `
-                    <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
-                        <img src="cid:${item.variationId._id}" alt="${item.variationId.name}" style="width: 100px; height: auto;">
-                        <p><strong>Tên sản phẩm:</strong> ${item.variationId.name}</p>
-                        <p><strong>Số lượng:</strong> ${item.quantity}</p>
-                        <p><strong>Đơn giá:</strong> ${item.salePrice.toLocaleString('vi-VN')} VNĐ</p>
-                        <p><strong>Thành tiền:</strong> ${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</p>
-                    </div>
-                `).join('')}
-                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoac <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Hình ảnh</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên sản phẩm</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Số lượng</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Đơn giá</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;" colspan="4">Tổng cộng</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left">${order.totalAmount.toLocaleString('vi-VN')} VNĐ</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        ${order.items.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                    <img src="cid:${item.variationId._id}" alt="${item.variationId.name}" style="width: 100px; height: auto;">
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.variationId.name}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.salePrice.toLocaleString('vi-VN')} VNĐ</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${(item.salePrice * item.quantity).toLocaleString('vi-VN')} VNĐ</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p>Nếu bạn có câu hỏi, vui lòng liên hệ <a href="mailto:${process.env.EMAIL_USER1}">${process.env.EMAIL_USER1}</a> hoặc <a href="tel:${process.env.PHONE_NUMBER}">${process.env.PHONE_NUMBER}</a>.</p>
                 <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
             `,
             attachments: order.items.map(item => ({

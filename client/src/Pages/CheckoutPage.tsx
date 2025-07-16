@@ -13,11 +13,12 @@ const CheckoutPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [finalAmount, setFinalAmount] = useState<number | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number | null>(null);
   const { data: promotionListRaw } = useQuery({
     queryKey: ['promotions'],
     queryFn: getAllPromotions,
   });
-
+  const SHIPPING_FEE = 30000;
   const promotionList: any[] = Array.isArray(promotionListRaw)
     ? promotionListRaw
     : [];
@@ -67,6 +68,7 @@ const CheckoutPage: React.FC = () => {
   const selectedItems = passedState?.selectedItems || [];
   const cartItems = passedState?.cartItems || fallbackCart?.items || [];
   const totalPrice = passedState?.totalPrice ?? fallbackTotalPrice;
+  const totalWithShipping = (finalAmount ?? totalPrice) + SHIPPING_FEE;
 
   const orderMutation = useMutation({
     mutationFn: (orderData: any) => createOrder(orderData, token, guestId),
@@ -107,15 +109,16 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    let email = 'guest@example.com';
-    if (token) {
+    let finalEmail = email?.trim();
+    if (!finalEmail && token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.email) email = payload.email;
+        if (payload.email) finalEmail = payload.email;
       } catch {
         console.warn('Không thể lấy email từ token');
       }
     }
+    if (!finalEmail) finalEmail = 'guest@example.com';
 
     if (!fallbackCart || !fallbackCart._id) {
       toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
@@ -127,7 +130,7 @@ const CheckoutPage: React.FC = () => {
         shippingAddress: {
           fullName,
           phone,
-          email,
+          email: finalEmail,
           addressLine: detailAddress,
           street,
           province,
@@ -137,7 +140,7 @@ const CheckoutPage: React.FC = () => {
         paymentMethod,
         cartId: fallbackCart._id,
         couponCode: couponCode || undefined,
-        finalAmount: finalAmount ?? totalPrice,
+        finalAmount: (finalAmount ?? totalPrice) + SHIPPING_FEE,
         selectedItems, // Đảm bảo gửi selectedItems
       };
 
@@ -150,7 +153,9 @@ const CheckoutPage: React.FC = () => {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: finalAmount ?? totalPrice }),
+            body: JSON.stringify({
+              amount: (finalAmount ?? totalPrice) + SHIPPING_FEE,
+            }),
           }
         );
 
@@ -209,9 +214,11 @@ const CheckoutPage: React.FC = () => {
       }
       toast.success(data.message || 'Áp dụng mã thành công!');
       setFinalAmount(data.finalPrice);
+      setDiscountAmount(data.discountAmount);
     } catch {
       toast.error('Có lỗi khi áp dụng mã');
       setFinalAmount(null);
+      setDiscountAmount(null);
     }
   };
 
@@ -404,9 +411,16 @@ const CheckoutPage: React.FC = () => {
               .map((item: any, index: number) => (
                 <div key={index} className="flex gap-4">
                   <img
-                    src={item.variationId.colorImageUrl}
-                    alt="item"
-                    className="w-20 h-20 object-cover"
+                    src={
+                      item.variationId.colorImageUrl
+                        ? item.variationId.colorImageUrl
+                        : '/placeholder.png'
+                    }
+                    alt={item.variationId.name || 'Sản phẩm'}
+                    className="w-20 h-20 object-cover rounded border"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.png';
+                    }}
                   />
                   <div>
                     <p className="font-medium">{item.variationId.name}</p>
@@ -556,12 +570,18 @@ const CheckoutPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span>Phí vận chuyển:</span>
-            <span>—</span>
+            <span>{SHIPPING_FEE.toLocaleString()}₫</span>
           </div>
           <hr />
+          {discountAmount !== null && discountAmount > 0 && (
+            <div className="flex justify-between text-green-600 font-medium">
+              <span>Tiết kiệm:</span>
+              <span>-{discountAmount.toLocaleString()}₫</span>
+            </div>
+          )}
           <div className="flex justify-between font-semibold text-red-500 text-lg">
             <span>Tổng cộng:</span>
-            <span>{(finalAmount ?? totalPrice).toLocaleString()}₫</span>
+            <span>{totalWithShipping.toLocaleString()}₫</span>
           </div>
         </div>
       </div>

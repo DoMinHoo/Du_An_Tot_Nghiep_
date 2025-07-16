@@ -7,6 +7,7 @@ exports.applyPromotion = async (req, res) => {
   try {
     const promotion = await Promotion.findOne({ code: code.toUpperCase(), isActive: true });
 
+
     if (!promotion) {
       return res.status(400).json({ message: "Mã khuyến mãi không tồn tại hoặc đã bị vô hiệu hóa." });
     }
@@ -40,11 +41,13 @@ exports.applyPromotion = async (req, res) => {
       promotion.usedCount += 1;
       await promotion.save();
     }
+    const discountAmount = originalPrice - finalPrice;
 
     res.json({
       message: "Áp dụng mã thành công!",
       originalPrice,
       finalPrice,
+      discountAmount,
       promotionApplied: promotion.code,
     });
   } catch (error) {
