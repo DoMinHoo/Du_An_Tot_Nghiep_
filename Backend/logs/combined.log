@@ -97,6 +97,13 @@
 {"level":"info","message":"Giỏ hàng người dùng với userId: 68482de9d33140e1b15ab182 đã chứa sản phẩm, xóa guestCart: af98e399-2d70-461d-881f-16b4ae4e2ed1","timestamp":"2025-07-04 14:28:33"}
 
 {"level":"info","message":"Hợp nhất 1 mặt hàng thành công từ guestId: 561b0ed6-7bbc-4890-8f5f-9e33be7c6bbe sang userId: 6848e6354b689f0a38a8ede7","timestamp":"2025-07-07 21:54:50"}
+
+{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: 06b3303d-fcb7-4dad-8a76-addc977e0da1","timestamp":"2025-07-09 13:19:06"}
+{"level":"error","message":"Lỗi đăng nhập:","timestamp":"2025-07-15 21:58:25"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: 9962691f-adb6-419e-833b-fdc7a9adedcc","timestamp":"2025-07-15 22:05:58"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: 691496db-66e5-4e1f-8559-4fd4a5d40e5f","timestamp":"2025-07-15 22:07:38"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: 83b5713f-346d-454d-80c7-702b6868b5f2","timestamp":"2025-07-15 22:08:18"}
+
 {"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: 771a4d53-b5c1-4c34-9905-561df84b826b","timestamp":"2025-07-10 22:03:45"}
 
 {"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-06 19:43:22"}
@@ -108,3 +115,4 @@
 
 {"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: a2e9e9db-9432-4350-8465-3e623df865e3","timestamp":"2025-07-13 12:45:06"}
 {"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: c0951488-bb31-44ac-b15e-796af2cdb77b","timestamp":"2025-07-16 10:45:46"}
+

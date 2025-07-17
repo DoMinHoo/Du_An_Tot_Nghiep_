@@ -20,6 +20,8 @@ import ThankYouPage from './Pages/ThankYouPage';
 import ReturnVnpayPage from './Pages/ReturnVnpayPage';
 import ContactPage from './Pages/Contact';
 import AboutPage from './Pages/About';
+import NewsDetailPage from './Pages/NewsDetailPage';
+import NewsPage from './Pages/NewsPage';
 
 
 
@@ -67,8 +69,10 @@ function App() {
         <Route path='/thank-you' element={<ThankYouPage />} />
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />
-
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/news/:slug" element={<NewsDetailPage />} />
       </Route>
+
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/set-user" element={<SetUser />} />
