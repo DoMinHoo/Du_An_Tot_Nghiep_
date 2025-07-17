@@ -34,6 +34,7 @@ import ListPromotion from '../pages/Promotions/listPromotion';
 import UpdatePromotion from '../pages/Promotions/updatePromotion';
 import CreatePromotion from '../pages/Promotions/createPromotion';
 import Dashboard from '../pages/Dashboard/dashboard';
+import RestoreVariationList from '../pages/Products/ProductVariants/RestoreVariationList';
 
 const routes: RouteObject[] = [
   {
@@ -77,6 +78,10 @@ const routes: RouteObject[] = [
           {
             path: 'variants/:id/edit/:variationId',
             element: <UpdateProductVariationPage />,
+          },
+          {
+            path: 'variants/:id/deleted',
+            element: <RestoreVariationList />,
           },
         ],
       },
