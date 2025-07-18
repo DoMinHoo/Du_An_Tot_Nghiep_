@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -7,6 +7,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
 import { getAllPromotions } from '../services/apiPromotion.service';
+import {
+  getProvinces,
+  getDistricts,
+  getWards,
+  calculateShippingFee,
+} from '../services/ghnService';
 
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -18,7 +24,6 @@ const CheckoutPage: React.FC = () => {
     queryKey: ['promotions'],
     queryFn: getAllPromotions,
   });
-  const SHIPPING_FEE = 30000;
   const promotionList: any[] = Array.isArray(promotionListRaw)
     ? promotionListRaw
     : [];
@@ -57,18 +62,22 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
-    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-  ];
+      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+    ];
+
+  // Lấy giá trị từ location.state chỉ 1 lần khi mount
+  const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
+  const [initCartItems] = useState(() => passedState?.cartItems || undefined);
+  const [initTotalPrice] = useState(() => passedState?.totalPrice);
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
 
-  const selectedItems = passedState?.selectedItems || [];
-  const cartItems = passedState?.cartItems || fallbackCart?.items || [];
-  const totalPrice = passedState?.totalPrice ?? fallbackTotalPrice;
-  const totalWithShipping = (finalAmount ?? totalPrice) + SHIPPING_FEE;
+  const selectedItems = initSelectedItems;
+  const cartItems = initCartItems ?? fallbackCart?.items ?? [];
+  const totalPrice = initTotalPrice ?? fallbackTotalPrice; // Xóa shippingFee
 
   const orderMutation = useMutation({
     mutationFn: (orderData: any) => createOrder(orderData, token, guestId),
@@ -100,6 +109,96 @@ const CheckoutPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Thêm biến tổng tiền đã cộng phí vận chuyển
+  const [provinceList, setProvinceList] = useState<any[]>([]);
+  const [districtList, setDistrictList] = useState<any[]>([]);
+  const [wardList, setWardList] = useState<any[]>([]);
+  const [provinceId, setProvinceId] = useState<number | null>(null);
+  const [districtId, setDistrictId] = useState<number | null>(null);
+  const [wardCode, setWardCode] = useState<string>('');
+  const [shippingFee, setShippingFee] = useState<number>(0); // KHỞI TẠO 0
+  const [provinceSearch, setProvinceSearch] = useState(''); // Thêm state tìm kiếm
+
+  const finalAmountWithShipping = (finalAmount ?? totalPrice) + shippingFee;
+
+  // Lấy danh sách tỉnh/thành khi mount
+  useEffect(() => {
+    getProvinces()
+      .then((res) => {
+        console.log('Provinces:', res); // Kiểm tra dữ liệu thực tế
+        // Sửa lại đoạn này cho đúng với dữ liệu thực tế trả về từ backend
+        if (Array.isArray(res)) {
+          setProvinceList(res);
+        } else if (res && Array.isArray(res.data)) {
+          setProvinceList(res.data);
+        } else if (res && Array.isArray(res.provinces)) {
+          setProvinceList(res.provinces);
+        } else {
+          setProvinceList([]);
+        }
+      })
+      .catch(() => setProvinceList([]));
+  }, []);
+
+  // Lấy danh sách quận/huyện khi chọn tỉnh/thành
+  useEffect(() => {
+    if (provinceId) {
+      getDistricts(provinceId)
+        .then(setDistrictList)
+        .catch(() => setDistrictList([]));
+    } else {
+      setDistrictList([]);
+      setDistrict('');
+      setDistrictId(null);
+    }
+    setWardList([]);
+    setWard('');
+    setWardCode('');
+  }, [provinceId]);
+
+  // Lấy danh sách phường/xã khi chọn quận/huyện
+  useEffect(() => {
+    if (districtId) {
+      getWards(districtId).then(setWardList).catch(() => setWardList([]));
+    } else {
+      setWardList([]);
+      setWard('');
+      setWardCode('');
+    }
+  }, [districtId]);
+
+  // Tính phí vận chuyển khi chọn tỉnh/thành, quận/huyện, phường/xã hoặc khi thay đổi tỉnh/thành
+  useEffect(() => {
+    // Chỉ tính phí khi đã chọn đủ tỉnh, quận, phường và các giá trị là hợp lệ
+    if (
+      provinceId &&
+      districtId &&
+      wardCode &&
+      totalPrice > 0 &&
+      typeof districtId === 'number' &&
+      typeof provinceId === 'number' &&
+      typeof wardCode === 'string' &&
+      wardCode.length > 0
+    ) {
+      calculateShippingFee({
+        toDistrictId: districtId,
+        toWardCode: wardCode,
+        amount: totalPrice,
+      })
+        .then((fee) => {
+          // Nếu fee là số hợp lệ và lớn hơn 0 thì set, nếu không thì set 0
+          if (typeof fee === 'number' && !isNaN(fee) && fee > 0) {
+            setShippingFee(fee);
+          } else {
+            setShippingFee(0);
+          }
+        })
+        .catch(() => setShippingFee(0));
+    } else {
+      setShippingFee(0);
+    }
+  }, [provinceId, districtId, wardCode, totalPrice]);
 
   const handleSubmitOrder = async () => {
     if (!validate()) return;
@@ -140,7 +239,8 @@ const CheckoutPage: React.FC = () => {
         paymentMethod,
         cartId: fallbackCart._id,
         couponCode: couponCode || undefined,
-        finalAmount: (finalAmount ?? totalPrice) + SHIPPING_FEE,
+        finalAmount: finalAmountWithShipping, // Gửi tổng tiền đã cộng phí vận chuyển
+        shippingFee, // lưu phí vận chuyển thực tế
         selectedItems, // Đảm bảo gửi selectedItems
       };
 
@@ -154,7 +254,7 @@ const CheckoutPage: React.FC = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              amount: (finalAmount ?? totalPrice) + SHIPPING_FEE,
+              amount: finalAmountWithShipping, // Sử dụng tổng tiền đã cộng phí vận chuyển
             }),
           }
         );
@@ -222,6 +322,124 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  // State cho địa chỉ động
+
+
+  // Lấy danh sách tỉnh/thành khi mount
+  useEffect(() => {
+    getProvinces()
+      .then((res) => {
+        console.log('Provinces:', res); // Kiểm tra dữ liệu thực tế
+        // Sửa lại đoạn này cho đúng với dữ liệu thực tế trả về từ backend
+        if (Array.isArray(res)) {
+          setProvinceList(res);
+        } else if (res && Array.isArray(res.data)) {
+          setProvinceList(res.data);
+        } else if (res && Array.isArray(res.provinces)) {
+          setProvinceList(res.provinces);
+        } else {
+          setProvinceList([]);
+        }
+      })
+      .catch(() => setProvinceList([]));
+  }, []);
+
+  // Lấy danh sách quận/huyện khi chọn tỉnh/thành
+  useEffect(() => {
+    if (provinceId) {
+      getDistricts(provinceId)
+        .then(setDistrictList)
+        .catch(() => setDistrictList([]));
+    } else {
+      setDistrictList([]);
+      setDistrict('');
+      setDistrictId(null);
+    }
+    setWardList([]);
+    setWard('');
+    setWardCode('');
+  }, [provinceId]);
+
+  // Lấy danh sách phường/xã khi chọn quận/huyện
+  useEffect(() => {
+    if (districtId) {
+      getWards(districtId).then(setWardList).catch(() => setWardList([]));
+    } else {
+      setWardList([]);
+      setWard('');
+      setWardCode('');
+    }
+  }, [districtId]);
+
+  // Tính phí vận chuyển khi chọn tỉnh/thành, quận/huyện, phường/xã hoặc khi thay đổi tỉnh/thành
+  useEffect(() => {
+    // Chỉ tính phí khi đã chọn đủ tỉnh, quận, phường và các giá trị là hợp lệ
+    if (
+      provinceId &&
+      districtId &&
+      wardCode &&
+      totalPrice > 0 &&
+      typeof districtId === 'number' &&
+      typeof provinceId === 'number' &&
+      typeof wardCode === 'string' &&
+      wardCode.length > 0
+    ) {
+      calculateShippingFee({
+        toDistrictId: districtId,
+        toWardCode: wardCode,
+        amount: totalPrice,
+      })
+        .then((fee) => {
+          // Nếu fee là số hợp lệ và lớn hơn 0 thì set, nếu không thì set 0
+          if (typeof fee === 'number' && !isNaN(fee) && fee > 0) {
+            setShippingFee(fee);
+          } else {
+            setShippingFee(0);
+          }
+        })
+        .catch(() => setShippingFee(0));
+    } else {
+      setShippingFee(0);
+    }
+  }, [provinceId, districtId, wardCode, totalPrice]);
+
+  const handleProvinceChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const id = Number(e.target.value);
+    setProvinceId(id || null);
+    setProvince(e.target.selectedOptions[0]?.text || '');
+    // Reset quận/huyện, phường/xã khi đổi tỉnh/thành
+    setDistrict('');
+    setDistrictId(null);
+    setWard('');
+    setWardCode('');
+    setDistrictList([]);
+    setWardList([]);
+    setShippingFee(0); // Reset phí khi đổi tỉnh
+  };
+
+  // Thay đổi select quận/huyện
+  const handleDistrictChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const id = Number(e.target.value);
+    setDistrictId(id || null);
+    setDistrict(e.target.selectedOptions[0]?.text || '');
+  };
+
+  // Thay đổi select phường/xã
+  const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setWardCode(e.target.value);
+    setWard(e.target.selectedOptions[0]?.text || '');
+  };
+
+  // Lọc danh sách tỉnh/thành theo từ khóa tìm kiếm
+  const filteredProvinceList = (Array.isArray(provinceList) ? provinceList : []).filter((item) => {
+    const name = (item.ProvinceName || item.province_name || item.name || '').toLowerCase();
+    return name.includes(provinceSearch.trim().toLowerCase());
+  });
+
   return (
     <div className="flex flex-col lg:flex-row bg-white p-6 rounded-md">
       <ToastContainer />
@@ -276,12 +494,18 @@ const CheckoutPage: React.FC = () => {
               <div className="w-1/3">
                 <select
                   className="w-full border rounded px-4 py-2"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
+                  value={provinceId || ''}
+                  onChange={handleProvinceChange}
                 >
                   <option value="">Chọn tỉnh/thành</option>
-                  <option value="Hồ Chí Minh">Hồ Chí Minh</option>
-                  <option value="Hà Nội">Hà Nội</option>
+                  {filteredProvinceList.map((item) => (
+                    <option
+                      key={item.ProvinceID || item.province_id || item.id}
+                      value={item.ProvinceID || item.province_id || item.id}
+                    >
+                      {item.ProvinceName || item.province_name || item.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.province && (
                   <p className="text-red-500 text-sm mt-1">{errors.province}</p>
@@ -290,12 +514,16 @@ const CheckoutPage: React.FC = () => {
               <div className="w-1/3">
                 <select
                   className="w-full border rounded px-4 py-2"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
+                  value={districtId || ''}
+                  onChange={handleDistrictChange}
+                  disabled={!provinceId}
                 >
                   <option value="">Chọn quận/huyện</option>
-                  <option value="Quận 1">Quận 1</option>
-                  <option value="Quận Bình Thạnh">Quận Bình Thạnh</option>
+                  {(Array.isArray(districtList) ? districtList : []).map((item) => (
+                    <option key={item.DistrictID} value={item.DistrictID}>
+                      {item.DistrictName}
+                    </option>
+                  ))}
                 </select>
                 {errors.district && (
                   <p className="text-red-500 text-sm mt-1">{errors.district}</p>
@@ -304,12 +532,16 @@ const CheckoutPage: React.FC = () => {
               <div className="w-1/3">
                 <select
                   className="w-full border rounded px-4 py-2"
-                  value={ward}
-                  onChange={(e) => setWard(e.target.value)}
+                  value={wardCode}
+                  onChange={handleWardChange}
+                  disabled={!districtId}
                 >
                   <option value="">Chọn phường/xã</option>
-                  <option value="Phường 1">Phường 1</option>
-                  <option value="Phường 2">Phường 2</option>
+                  {(Array.isArray(wardList) ? wardList : []).map((item) => (
+                    <option key={item.WardCode} value={item.WardCode}>
+                      {item.WardName}
+                    </option>
+                  ))}
                 </select>
                 {errors.ward && (
                   <p className="text-red-500 text-sm mt-1">{errors.ward}</p>
@@ -359,9 +591,9 @@ const CheckoutPage: React.FC = () => {
                   onChange={(e) =>
                     setPaymentMethod(
                       e.target.value as
-                        | 'cod'
-                        | 'bank_transfer'
-                        | 'online_payment'
+                      | 'cod'
+                      | 'bank_transfer'
+                      | 'online_payment'
                     )
                   }
                   className="mr-2"
@@ -401,8 +633,8 @@ const CheckoutPage: React.FC = () => {
         <div className="border rounded p-4 space-y-4">
           {isLoading ? (
             <p>Đang tải giỏ hàng...</p>
-          ) : cartItems.length ? (
-            cartItems
+          ) : (Array.isArray(cartItems) ? cartItems : []).length ? (
+            (Array.isArray(cartItems) ? cartItems : [])
               .filter(
                 (item) =>
                   selectedItems.length === 0 ||
@@ -412,9 +644,13 @@ const CheckoutPage: React.FC = () => {
                 <div key={index} className="flex gap-4">
                   <img
                     src={
-                      item.variationId.colorImageUrl
-                        ? item.variationId.colorImageUrl
-                        : '/placeholder.png'
+                      // Ưu tiên lấy ảnh từ productId.images[0], sau đó đến colorImageUrl, cuối cùng là placeholder
+                      (item.variationId.productId &&
+                        Array.isArray(item.variationId.productId.images) &&
+                        item.variationId.productId.images.length > 0 &&
+                        item.variationId.productId.images[0]) ||
+                      item.variationId.colorImageUrl ||
+                      '/placeholder.png'
                     }
                     alt={item.variationId.name || 'Sản phẩm'}
                     className="w-20 h-20 object-cover rounded border"
@@ -428,8 +664,8 @@ const CheckoutPage: React.FC = () => {
                       {item.variationId.color}
                     </p>
                     {item.variationId.finalPrice !== 0 &&
-                    item.variationId.salePrice !== 0 &&
-                    item.variationId.salePrice < item.variationId.finalPrice ? (
+                      item.variationId.salePrice !== 0 &&
+                      item.variationId.salePrice < item.variationId.finalPrice ? (
                       <p className="font-semibold">
                         {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
                         {item.quantity}
@@ -460,8 +696,10 @@ const CheckoutPage: React.FC = () => {
                 value={couponCode}
                 onChange={(e) => {
                   setCouponCode(e.target.value);
+                  // Khi setCouponCode, chỉ reset finalAmount khi thực sự xóa mã
                   if (e.target.value.trim() === '') {
                     setFinalAmount(null);
+                    setDiscountAmount(null); // Thêm dòng này để tránh render lại liên tục
                     toast.info('Đã xóa mã giảm giá, giá gốc được áp dụng lại');
                   }
                 }}
@@ -474,7 +712,7 @@ const CheckoutPage: React.FC = () => {
               </button>
             </div>
 
-            {promotionList?.length > 0 && (
+            {Array.isArray(promotionList) && promotionList.length > 0 && (
               <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 max-h-60 overflow-y-auto">
                 <p className="font-semibold text-gray-700 text-sm">
                   Chọn mã giảm giá:
@@ -490,11 +728,10 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
-                        disabled
-                          ? 'opacity-50 bg-gray-100'
-                          : 'hover:bg-blue-50 hover:border-blue-300'
-                      }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
+                        ? 'opacity-50 bg-gray-100'
+                        : 'hover:bg-blue-50 hover:border-blue-300'
+                        }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -518,9 +755,8 @@ const CheckoutPage: React.FC = () => {
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${
-                              isExpired ? 'text-red-500' : 'text-gray-600'
-                            }`}
+                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
+                              }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(
@@ -570,7 +806,13 @@ const CheckoutPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span>Phí vận chuyển:</span>
-            <span>{SHIPPING_FEE.toLocaleString()}₫</span>
+            <span>
+              {provinceId && districtId && wardCode
+                ? (shippingFee > 0
+                  ? `${shippingFee.toLocaleString()}₫`
+                  : 'Đang tính phí...')
+                : 'Vui lòng chọn đủ địa chỉ'}
+            </span>
           </div>
           <hr />
           {discountAmount !== null && discountAmount > 0 && (
@@ -581,12 +823,13 @@ const CheckoutPage: React.FC = () => {
           )}
           <div className="flex justify-between font-semibold text-red-500 text-lg">
             <span>Tổng cộng:</span>
-            <span>{totalWithShipping.toLocaleString()}₫</span>
+            <span>{finalAmountWithShipping.toLocaleString()}₫</span>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 export default CheckoutPage;

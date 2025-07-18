@@ -282,14 +282,14 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
 
         if (status === "1") {
             order.paymentStatus = "completed";
-            order.status = "shipping";
+            order.status = "pending";
             await order.save();
             const emailResult = await sendPaymentSuccessEmail(order._id);
             if (!emailResult.success) {
                 console.error('Failed to send payment success email:', emailResult.message);
             }
         } else {
-            order.paymentStatus = "failed";
+            order.paymentStatus = "pending";
             order.status = "canceled";
         }
 

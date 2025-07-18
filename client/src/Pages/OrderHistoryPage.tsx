@@ -139,6 +139,15 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
+
+  const getDiscountAmount = (order: any): number => {
+    if (!order.promotion) return 0;
+    if (order.promotion.discountType === 'percentage') {
+      return Math.floor((order.totalAmount * order.promotion.discountValue) / 100);
+    }
+    return order.promotion.discountValue;
+  };
+
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
@@ -227,10 +236,28 @@ const OrderHistoryPage: React.FC = () => {
                       : `${order.promotion.discountValue.toLocaleString()}₫`})`
                     : 'Không áp dụng'}
                 </p>
-                Tổng cộng: {order.totalAmount.toLocaleString()}₫
+
+
+                <p>
+                  <strong>Giá trị giảm:</strong>{' '}
+                  {getDiscountAmount(order).toLocaleString()}₫
+                </p>
+
+                {/* Phí vận chuyển lấy từ backend */}
+                <p>
+                  <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
+                </p>
+
+                <hr className="my-2" />
+
+                {/* Tổng cộng lấy từ backend */}
+                <p className="text-lg font-semibold text-red-600">
+                  Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+                </p>
+
               </div>
 
-              {order.status === 'pending' && (
+              {order.status === 'canceled' && (
                 <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
                   {order.paymentMethod === 'online_payment' && (
                     <button

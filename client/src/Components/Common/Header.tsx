@@ -107,6 +107,11 @@ const Header: React.FC = () => {
                   >
                     Lịch sử đơn hàng
                   </div>
+                  <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    <Link to="/account" className="hidden md:inline">
+                      Tài khoản của tôi
+                    </Link>
+                  </div>
                   <div
                     onClick={handleLogout}
                     className="px-4 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
@@ -123,9 +128,7 @@ const Header: React.FC = () => {
               <Link to="/signin">Đăng ký</Link>
             </div>
           )}
-          <Link to="/account" className="hidden md:inline">
-            Tài khoản của tôi
-          </Link>
+
           <Link to="/cart" className="flex items-center gap-1">
             <FaShoppingCart className="text-lg" /> Giỏ hàng
           </Link>
@@ -145,11 +148,10 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${
-                openDropdown
-                  ? 'opacity-100 scale-y-100'
-                  : 'opacity-0 scale-y-0 pointer-events-none'
-              }`}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown
+                ? 'opacity-100 scale-y-100'
+                : 'opacity-0 scale-y-0 pointer-events-none'
+                }`}
             >
               {categories.map((cat) => (
                 <Link
