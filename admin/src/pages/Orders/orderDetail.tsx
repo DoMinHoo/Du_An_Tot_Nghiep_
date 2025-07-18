@@ -157,9 +157,12 @@ const OrderDetail: React.FC = () => {
           {shipping.phone || 'N/A'}
         </Descriptions.Item>
         <Descriptions.Item label="Địa chỉ giao hàng">
-          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${
-            shipping.ward || ''
-          }, ${shipping.district || ''}, ${shipping.province || ''}`}
+          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${shipping.ward || ''
+            }, ${shipping.district || ''}, ${shipping.province || ''}`}
+        </Descriptions.Item>
+        {/* Thêm phí vận chuyển */}
+        <Descriptions.Item label="Phí vận chuyển">
+          {order.shippingFee?.toLocaleString('vi-VN') || '0'}₫
         </Descriptions.Item>
         <Descriptions.Item label="Trạng thái hiện tại">
           <Tag color={statusColor[order.status]}>

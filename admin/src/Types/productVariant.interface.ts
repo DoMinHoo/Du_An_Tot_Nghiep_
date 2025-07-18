@@ -21,6 +21,8 @@ export interface ProductVariation {
     name: string;
   } | null;// Ví dụ: "Gỗ MFC phủ bóng"
 
+  isDeleted: boolean;
+
   createdAt: string;
   updatedAt: string;
 }

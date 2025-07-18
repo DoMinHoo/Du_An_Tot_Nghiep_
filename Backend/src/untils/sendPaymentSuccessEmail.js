@@ -31,11 +31,11 @@ const sendPaymentSuccessEmail = async (orderId) => {
         const order = await Order.findById(orderId).populate('items.variationId');
         if (!order) throw new Error('Đơn hàng không tồn tại');
         if (order.paymentStatus !== 'completed') throw new Error('Thanh toán chưa hoàn tất');
- // Kiểm tra email người dùng
-    const email = order.shippingAddress.email;
-    if (!isValidEmail(email)) {
-        throw new Error(`Email khách hàng không hợp lệ: ${email}`);
-    }
+        // Kiểm tra email người dùng
+        const email = order.shippingAddress.email;
+        if (!isValidEmail(email)) {
+            throw new Error(`Email khách hàng không hợp lệ: ${email}`);
+        }
         const mailOptions = {
             from: process.env.EMAIL_USER1,
             to: email,
@@ -48,6 +48,7 @@ const sendPaymentSuccessEmail = async (orderId) => {
                 <ul>
                     <li><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                     <li><strong>Tổng tiền:</strong> ${order.totalAmount.toLocaleString('vi-VN')} VNĐ</li>
+                    <li><strong>Phí vận chuyển:</strong> ${order.shippingFee?.toLocaleString('vi-VN') || '0'} VNĐ</li>
                     <li><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán trực tuyến' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
                     <li><strong>Trạng thái:</strong> ${order.status}</li>
                 </ul>
@@ -108,20 +109,20 @@ const sendOrderSuccessEmail = async (orderId) => {
         if (!order) throw new Error('Đơn hàng không tồn tại');
         if (order.paymentMethod !== 'cod') throw new Error('Chỉ áp dụng cho đơn hàng COD');
 
-         // Kiểm tra email người dùng
-            const email = order.shippingAddress.email;
+        // Kiểm tra email người dùng
+        const email = order.shippingAddress.email;
         const isValidEmail = (email) => {
             const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return regex.test(email);
         };
         if (!isValidEmail(email)) {
             throw new Error(`Email khách hàng không hợp lệ: ${email}`);
-    }
+        }
         const mailOptions = {
             from: process.env.EMAIL_USER1,
             to: email,
             subject: 'Xác nhận thanh toán thành công - Đơn hàng #' + order.orderCode,
-           html: `
+            html: `
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã mua sắm!</h2>
                 <p>Chào ${order.shippingAddress.fullName},</p>
                 <p>Chúng tôi xin thông báo rằng thanh toán cho đơn hàng <strong>#${order.orderCode}</strong> đã được thực hiện thành công.</p>
@@ -129,6 +130,7 @@ const sendOrderSuccessEmail = async (orderId) => {
                 <ul>
                     <li><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                     <li><strong>Tổng tiền:</strong> ${order.totalAmount.toLocaleString('vi-VN')} VNĐ</li>
+                    <li><strong>Phí vận chuyển:</strong> ${order.shippingFee?.toLocaleString('vi-VN') || '0'} VNĐ</li>
                     <li><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán trực tuyến' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
                     <li><strong>Trạng thái:</strong> ${order.status}</li>
                 </ul>

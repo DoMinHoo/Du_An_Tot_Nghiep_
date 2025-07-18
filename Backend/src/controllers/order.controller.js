@@ -135,7 +135,7 @@ exports.getOrders = async (req, res) => {
 // Tạo đơn hàng từ giỏ hàng
 exports.createOrder = async (req, res) => {
     try {
-        const { shippingAddress, paymentMethod, cartId, finalAmount, couponCode, selectedItems } = req.body;
+        const { shippingAddress, paymentMethod, cartId, finalAmount, couponCode, selectedItems, shippingFee } = req.body;
 
         // Xác thực địa chỉ giao hàng
         const { fullName, phone, email, addressLine, street, province, district, ward } = shippingAddress || {};
@@ -250,7 +250,7 @@ exports.createOrder = async (req, res) => {
             totalAmount = Number(finalAmount);
         }
 
-        // Tạo đơn hàng mới
+        // Thêm shippingFee vào đơn hàng
         const newOrder = new Order({
             userId: req.user?.userId || null,
             cartId,
@@ -259,6 +259,7 @@ exports.createOrder = async (req, res) => {
             phone,
             email,
             totalAmount,
+            shippingFee: shippingFee || 0,
             shippingAddress,
             paymentMethod,
             items, // Chỉ lưu các sản phẩm được chọn
