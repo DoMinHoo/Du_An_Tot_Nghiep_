@@ -116,6 +116,10 @@
 {"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: a2e9e9db-9432-4350-8465-3e623df865e3","timestamp":"2025-07-13 12:45:06"}
 {"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: c0951488-bb31-44ac-b15e-796af2cdb77b","timestamp":"2025-07-16 10:45:46"}
 
+
 {"level":"info","message":"Không tìm thấy guestCart với guestId: f30d516a-721e-4654-8481-15224761ec67 hoặc giỏ hàng rỗng","timestamp":"2025-07-17 21:01:09"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 4ca483c8-c72f-4fd2-88de-d9fe408418a8 hoặc giỏ hàng rỗng","timestamp":"2025-07-17 21:56:54"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 66d85196-9f04-42c6-b22a-0913fc0586d2 hoặc giỏ hàng rỗng","timestamp":"2025-07-18 16:30:24"}
+
+{"level":"info","message":"Không tìm thấy guestCart với guestId: a6a20672-852d-4851-a4ca-2cd4dabccb5f hoặc giỏ hàng rỗng","timestamp":"2025-07-18 12:13:02"}
+
