@@ -130,3 +130,4 @@
 {"level":"info","message":"Không tìm thấy guestCart với guestId: a6a20672-852d-4851-a4ca-2cd4dabccb5f hoặc giỏ hàng rỗng","timestamp":"2025-07-18 12:13:02"}
 
 
+{"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: 0d389a5a-e8e1-45cb-a013-62c306119d94","timestamp":"2025-07-18 22:55:43"}
