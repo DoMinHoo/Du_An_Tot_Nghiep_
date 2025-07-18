@@ -201,8 +201,10 @@ const OrderManager: React.FC = () => {
         items.length > 0
           ? items.map((item, i) => (
             <div key={i}>
-              {item.name} x{item.quantity} –{" "}
-              {item.price ? item.price.toLocaleString("vi-VN") : "N/A"}₫
+              {item.name} x{item.quantity}
+              {item.price && item.price > 0
+                ? ` – ${item.price.toLocaleString("vi-VN")}₫`
+                : ""}
             </div>
           ))
           : "Không có sản phẩm",

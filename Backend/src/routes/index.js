@@ -20,6 +20,7 @@ const cartRoutes = require("./cart.routes")
 
 const paymentZaloRoutes = require('./payment.routes');
 
+const shippingRoutes = require('./shipping.routes');
 
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
@@ -37,6 +38,7 @@ router.use("/posts", postRoutes);
 router.use('/zalo-payment', paymentZaloRoutes)
 router.use("/upload", uploadRoute);
 router.use('/vnpay', vnpayRouter);
+router.use('/shipping', shippingRoutes)
 
 
 

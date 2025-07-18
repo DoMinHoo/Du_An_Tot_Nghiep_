@@ -25,7 +25,6 @@ const OrderHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
 
-  const FIXED_SHIPPING_FEE = 30000;
   const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
     try {
@@ -146,9 +145,8 @@ const OrderHistoryPage: React.FC = () => {
 
   const getDiscountAmount = (order: any): number => {
     if (!order.promotion) return 0;
-    const originalTotal = order.totalAmount + FIXED_SHIPPING_FEE;
     if (order.promotion.discountType === 'percentage') {
-      return Math.floor((originalTotal * order.promotion.discountValue) / 100);
+      return Math.floor((order.totalAmount * order.promotion.discountValue) / 100);
     }
     return order.promotion.discountValue;
   };
@@ -234,18 +232,20 @@ const OrderHistoryPage: React.FC = () => {
                   {getDiscountAmount(order).toLocaleString()}₫
                 </p>
 
+                {/* Phí vận chuyển lấy từ backend */}
                 <p>
-                  <strong>Phí vận chuyển:</strong> {FIXED_SHIPPING_FEE.toLocaleString()}₫
+                  <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
                 </p>
 
                 <hr className="my-2" />
 
+                {/* Tổng cộng lấy từ backend */}
                 <p className="text-lg font-semibold text-red-600">
-                  Tổng cộng: {(order.totalAmount + FIXED_SHIPPING_FEE).toLocaleString()}₫
+                  Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
                 </p>
               </div>
 
-              {order.status === 'pending' && (
+              {order.status === 'canceled' && (
                 <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
                   {order.paymentMethod === 'online_payment' && (
                     <button
