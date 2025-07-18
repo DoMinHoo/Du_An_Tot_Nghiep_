@@ -9,7 +9,7 @@ router.get("/status", orderController.getOrderStatus);
 
 // Các route khác
 router.get('/', protect(['admin']), orderController.getOrders); // Chỉ admin
-router.get('/:id', protect(['admin']), orderController.getOrderById);
+router.get('/:id', protect(), orderController.getOrderById);
 router.put('/:id', protect(), orderController.updateOrder); // Ai đăng nhập cũng có thể sửa
 router.delete('/:id', protect(['admin']), orderController.deleteOrder); // Chỉ admin
 router.get('/user/:userId', protect(), orderController.getOrdersByUser);

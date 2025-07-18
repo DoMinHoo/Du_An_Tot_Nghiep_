@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { message } from 'antd';
 import { getImageUrl } from '../utils/imageUtils';
+import { ToastContainer, toast, Slide } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const cancelReasons = [
   'Thay đổi nhu cầu mua hàng',
@@ -25,7 +26,6 @@ const OrderHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
 
-  const FIXED_SHIPPING_FEE = 30000;
   const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
     try {
@@ -46,7 +46,6 @@ const OrderHistoryPage: React.FC = () => {
       setOrders(res.data.data || []);
     } catch (error) {
       console.error('Lỗi khi lấy đơn hàng:', error);
-      toast.error('Không thể tải đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -71,18 +70,14 @@ const OrderHistoryPage: React.FC = () => {
     }
 
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+      const res = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const latestStatus = data?.data?.status;
-
+      const latestStatus = res.data.data?.status;
       if (latestStatus !== 'pending') {
-        if (latestStatus === 'confirmed') {
-          toast.warning('Đơn hàng đã được xác nhận, không thể huỷ nữa.');
-        } else {
-          toast.warning(`Không thể huỷ đơn hàng ở trạng thái "${statusText[latestStatus] || latestStatus}"`);
-        }
+        const readableStatus = statusText[latestStatus] || latestStatus;
+        toast.warning(`Đơn hàng đã ${readableStatus.toLowerCase()} và không thể hủy.`);
         fetchOrders();
         return;
       }
@@ -94,18 +89,18 @@ const OrderHistoryPage: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      toast.success('Đã hủy đơn hàng');
+      toast.success('Đã hủy đơn hàng thành công');
       setCancelReasonsMap((prev) => ({ ...prev, [orderId]: '' }));
       fetchOrders();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Hủy đơn hàng thất bại');
+      toast.error('Hủy đơn hàng thất bại. Vui lòng thử lại sau.');
     }
   };
 
   const handleRetryPayment = async (orderCode: string) => {
     try {
-      toast.info('Đang tạo lại liên kết thanh toán...');
+      message.loading({ content: 'Đang tạo lại liên kết thanh toán...', key: 'retry' });
 
       const res = await axios.post(
         'http://localhost:5000/api/zalo-payment/create-payment',
@@ -116,15 +111,15 @@ const OrderHistoryPage: React.FC = () => {
       );
 
       if (res.data.order_url) {
-        toast.success('Chuyển hướng đến ZaloPay...');
+        message.success({ content: 'Chuyển hướng đến ZaloPay...', key: 'retry' });
         localStorage.setItem('currentOrderCode', orderCode);
         window.location.href = res.data.order_url;
       } else {
-        toast.error('Không lấy được liên kết thanh toán.');
+        message.error('Không lấy được liên kết thanh toán.');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Tạo lại thanh toán thất bại.');
+      message.error('Tạo lại thanh toán thất bại.');
     }
   };
 
@@ -137,27 +132,31 @@ const OrderHistoryPage: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      toast.success('Xác nhận đã nhận hàng thành công');
+      message.success('Xác nhận đã nhận hàng thành công');
       fetchOrders();
     } catch (err) {
-      toast.error('Xác nhận thất bại');
+      message.error('Xác nhận thất bại');
     }
-  };
-
-  const getDiscountAmount = (order: any): number => {
-    if (!order.promotion) return 0;
-    const originalTotal = order.totalAmount + FIXED_SHIPPING_FEE;
-    if (order.promotion.discountType === 'percentage') {
-      return Math.floor((originalTotal * order.promotion.discountValue) / 100);
-    }
-    return order.promotion.discountValue;
   };
 
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        transition={Slide}
+      />
+
       <h2 className="text-2xl font-semibold mb-6">Lịch sử đơn hàng</h2>
 
       {orders.length === 0 ? (
@@ -219,7 +218,7 @@ const OrderHistoryPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="text-right mt-4 text-sm leading-6 text-gray-800">
+              <div className="text-right mt-4 text-lg font-semibold text-red-600">
                 <p>
                   <strong>Mã giảm giá:</strong>{' '}
                   {order.promotion?.code
@@ -228,21 +227,7 @@ const OrderHistoryPage: React.FC = () => {
                       : `${order.promotion.discountValue.toLocaleString()}₫`})`
                     : 'Không áp dụng'}
                 </p>
-
-                <p>
-                  <strong>Giá trị giảm:</strong>{' '}
-                  {getDiscountAmount(order).toLocaleString()}₫
-                </p>
-
-                <p>
-                  <strong>Phí vận chuyển:</strong> {FIXED_SHIPPING_FEE.toLocaleString()}₫
-                </p>
-
-                <hr className="my-2" />
-
-                <p className="text-lg font-semibold text-red-600">
-                  Tổng cộng: {(order.totalAmount + FIXED_SHIPPING_FEE).toLocaleString()}₫
-                </p>
+                Tổng cộng: {order.totalAmount.toLocaleString()}₫
               </div>
 
               {order.status === 'pending' && (
