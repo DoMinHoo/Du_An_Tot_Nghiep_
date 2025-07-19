@@ -227,7 +227,7 @@ const OrderHistoryPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="text-right mt-4 text-lg font-semibold text-red-600">
+              <div className="text-right mt-4 text-lg font-semibold">
                 <p>
                   <strong>Mã giảm giá:</strong>{' '}
                   {order.promotion?.code
