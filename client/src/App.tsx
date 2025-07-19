@@ -1,25 +1,25 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import MainLayout from './Components/Layout/MainLayout';
 import Home from './Pages/Home';
 
-import ProductDetail from './Pages/ProductDetail';
-import CategoryPage from './Pages/CategoryPage';
-import Register from './Pages/Register/register';
-import Login from './Pages/Login/login';
-import SetUser from './SetUser';
-import CartPage from './Pages/Cart/CartPage';
-import CheckoutPage from './Pages/CheckoutPage';
 import BannerSlider from './Pages/Banner';
+import CartPage from './Pages/Cart/CartPage';
+import CategoryPage from './Pages/CategoryPage';
+import CheckoutPage from './Pages/CheckoutPage';
+import Login from './Pages/Login/login';
 import OrderHistoryPage from './Pages/OrderHistoryPage';
+import ProductDetail from './Pages/ProductDetail';
+import Register from './Pages/Register/register';
+import SetUser from './SetUser';
 
 import CheckPayment from './Pages/CheckPayment';
 
-import UserAccount from './Pages/account';
-import ThankYouPage from './Pages/ThankYouPage';
-import ReturnVnpayPage from './Pages/ReturnVnpayPage';
-import ContactPage from './Pages/Contact';
 import AboutPage from './Pages/About';
+import UserAccount from './Pages/account';
+import ContactPage from './Pages/Contact';
+import ReturnVnpayPage from './Pages/ReturnVnpayPage';
+import SalePage from './Pages/Sale';
+import ThankYouPage from './Pages/ThankYouPage';
 
 
 
@@ -67,6 +67,7 @@ function App() {
         <Route path='/thank-you' element={<ThankYouPage />} />
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/sales" element={<SalePage />} />
 
       </Route>
       <Route path="/signin" element={<Register />} />

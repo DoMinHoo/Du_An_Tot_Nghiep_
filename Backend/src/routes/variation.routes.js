@@ -3,6 +3,8 @@ const router = express.Router();
 const variationCtrl = require('../controllers/variation.controller');
 const upload = require('../middlewares/upload');
 
+
+router.get('/sale', variationCtrl.getSaleProducts);
 // Tạo biến thể dựa trên productId từ URL
 router.post('/:productId/variations', upload.array('images', 5), variationCtrl.createVariation); //
 

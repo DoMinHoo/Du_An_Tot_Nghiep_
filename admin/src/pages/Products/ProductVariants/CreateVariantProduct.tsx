@@ -2,7 +2,7 @@
 
 import { ArrowLeftOutlined, UploadOutlined, InfoCircleOutlined } from "@ant-design/icons"
 import { useMutation } from "@tanstack/react-query"
-import { Button, Card, Col, Form, Input, InputNumber, message, Row, Upload, Space, Typography, Tooltip, Select } from "antd"
+import { Button, Card, Col, Form, Input, InputNumber, message, Row, Upload, Space, Typography, Tooltip, Select, DatePicker } from "antd"
 import type React from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { createVariation } from "../../../Services/productVariation.Service"
@@ -85,6 +85,13 @@ const CreateProductVariationPage: React.FC = () => {
     formData.append("colorHexCode", values.colorHexCode)
     formData.append("material", values.material)
     formData.append("colorImageUrl", "placeholder")
+    if (values.flashSaleStart) {
+      formData.append("flashSaleStart", values.flashSaleStart.toISOString())
+    }
+    if (values.flashSaleEnd) {
+      formData.append("flashSaleEnd", values.flashSaleEnd.toISOString())
+    }
+
 
     values.colorImage.forEach((file: any) => {
       if (file.originFileObj) {
@@ -294,7 +301,7 @@ const CreateProductVariationPage: React.FC = () => {
                 </Col>
 
                 <Col xs={24} md={8}>
-                  <Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice">
+                  <Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice" rules={[]}>
                     <InputNumber
                       min={0}
                       style={{ width: "100%" }}
@@ -305,6 +312,40 @@ const CreateProductVariationPage: React.FC = () => {
                     />
                   </Form.Item>
                 </Col>
+
+                <Form.Item
+                  label="Ngày bắt đầu khuyến mãi"
+                  name="flashSaleStart"
+                  rules={[]}>
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    placeholder="Chọn ngày giờ bắt đầu"
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Ngày kết thúc khuyến mãi"
+                  name="flashSaleEnd"
+                  rules={[
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const start = getFieldValue("flashSaleStart");
+                        if (!value || !start) return Promise.resolve();
+                        if (value.isAfter(start)) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject(new Error("Ngày kết thúc phải sau ngày bắt đầu"));
+                      }
+                    })
+                  ]}>
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    placeholder="Chọn ngày giờ kết thúc"
+                  />
+                </Form.Item>
+
               </Row>
             </Card>
           </Col>

@@ -20,12 +20,14 @@ import {
   Tooltip,
   Select,
   Spin,
+  DatePicker,
 } from "antd"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { getVariationById, updateVariation } from "../../../Services/productVariation.Service"
 import { getMaterials } from "../../../Services/materials.service"
+import dayjs from "dayjs"
 
 const { Title, Text } = Typography
 
@@ -66,12 +68,15 @@ const UpdateProductVariationPage = () => {
     if (variation && materialOptions.length > 0) {
       const dims = variation.dimensions?.split("x") || []
       const [length = "", width = "", height = ""] = dims
+      console.log("Dữ liệu variation từ API:", variation)
       form.setFieldsValue({
         name: variation.name,
         sku: variation.sku,
         basePrice: variation.basePrice,
         importPrice: variation.importPrice,
         salePrice: variation.salePrice,
+        flashSaleStart: variation.flashSaleStart ? dayjs(variation.flashSaleStart) : null,
+        flashSaleEnd: variation.flashSaleEnd ? dayjs(variation.flashSaleEnd) : null,
         priceAdjustment: variation.priceAdjustment,
         stockQuantity: variation.stockQuantity,
         length: Number(length),
@@ -124,11 +129,17 @@ const UpdateProductVariationPage = () => {
     formData.append("priceAdjustment", values.priceAdjustment ?? 0)
     formData.append("importPrice", values.importPrice)
     formData.append("salePrice", values.salePrice ?? 0)
+    if (values.flashSaleStart) {
+      formData.append("flashSaleStart", values.flashSaleStart.toISOString())
+    }
+    if (values.flashSaleEnd) {
+      formData.append("flashSaleEnd", values.flashSaleEnd.toISOString())
+    }
+
     formData.append("stockQuantity", values.stockQuantity)
     formData.append("colorName", values.colorName)
     formData.append("colorHexCode", values.colorHexCode)
     formData.append("material", typeof values.material === "object" ? values.material.value : values.material)
-
 
     const files = values.colorImage
     files?.forEach((file: any) => {
@@ -237,16 +248,57 @@ const UpdateProductVariationPage = () => {
           </Col>
 
           <Col span={24}>
-            <Card title={<span>💰 Thông tin giá</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+            <Card title={<span>💰 Thông tin giá & khuyến mãi</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}><Form.Item label="Giá gốc (VNĐ)" name="basePrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
                 <Col xs={24} md={8}><Form.Item label="Giá nhập (VNĐ)" name="importPrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
                 <Col xs={24} md={8}><Form.Item label="Tồn kho" name="stockQuantity" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
                 <Col xs={24} md={8}><Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
                 <Col xs={24} md={8}><Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Thời gian bắt đầu khuyến mãi"
+                    name="flashSaleStart"
+                    rules={[{ required: false }]}
+                  >
+                    <DatePicker
+                      showTime
+                      format="YYYY-MM-DD HH:mm:ss"
+                      style={{ width: "100%" }}
+                      size="large"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Thời gian kết thúc khuyến mãi"
+                    name="flashSaleEnd"
+                    rules={[
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          const start = getFieldValue("flashSaleStart");
+                          if (!value || !start) return Promise.resolve();
+                          if (value.isAfter(start)) {
+                            return Promise.resolve();
+                          }
+                          return Promise.reject(new Error("Ngày kết thúc phải sau ngày bắt đầu"));
+                        }
+                      })
+                    ]}
+                  >
+                    <DatePicker
+                      showTime
+                      format="YYYY-MM-DD HH:mm:ss"
+                      style={{ width: "100%" }}
+                      size="large"
+                    />
+                  </Form.Item>
+                </Col>
               </Row>
             </Card>
           </Col>
+          
+
 
           <Col span={24}>
             <Card title={<span>🎨 Màu sắc & Hình ảnh</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
