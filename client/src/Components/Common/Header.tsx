@@ -144,7 +144,7 @@ const Header: React.FC = () => {
             ref={dropdownRef}
           >
             <div className="flex items-center gap-1 hover:font-semibold">
-              <Link to="/categories">Sản phẩm</Link>
+              <Link to="/categories">Danh mục Sản phẩm</Link>
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
