@@ -20,4 +20,8 @@ router.delete('/:id', productController.softDeleteProduct);
 
 // Lấy danh sách chất liệu của sản phẩm theo ID
 router.get("/:productId/materials", productController.getMaterialsByProductId);
+
+// Tìm kiếm sản phẩm theo từ khóa (tương đối và tuyệt đối)
+router.get('/search/keyword', productController.searchProducts);
+
 module.exports = router;

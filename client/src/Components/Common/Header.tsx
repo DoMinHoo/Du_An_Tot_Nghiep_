@@ -16,6 +16,7 @@ const Header: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const [openUserDropdown, setOpenUserDropdown] = useState(false);
@@ -52,7 +53,6 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Xóa tất cả dữ liệu trong sessionStorage
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('guestId');
@@ -61,15 +61,18 @@ const Header: React.FC = () => {
     navigate('/');
   };
 
+  const handleSearch = () => {
+    const keyword = searchTerm.trim();
+    if (keyword) {
+      navigate(`/search?keyword=${encodeURIComponent(keyword)}`);
+    }
+  };
+
   return (
     <header className="shadow-sm">
       <div className="container mx-auto px-4 py-3 mt-3 mb-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img
-            src={logo}
-            alt="Livento"
-            className="h-12 object-contain scale-150"
-          />
+          <img src={logo} alt="Livento" className="h-12 object-contain scale-150" />
         </Link>
 
         <div className="w-1/2 mx-6">
@@ -78,8 +81,13 @@ const Header: React.FC = () => {
               type="text"
               placeholder="Tìm kiếm sản phẩm..."
               className="w-full px-4 py-1.5 focus:outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearch();
+              }}
             />
-            <button className="bg-gray-800 text-white px-4">
+            <button onClick={handleSearch} className="bg-gray-800 text-white px-4">
               <FaSearch />
             </button>
           </div>
@@ -88,14 +96,10 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-4 text-sm text-gray-600">
           {user ? (
             <div className="relative">
-              <button
-                onClick={() => setOpenUserDropdown(!openUserDropdown)}
-                className="flex items-center gap-1"
-              >
+              <button onClick={() => setOpenUserDropdown(!openUserDropdown)} className="flex items-center gap-1">
                 <FaUser className="text-lg" /> {user.name}
                 <IoIosArrowDown className="text-xs mt-1" />
               </button>
-
               {openUserDropdown && (
                 <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
                   <div
@@ -112,10 +116,7 @@ const Header: React.FC = () => {
                       Tài khoản của tôi
                     </Link>
                   </div>
-                  <div
-                    onClick={handleLogout}
-                    className="px-4 py-2 hover:bg-gray-100 text-red-500 cursor-pointer"
-                  >
+                  <div onClick={handleLogout} className="px-4 py-2 hover:bg-gray-100 text-red-500 cursor-pointer">
                     Đăng xuất
                   </div>
                 </div>
@@ -124,8 +125,7 @@ const Header: React.FC = () => {
           ) : (
             <div className="flex items-center gap-1">
               <FaUser className="text-lg" />
-              <Link to="/login">Đăng nhập</Link> /{' '}
-              <Link to="/signin">Đăng ký</Link>
+              <Link to="/login">Đăng nhập</Link> / <Link to="/signin">Đăng ký</Link>
             </div>
           )}
 
@@ -148,38 +148,23 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown
-                ? 'opacity-100 scale-y-100'
-                : 'opacity-0 scale-y-0 pointer-events-none'
-                }`}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${
+                openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+              }`}
             >
               {categories.map((cat) => (
-                <Link
-                  key={cat._id}
-                  to={`/categories/${cat.slug}`}
-                  className="block px-4 py-2 hover:bg-gray-100"
-                >
+                <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-2 hover:bg-gray-100">
                   {cat.name}
                 </Link>
               ))}
             </div>
           </div>
 
-          <Link to="/sales" className="hover:font-semibold">
-            Khuyến mãi
-          </Link>
-          <Link to="/news" className="hover:font-semibold">
-            Tin tức
-          </Link>
-          <Link to="/contact" className="hover:font-semibold">
-            Liên hệ
-          </Link>
-          <Link to="/about" className="hover:font-semibold">
-            Giới thiệu
-          </Link>
-          <Link to="/showroom" className="hover:font-semibold">
-            Showroom
-          </Link>
+          <Link to="/sales" className="hover:font-semibold">Khuyến mãi</Link>
+          <Link to="/news" className="hover:font-semibold">Tin tức</Link>
+          <Link to="/contact" className="hover:font-semibold">Liên hệ</Link>
+          <Link to="/about" className="hover:font-semibold">Giới thiệu</Link>
+          <Link to="/showroom" className="hover:font-semibold">Showroom</Link>
         </div>
       </nav>
     </header>
