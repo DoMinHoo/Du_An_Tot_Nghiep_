@@ -22,6 +22,7 @@ import ContactPage from './Pages/Contact';
 import AboutPage from './Pages/About';
 import NewsDetailPage from './Pages/NewsDetailPage';
 import NewsPage from './Pages/NewsPage';
+import SearchPage from './Pages/SearchPage';
 
 
 
@@ -65,7 +66,7 @@ function App() {
 
         <Route path="/order-history" element={<OrderHistoryPage />} />
         <Route path="/check-payment" element={<CheckPayment />} />
-
+        <Route path="/search" element={<SearchPage />} />
         <Route path='/thank-you' element={<ThankYouPage />} />
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />

@@ -291,3 +291,28 @@ exports.getMaterialsByProductId = async (req, res) => {
     return res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
+
+// Tìm kiếm sản phẩm theo từ khóa
+exports.searchProducts = async (req, res) => {
+  try {
+    const { keyword, strict } = req.query;
+
+    if (!keyword || keyword.trim() === '') {
+      return res.status(400).json({ message: 'Thiếu từ khóa tìm kiếm' });
+    }
+
+    const query = strict === 'true'
+      ? { name: keyword.trim(), isDeleted: false, status: 'active' } // tìm chính xác
+      : {
+          name: { $regex: keyword.trim(), $options: 'i' },
+          isDeleted: false,
+          status: 'active'
+        }; // tìm tương đối (không phân biệt hoa thường)
+
+    const products = await Product.find(query);
+    res.status(200).json(products);
+  } catch (err) {
+    console.error('Lỗi tìm kiếm:', err);
+    res.status(500).json({ message: 'Lỗi server khi tìm kiếm sản phẩm' });
+  }
+};
