@@ -424,7 +424,7 @@ exports.updateOrder = async (req, res) => {
 
         // ✅ Gửi mail nếu COD hoàn tất
         if (status === 'completed' && order.paymentMethod === 'cod') {
-            await sendPaymentSuccessEmail(id);
+            await sendOrderSuccessEmail(id);
         }
 
         // ✅ Cập nhật trạng thái và ghi log
