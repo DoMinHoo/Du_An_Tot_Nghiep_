@@ -42,12 +42,8 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Chất liệu không tồn tại' });
     }
 
-    const existingVariation = await ProductVariation.findOne({
-      productId,
-      material: body.material,
-      dimensions: body.dimensions,
-    });
     // 5. Xử lý hình ảnh
+
     const uploadedImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
@@ -64,7 +60,7 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Ảnh màu (colorImageUrl) là bắt buộc' });
     }
 
-    // 6. Kiểm tra SKU duy nhất
+    // 7. Kiểm tra biến thể trùng chất liệu + kích thước + màu
     const existingMaterialVariation = await ProductVariation.findOne({
       productId,
       material: body.material,
@@ -75,7 +71,7 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Biến thể này đã tồn tại (cùng chất liệu, kích thước, màu)' });
     }
 
-    // 7. Tính finalPrice
+    // 8. Tính toán giá
     const basePrice = parseFloat(body.basePrice);
     const priceAdjustment = parseFloat(body.priceAdjustment || 0);
     if (isNaN(basePrice)) {
@@ -85,7 +81,15 @@ exports.createVariation = async (req, res) => {
       ? parseFloat(body.finalPrice)
       : basePrice + priceAdjustment;
 
-    // 8. Tạo dữ liệu
+    // 9. Kiểm tra logic ngày khuyến mãi (nếu có)
+    let saleStartDate = body.saleStartDate ? new Date(body.saleStartDate) : null;
+    let saleEndDate = body.saleEndDate ? new Date(body.saleEndDate) : null;
+
+    if (saleStartDate && saleEndDate && saleStartDate > saleEndDate) {
+      return res.status(400).json({ success: false, message: 'Ngày bắt đầu khuyến mãi phải trước hoặc bằng ngày kết thúc' });
+    }
+
+    // 10. Tạo dữ liệu biến thể
     const variationData = {
       productId,
       name: body.name,
@@ -96,6 +100,8 @@ exports.createVariation = async (req, res) => {
       finalPrice,
       importPrice: parseFloat(body.importPrice),
       salePrice: body.salePrice ? parseFloat(body.salePrice) : null,
+      saleStartDate,
+      saleEndDate,
       flashSaleDiscountedPrice: body.flashSaleDiscountedPrice ? parseFloat(body.flashSaleDiscountedPrice) : null,
       flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : null,
       flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : null,
@@ -105,6 +111,7 @@ exports.createVariation = async (req, res) => {
       colorImageUrl,
       material: body.material,// ✅ Gán ObjectId chất liệu đúng
       isDeleted: false // Mặc định là false khi tạo mới
+
     };
 
     const variation = new ProductVariation(variationData);
@@ -116,6 +123,7 @@ exports.createVariation = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
 // Cập nhật một biến thể sản phẩm
 exports.updateVariation = async (req, res) => {
   try {
@@ -180,6 +188,10 @@ exports.updateVariation = async (req, res) => {
     const finalPrice = body.finalPrice ? parseFloat(body.finalPrice) : basePrice + priceAdjustment;
 
     // 7. Gộp dữ liệu để cập nhật
+    const isValidDate = (dateStr) => {
+      return typeof dateStr === "string" && dateStr.trim() !== "" && !isNaN(Date.parse(dateStr));
+    };
+
     const variationData = {
       name: body.name || variation.name,
       sku: body.sku || variation.sku,
@@ -192,8 +204,12 @@ exports.updateVariation = async (req, res) => {
       flashSaleDiscountedPrice: body.flashSaleDiscountedPrice
         ? parseFloat(body.flashSaleDiscountedPrice)
         : variation.flashSaleDiscountedPrice,
-      flashSaleStart: body.flashSaleStart ? new Date(body.flashSaleStart) : variation.flashSaleStart,
-      flashSaleEnd: body.flashSaleEnd ? new Date(body.flashSaleEnd) : variation.flashSaleEnd,
+      flashSaleStart: isValidDate(body.flashSaleStart)
+        ? new Date(body.flashSaleStart)
+        : variation.flashSaleStart,
+      flashSaleEnd: isValidDate(body.flashSaleEnd)
+        ? new Date(body.flashSaleEnd)
+        : variation.flashSaleEnd,
       stockQuantity: body.stockQuantity ? parseInt(body.stockQuantity) : variation.stockQuantity,
       colorName: body.colorName || variation.colorName,
       colorHexCode: body.colorHexCode || variation.colorHexCode,
@@ -201,7 +217,6 @@ exports.updateVariation = async (req, res) => {
       material: materialId, // ✅ gán đúng material đã kiểm tra ở trên
 
     };
-
     // 8. Cập nhật vào DB
     const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
 
@@ -319,6 +334,44 @@ exports.restoreVariation = async (req, res) => {
   }
 };
 
+
+
+exports.getSaleProducts = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const variations = await ProductVariation.find({
+      stockQuantity: { $gt: 0 }, // ✅ Đúng field tồn tại trong DB
+      $or: [
+        { salePrice: { $gt: 0 } }, // ✅ Lọc giá sale hợp lệ (> 0)
+        {
+          flashSaleDiscountedPrice: { $gt: 0 },
+          flashSaleStart: { $lte: now },
+          flashSaleEnd: { $gte: now }
+        }
+      ]
+    })
+    .populate({
+      path: 'productId',
+      select: 'name thumbnail',
+      match: { isDeleted: false } // nếu có soft delete
+    })
+    .populate('material', 'name')
+    .sort({ flashSaleStart: -1 }) // Ưu tiên sản phẩm sắp hết hạn sale
+    .lean();
+
+    // Lọc những biến thể có productId đã được populate thành công
+    const filteredVariations = variations.filter(v => v.productId);
+
+    res.json({ success: true, data: filteredVariations });
+  } catch (err) {
+    console.error('Lỗi khi lấy sản phẩm đang sale:', err);
+    res.status(500).json({ success: false, message: 'Lỗi server: ' + err.message });
+  }
+};
+
+
+
 // Lấy danh sách biến thể đã xóa mềm theo productId
 exports.getDeletedVariations = async (req, res) => {
   try {
@@ -347,3 +400,4 @@ exports.getDeletedVariations = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+

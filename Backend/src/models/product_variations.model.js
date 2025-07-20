@@ -20,11 +20,15 @@ const productVariationSchema = new mongoose.Schema({
     importPrice: { type: Number, required: true }, // Giá nhập theo biến thể
     salePrice: { type: Number, default: null }, // Giá khuyến mãi (nếu có)
 
+    // 🆕 Ngày bắt đầu và kết thúc khuyến mãi
+    flashSaleStart: { type: Date, default: null },
+    flashSaleEnd: { type: Date, default: null },
+    // Số lượng tồn kho
     stockQuantity: {
         type: Number,
         required: true,
         min: 0
-    }, // Số lượng tồn kho
+    },
     colorName: { type: String, required: true }, // Tên màu, ví dụ: "Trắng"
     colorHexCode: { type: String, required: true }, // Mã màu HEX, ví dụ: "#FFFFFF"
     colorImageUrl: { type: String, required: true }, // Đường dẫn ảnh màu

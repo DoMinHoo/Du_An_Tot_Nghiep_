@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -52,6 +54,25 @@ const CheckoutPage: React.FC = () => {
     totalPrice?: number;
   };
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem('shippingInfo');
+    if (saved) {
+      try {
+        const info = JSON.parse(saved);
+        setFullName(info.fullName || '');
+        setPhone(info.phone || '');
+        setEmail(info.email || '');
+        setProvince(info.province || '');
+        setDistrict(info.district || '');
+        setWard(info.ward || '');
+        setStreet(info.street || '');
+        setDetailAddress(info.detailAddress || '');
+      } catch (error) {
+        console.warn('Không thể đọc dữ liệu shippingInfo:', error);
+      }
+    }
+  }, []);
+
   const { data, isLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: () => getCart(token, guestId),
@@ -84,6 +105,7 @@ const CheckoutPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+       sessionStorage.removeItem('pendingOrderInfo'); 
       setTimeout(() => navigate('/thank-you'), 1600);
     },
     onError: () => {
@@ -243,6 +265,20 @@ const CheckoutPage: React.FC = () => {
         shippingFee, // lưu phí vận chuyển thực tế
         selectedItems, // Đảm bảo gửi selectedItems
       };
+
+      sessionStorage.setItem(
+      'shippingInfo',
+      JSON.stringify({
+        fullName,
+        phone,
+        email: finalEmail,
+        province,
+        district,
+        ward,
+        street,
+        detailAddress,
+      })
+    );
 
       const orderRes = await orderMutation.mutateAsync(orderData);
 
