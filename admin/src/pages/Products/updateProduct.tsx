@@ -221,17 +221,6 @@ const UpdateProductPage: React.FC = () => {
                 </Col>
                 <Col span={12}>
                   <Form.Item
-                    label="Thương hiệu"
-                    name="brand"
-                    rules={[
-                      { required: true, message: 'Vui lòng nhập thương hiệu' },
-                    ]}
-                  >
-                    <Input placeholder="Nhập thương hiệu" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
                     label="Danh mục"
                     name="categoryId"
                     rules={[

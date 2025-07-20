@@ -2,7 +2,6 @@
 export interface Product {
   _id: string;
   name: string;
-  brand: string;
   descriptionShort: string;
   descriptionLong: string;
   categoryId: { _id: string; name: string }; // Tham chiếu danh mục
