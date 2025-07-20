@@ -99,17 +99,7 @@ const AddProductPage: React.FC = () => {
                 <Input />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Thương hiệu"
-                name="brand"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập thương hiệu' },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
+
             <Col span={12}>
               <Form.Item
                 label="Danh mục"
@@ -175,6 +165,7 @@ const AddProductPage: React.FC = () => {
                   beforeUpload={() => false}
                   accept="image/jpeg,image/jpg,image/png,image/gif"
                   multiple
+                  maxCount={10}
                 >
                   <UploadOutlined /> Tải ảnh
                 </Upload>
