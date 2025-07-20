@@ -139,12 +139,27 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
+  // 1. Hàm tính tổng tiền hàng (subtotal)
+  const calculateSubtotal = (order: any): number => {
+    let subtotal = 0;
+    order.items.forEach((group: any) => {
+      group.variations.forEach((v: any) => {
+        const price = getEffectivePrice(v.salePrice, v.finalPrice);
+        subtotal += price * v.quantity;
+      });
+    });
+    return subtotal;
+  };
 
-  const getDiscountAmount = (order: any): number => {
+
+  // 2. Sửa lại hàm getDiscountAmount để nhận subtotal
+  const getDiscountAmount = (order: any, subtotal: number): number => {
     if (!order.promotion) return 0;
     if (order.promotion.discountType === 'percentage') {
-      return Math.floor((order.totalAmount * order.promotion.discountValue) / 100);
+      // Tính phần trăm dựa trên subtotal
+      return Math.floor((subtotal * order.promotion.discountValue) / 100);
     }
+    // Nếu là fixed amount, trả về giá trị giảm giá trực tiếp
     return order.promotion.discountValue;
   };
 
@@ -172,142 +187,158 @@ const OrderHistoryPage: React.FC = () => {
         <p>Chưa có đơn hàng nào.</p>
       ) : (
         <div className="space-y-6">
-          {orders.map((order) => (
-            <div
-              key={order._id}
-              className="border p-4 rounded-md shadow-sm bg-white"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <p className="text-lg font-medium">Mã đơn: {order.orderCode}</p>
-                  <p className="text-sm text-gray-600">
-                    Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
-                  </p>
-                </div>
-                <div className="text-sm px-3 py-1 rounded bg-gray-100 text-gray-800">
-                  <strong>{statusText[order.status] || order.status}</strong>
-                </div>
-              </div>
+          {orders.map((order) => {
+            // Tính subtotal cho mỗi đơn hàng
+            const subtotal = calculateSubtotal(order);
+            // Tính discount amount dựa trên subtotal
+            const discountAmount = getDiscountAmount(order, subtotal);
+            // Tính tổng cộng cuối cùng (nếu backend không cung cấp chính xác hoặc bạn muốn tự tính lại)
+            // const finalTotal = subtotal - discountAmount + (order.shippingFee || 0);
 
-              <div className="text-sm mb-4 space-y-1">
-                <p><strong>Người nhận:</strong> {order.shippingAddress.fullName}</p>
-                <p><strong>SĐT:</strong> {order.shippingAddress.phone}</p>
-                <p><strong>Email:</strong> {order.shippingAddress.email}</p>
-                <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
-                <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</p>
-              </div>
-
-              <div className="space-y-4">
-                {order.items.map((group: any) => (
-                  <div key={group.productId} className="border rounded-md p-3 bg-gray-50">
-                    {group.variations.map((v: any) => {
-                      const price = getEffectivePrice(v.salePrice, v.finalPrice);
-                      return (
-                        <div key={v.variationId} className="flex gap-4 items-center pt-2 mt-2">
-                          <img
-                            src={getImageUrl(v.colorImageUrl)}
-                            alt={v.name}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <div className="flex-1">
-                            <p className="font-medium">{v.name}</p>
-                            <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
-                            <p className="text-sm text-gray-500">SKU: {v.sku}</p>
-                          </div>
-                          <div className="text-right">
-                            <p>{price.toLocaleString()}₫ x {v.quantity}</p>
-                            <p className="font-semibold text-red-500">
-                              {(price * v.quantity).toLocaleString()}₫
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
+            return (
+              <div
+                key={order._id}
+                className="border p-4 rounded-md shadow-sm bg-white"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <p className="text-lg font-medium">Mã đơn: {order.orderCode}</p>
+                    <p className="text-sm text-gray-600">
+                      Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <div className="text-sm px-3 py-1 rounded bg-gray-100 text-gray-800">
+                    <strong>{statusText[order.status] || order.status}</strong>
+                  </div>
+                </div>
 
-              <div className="text-right mt-4 text-lg font-semibold">
-                <p>
-                  <strong>Mã giảm giá:</strong>{' '}
-                  {order.promotion?.code
-                    ? `${order.promotion.code} (${order.promotion.discountType === 'percentage'
-                      ? `${order.promotion.discountValue}%`
-                      : `${order.promotion.discountValue.toLocaleString()}₫`})`
-                    : 'Không áp dụng'}
-                </p>
+                <div className="text-sm mb-4 space-y-1">
+                  <p><strong>Người nhận:</strong> {order.shippingAddress.fullName}</p>
+                  <p><strong>SĐT:</strong> {order.shippingAddress.phone}</p>
+                  <p><strong>Email:</strong> {order.shippingAddress.email}</p>
+                  <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
+                  <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</p>
+                </div>
+
+                <div className="space-y-4">
+                  {order.items.map((group: any) => (
+                    <div key={group.productId} className="border rounded-md p-3 bg-gray-50">
+                      {group.variations.map((v: any) => {
+                        const price = getEffectivePrice(v.salePrice, v.finalPrice);
+                        return (
+                          <div key={v.variationId} className="flex gap-4 items-center pt-2 mt-2">
+                            <img
+                              src={getImageUrl(v.colorImageUrl)}
+                              alt={v.name}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium">{v.name}</p>
+                              <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
+                              <p className="text-sm text-gray-500">SKU: {v.sku}</p>
+                            </div>
+                            <div className="text-right">
+                              <p>{price.toLocaleString()}₫ x {v.quantity}</p>
+                              <p className="font-semibold text-red-500">
+                                {(price * v.quantity).toLocaleString()}₫
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-right mt-4 text-lg font-semibold">
+                  {/* Hiển thị tổng tiền hàng */}
+                  <p>
+                    <strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()}₫
+                  </p>
+                  <p>
+                    <strong>Mã giảm giá:</strong>{' '}
+                    {order.promotion?.code
+                      ? `${order.promotion.code} (${order.promotion.discountType === 'percentage'
+                        ? `${order.promotion.discountValue}%`
+                        : `${order.promotion.discountValue.toLocaleString()}₫`})`
+                      : 'Không áp dụng'}
+                  </p>
 
 
-                <p>
-                  <strong>Giá trị giảm:</strong>{' '}
-                  {getDiscountAmount(order).toLocaleString()}₫
-                </p>
+                  <p>
+                    <strong>Giá trị giảm:</strong>{' '}
+                    {discountAmount.toLocaleString()}₫ {/* Sử dụng giá trị giảm đã tính */}
+                  </p>
 
-                {/* Phí vận chuyển lấy từ backend */}
-                <p>
-                  <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
-                </p>
+                  {/* Phí vận chuyển lấy từ backend */}
+                  <p>
+                    <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
+                  </p>
 
-                <hr className="my-2" />
+                  <hr className="my-2" />
 
-                {/* Tổng cộng lấy từ backend */}
-                <p className="text-lg font-semibold text-red-600">
-                  Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
-                </p>
+                  {/* Tổng cộng lấy từ backend. Nếu order.totalAmount từ backend đã đúng, dùng nó.
+                      Nếu không, bạn có thể uncomment dòng dưới để tự tính:
+                      `Tổng cộng: ${finalTotal.toLocaleString()}₫`
+                  */}
+                  <p className="text-lg font-semibold text-red-600">
+                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+                  </p>
 
-              </div>
+                </div>
 
-              {order.status === 'pending' && (
-                <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                  {order.paymentMethod === 'online_payment' && (
-                    <button
-                      onClick={() => handleRetryPayment(order.orderCode)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                {order.status === 'pending' && (
+                  <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
+                    {order.paymentMethod === 'online_payment' && (
+                      <button
+                        onClick={() => handleRetryPayment(order.orderCode)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Thanh toán lại qua ZaloPay
+                      </button>
+                    )}
+
+                    <select
+                      value={cancelReasonsMap[order._id] || ''}
+                      onChange={(e) =>
+                        setCancelReasonsMap((prev) => ({
+                          ...prev,
+                          [order._id]: e.target.value,
+                        }))
+                      }
+                      className="border px-3 py-1 rounded text-sm"
+                      style={{ minWidth: 250 }}
                     >
-                      Thanh toán lại qua ZaloPay
+                      <option value="">Chọn lý do hủy đơn</option>
+                      {cancelReasons.map((reason) => (
+                        <option key={reason} value={reason}>
+                          {reason}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={() => handleCancelOrder(order._id)}
+                      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Hủy đơn hàng
                     </button>
-                  )}
+                  </div>
+                )}
 
-                  <select
-                    value={cancelReasonsMap[order._id] || ''}
-                    onChange={(e) =>
-                      setCancelReasonsMap((prev) => ({
-                        ...prev,
-                        [order._id]: e.target.value,
-                      }))
-                    }
-                    className="border px-3 py-1 rounded text-sm"
-                    style={{ minWidth: 250 }}
-                  >
-                    <option value="">Chọn lý do hủy đơn</option>
-                    {cancelReasons.map((reason) => (
-                      <option key={reason} value={reason}>
-                        {reason}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => handleCancelOrder(order._id)}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Hủy đơn hàng
-                  </button>
-                </div>
-              )}
-
-              {order.status === 'shipping' && (
-                <div className="text-right mt-4">
-                  <button
-                    onClick={() => handleConfirmReceived(order._id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Xác nhận đã nhận hàng
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+                {order.status === 'shipping' && (
+                  <div className="text-right mt-4">
+                    <button
+                      onClick={() => handleConfirmReceived(order._id)}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Xác nhận đã nhận hàng
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
