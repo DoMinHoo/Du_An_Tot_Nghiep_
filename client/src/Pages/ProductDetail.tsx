@@ -183,8 +183,8 @@ const ProductDetail: React.FC = () => {
         variations[0].colorImageUrl
           ? getImageUrl(variations[0].colorImageUrl)
           : product?.image?.[0]
-          ? getImageUrl(product.image[0])
-          : getImageUrl()
+            ? getImageUrl(product.image[0])
+            : getImageUrl()
       );
     } else if (product && !selectedVariation) {
       setMainImage(
@@ -202,8 +202,8 @@ const ProductDetail: React.FC = () => {
       variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product?.image?.[0]
-        ? getImageUrl(product.image[0])
-        : getImageUrl()
+          ? getImageUrl(product.image[0])
+          : getImageUrl()
     );
     setQuantity('1');
   };
@@ -362,11 +362,10 @@ const ProductDetail: React.FC = () => {
                 key={idx}
                 src={getImageUrl(src)}
                 onClick={() => setMainImage(getImageUrl(src))}
-                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${
-                  mainImage === getImageUrl(src)
+                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-all ${mainImage === getImageUrl(src)
                     ? 'border-blue-500'
                     : 'border-gray-300'
-                }`}
+                  }`}
                 loading="lazy"
                 alt={`Thumbnail ${idx + 1}`}
               />
@@ -432,13 +431,12 @@ const ProductDetail: React.FC = () => {
                   <button
                     key={variation._id}
                     onClick={() => handleVariationSelect(variation)}
-                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${
-                      selectedVariation?._id === variation._id
+                    className={`px-4 py-2 rounded border transition-all text-sm font-semibold ${selectedVariation?._id === variation._id
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                    }`}
+                      }`}
                   >
-                    {variation.dimensions}
+                    {variation.name}
                   </button>
                 ))}
               </div>
@@ -454,8 +452,8 @@ const ProductDetail: React.FC = () => {
             <p>
               <strong>Chất liệu:</strong>{' '}
               {selectedVariation?.material &&
-              typeof selectedVariation.material === 'object' &&
-              'name' in selectedVariation.material
+                typeof selectedVariation.material === 'object' &&
+                'name' in selectedVariation.material
                 ? selectedVariation.material.name
                 : 'Không xác định'}
             </p>
@@ -539,14 +537,13 @@ const ProductDetail: React.FC = () => {
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">Tình trạng:</h4>
             <p
-              className={`text-sm font-semibold pt-1 ${
-                (details.stockQuantity || 0) > 0
+              className={`text-sm font-semibold pt-1 ${(details.stockQuantity || 0) > 0
                   ? 'text-green-600'
                   : 'text-red-600'
-              }`}
+                }`}
             >
               {typeof details.stockQuantity === 'number' &&
-              details.stockQuantity > 0
+                details.stockQuantity > 0
                 ? 'Còn hàng'
                 : 'Hết hàng'}
             </p>
@@ -618,9 +615,8 @@ const ProductDetail: React.FC = () => {
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className={`text-2xl transition-transform ${
-                    rating >= star ? 'text-yellow-400' : 'text-gray-300'
-                  } hover:scale-125`}
+                  className={`text-2xl transition-transform ${rating >= star ? 'text-yellow-400' : 'text-gray-300'
+                    } hover:scale-125`}
                   aria-label={`Chọn ${star} sao`}
                 >
                   ★
@@ -671,11 +667,10 @@ const ProductDetail: React.FC = () => {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={`text-lg ${
-                            star <= review.rating
+                          className={`text-lg ${star <= review.rating
                               ? 'text-yellow-400'
                               : 'text-gray-300'
-                          }`}
+                            }`}
                         >
                           ★
                         </span>

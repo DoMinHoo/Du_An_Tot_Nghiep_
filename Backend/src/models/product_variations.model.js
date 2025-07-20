@@ -36,7 +36,8 @@ const productVariationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Material',
         required: true
-    } // Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
+    },// Biến thể chất liệu, ví dụ: "Gỗ MFC phủ bóng"
+    isDeleted: { type: Boolean, default: false } // Thêm trường isDeleted
 }, {
     timestamps: true,
     versionKey: false

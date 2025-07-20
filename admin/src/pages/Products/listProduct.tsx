@@ -112,11 +112,6 @@ const ProductList = () => {
       render: (text: string) => <strong>{text}</strong>,
     },
     {
-      title: 'Thương hiệu',
-      dataIndex: 'brand',
-      key: 'brand',
-    },
-    {
       title: 'Mô tả ngắn',
       dataIndex: 'descriptionShort',
       key: 'descriptionShort',

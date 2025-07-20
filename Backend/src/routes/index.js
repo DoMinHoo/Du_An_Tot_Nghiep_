@@ -11,6 +11,8 @@ const bannerRoutes = require("./banner.routes");
 const materialsRoutes = require("./materials.routes");
 const statsRoutes = require("./stats.routes");
 const vnpayRouter = require('./vnpay');
+const postRoutes = require("./post.routes");
+const uploadRoute = require("./upload.route");
 
 const promotionRoutes = require("./promotion.route");
 
@@ -18,6 +20,7 @@ const cartRoutes = require("./cart.routes")
 
 const paymentZaloRoutes = require('./payment.routes');
 
+const shippingRoutes = require('./shipping.routes');
 
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
@@ -31,10 +34,11 @@ router.use("/promotions", promotionRoutes);
 router.use('/carts', cartRoutes);
 router.use('/materials', materialsRoutes);
 router.use('/stats', statsRoutes);
-
+router.use("/posts", postRoutes);
 router.use('/zalo-payment', paymentZaloRoutes)
-
+router.use("/upload", uploadRoute);
 router.use('/vnpay', vnpayRouter);
+router.use('/shipping', shippingRoutes)
 
 
 

@@ -42,17 +42,8 @@ exports.createVariation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Chất liệu không tồn tại' });
     }
 
-    // 5. Kiểm tra biến thể trùng kích thước + chất liệu
-    const existingVariation = await ProductVariation.findOne({
-      productId,
-      material: body.material,
-      dimensions: body.dimensions,
-    });
-    if (existingVariation) {
-      return res.status(400).json({ success: false, message: 'Biến thể này đã tồn tại (cùng chất liệu và kích thước)' });
-    }
+    // 5. Xử lý hình ảnh
 
-    // 6. Xử lý hình ảnh màu
     const uploadedImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
@@ -118,7 +109,9 @@ exports.createVariation = async (req, res) => {
       colorName: body.colorName,
       colorHexCode: body.colorHexCode,
       colorImageUrl,
-      material: body.material
+      material: body.material,// ✅ Gán ObjectId chất liệu đúng
+      isDeleted: false // Mặc định là false khi tạo mới
+
     };
 
     const variation = new ProductVariation(variationData);
@@ -144,7 +137,7 @@ exports.updateVariation = async (req, res) => {
     }
 
     // 2. Tìm biến thể
-    const variation = await ProductVariation.findById(id);
+    const variation = await ProductVariation.findById(id, { isDeleted: false });
     if (!variation) {
       return res.status(404).json({ success: false, message: "Biến thể không tồn tại" });
     }
@@ -221,7 +214,8 @@ exports.updateVariation = async (req, res) => {
       colorName: body.colorName || variation.colorName,
       colorHexCode: body.colorHexCode || variation.colorHexCode,
       colorImageUrl,
-      material: materialId
+      material: materialId, // ✅ gán đúng material đã kiểm tra ở trên
+
     };
     // 8. Cập nhật vào DB
     const updatedVariation = await ProductVariation.findByIdAndUpdate(id, variationData, { new: true });
@@ -249,9 +243,9 @@ exports.getVariationsByProductId = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
     }
 
-    // Truy vấn và populate field "material"
-    const variations = await ProductVariation.find({ productId })
-      .populate('material', 'name') // ✅ lấy tên chất liệu
+    // Truy vấn và populate field "material", chỉ lấy các biến thể chưa bị xóa
+    const variations = await ProductVariation.find({ productId, isDeleted: false })
+      .populate('material', 'name')
       .lean();
 
     res.json({ success: true, data: variations });
@@ -261,27 +255,6 @@ exports.getVariationsByProductId = async (req, res) => {
   }
 };
 
-// Xóa một biến thể sản phẩm
-exports.deleteVariation = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Kiểm tra id hợp lệ
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
-    }
-
-    const deleted = await ProductVariation.findByIdAndDelete(id);
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
-    }
-
-    res.json({ success: true, message: 'Xóa biến thể thành công' });
-  } catch (err) {
-    console.error('Lỗi khi xóa biến thể:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
 // Lấy chi tiết một biến thể sản phẩm
 exports.getVariationById = async (req, res) => {
   try {
@@ -292,13 +265,13 @@ exports.getVariationById = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
     }
 
-    // Tìm biến thể theo ID và populate material
-    const variation = await ProductVariation.findById(id)
-      .populate('material', 'name') // ✅ populate tên chất liệu
+    // Tìm biến thể theo ID, chỉ lấy biến thể chưa bị xóa
+    const variation = await ProductVariation.findOne({ _id: id, isDeleted: false })
+      .populate('material', 'name')
       .lean();
 
     if (!variation) {
-      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại' });
+      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại hoặc đã bị xóa' });
     }
 
     res.json({ success: true, data: variation });
@@ -307,6 +280,60 @@ exports.getVariationById = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Xóa mềm một biến thể sản phẩm
+exports.deleteVariation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Kiểm tra ID biến thể hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
+    }
+
+    // 2. Tìm biến thể
+    const variation = await ProductVariation.findOne({ _id: id, isDeleted: false });
+    if (!variation) {
+      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại hoặc đã bị xóa' });
+    }
+
+    // 3. Cập nhật trạng thái isDeleted
+    variation.isDeleted = true;
+    await variation.save();
+
+    res.json({ success: true, message: 'Biến thể đã được xóa mềm thành công' });
+  } catch (err) {
+    console.error('Lỗi khi xóa mềm biến thể:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+// Khôi phục một biến thể đã bị xóa mềm
+exports.restoreVariation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Kiểm tra ID biến thể hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID biến thể không hợp lệ' });
+    }
+
+    // 2. Tìm biến thể đã bị xóa mềm
+    const variation = await ProductVariation.findOne({ _id: id, isDeleted: true });
+    if (!variation) {
+      return res.status(404).json({ success: false, message: 'Biến thể không tồn tại hoặc chưa bị xóa mềm' });
+    }
+
+    // 3. Khôi phục biến thể
+    variation.isDeleted = false;
+    await variation.save();
+
+    res.json({ success: true, message: 'Biến thể đã được khôi phục thành công', data: variation });
+  } catch (err) {
+    console.error('Lỗi khi khôi phục biến thể:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 
 
 exports.getSaleProducts = async (req, res) => {
@@ -343,4 +370,34 @@ exports.getSaleProducts = async (req, res) => {
   }
 };
 
+
+
+// Lấy danh sách biến thể đã xóa mềm theo productId
+exports.getDeletedVariations = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    console.log('Received productId:', productId);
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      console.log('Invalid productId:', productId);
+      return res.status(400).json({ success: false, message: 'ID sản phẩm không hợp lệ' });
+    }
+
+    const product = await Product.findOne({ _id: productId }); // Bỏ isDeleted: false
+    if (!product) {
+      console.log('Product not found:', productId);
+      return res.json({ success: true, data: [] }); // Trả về mảng rỗng thay vì lỗi
+    }
+
+    const variations = await ProductVariation.find({ productId, isDeleted: true })
+      .populate('material', 'name')
+      .lean();
+    console.log('Deleted variations found:', variations.length);
+
+    res.json({ success: true, data: variations });
+  } catch (err) {
+    console.error('Error in getDeletedVariations:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 

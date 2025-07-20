@@ -1,7 +1,6 @@
 'use client';
 
 import type React from 'react';
-
 import {
   DeleteOutlined,
   EditOutlined,
@@ -12,6 +11,7 @@ import {
   TagOutlined,
   DollarOutlined,
   CalendarOutlined,
+  UndoOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -54,12 +54,14 @@ const ProductVariationList = () => {
 
   const { mutate: deleteMutate } = useMutation({
     mutationFn: (variationId: string) => deleteVariation(id!, variationId),
-    onSuccess: () => {
-      message.success('✅ Xoá biến thể thành công');
+    onSuccess: (response) => {
+      message.success(response.message || '✅ Xóa biến thể thành công');
       queryClient.invalidateQueries({ queryKey: ['variations', id] });
     },
-    onError: () => {
-      message.error('❌ Xoá biến thể thất bại');
+    onError: (error: any) => {
+      message.error(
+        error.response?.data?.message || '❌ Xóa biến thể thất bại'
+      );
     },
   });
 
@@ -77,9 +79,9 @@ const ProductVariationList = () => {
     variations?.reduce((sum, item) => sum + item.stockQuantity, 0) || 0;
   const averagePrice = variations?.length
     ? Math.round(
-      variations.reduce((sum, item) => sum + item.finalPrice, 0) /
-      variations.length
-    )
+        variations.reduce((sum, item) => sum + item.finalPrice, 0) /
+          variations.length
+      )
     : 0;
   const lowStockCount =
     variations?.filter((item) => item.stockQuantity < 10).length || 0;
@@ -268,10 +270,10 @@ const ProductVariationList = () => {
               style={{ backgroundColor: '#1890ff' }}
             />
           </Tooltip>
-          <Tooltip title="Xóa biến thể">
+          <Tooltip title="Xóa mềm biến thể">
             <Popconfirm
-              title="Xác nhận xóa biến thể?"
-              description="Hành động này không thể hoàn tác!"
+              title="Xác nhận xóa mềm biến thể?"
+              description="Biến thể sẽ được chuyển vào thùng rác và có thể khôi phục."
               onConfirm={() => handleDelete(record)}
               okText="Xóa"
               cancelText="Hủy"
@@ -326,20 +328,35 @@ const ProductVariationList = () => {
               </Text>
             </div>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate(`/admin/products/variants/${id}/create`)}
-            size="large"
-            style={{
-              background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 600,
-            }}
-          >
-            Thêm biến thể mới
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate(`/admin/products/variants/${id}/create`)}
+              size="large"
+              style={{
+                background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 600,
+              }}
+            >
+              Thêm biến thể mới
+            </Button>
+            <Button
+              icon={<UndoOutlined />}
+              onClick={() => navigate(`/admin/products/variants/${id}/deleted`)}
+              size="large"
+              style={{
+                borderRadius: '8px',
+                backgroundColor: '#ff4d4f',
+                borderColor: '#ff4d4f',
+                color: '#fff',
+              }}
+            >
+              Xem biến thể đã xóa
+            </Button>
+          </Space>
         </div>
 
         {/* Statistics Cards */}

@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const path = require('path');
 const routes = require('./routes');
+const uploadRoute = require("./routes/upload.route");
 
 const app = express();
 
@@ -28,6 +29,6 @@ console.log('Serving static from:', path.join(__dirname, 'uploads'));
 
 // API routes
 app.use('/api', routes);
-
+app.use("/api/upload", uploadRoute);
 
 module.exports = app;

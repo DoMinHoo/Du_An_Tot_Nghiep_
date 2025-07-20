@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api'; // Correct endpoint structure
+const API_URL = 'http://localhost:5000/api';
 
 export const getVariations = async (productId: string | number) => {
   try {
@@ -12,6 +12,25 @@ export const getVariations = async (productId: string | number) => {
   }
 };
 
+export const getDeletedVariations = async (productId: string | number) => {
+  try {
+    console.log('Calling API:', `${API_URL}/${productId}/variations/deleted`);
+    const response = await axios.get(`${API_URL}/${productId}/variations/deleted`, {
+      headers: {
+        // Add token if needed
+        // Authorization: `Bearer ${yourToken}`,
+      },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Get deleted variations error:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+    }
+    throw error;
+  }
+};
 
 export const createVariation = async (productId: string | number, variationData: FormData) => {
   try {
@@ -19,7 +38,6 @@ export const createVariation = async (productId: string | number, variationData:
     console.log('Creating variation for product:', productId);
     console.log('Full URL:', `${API_URL}/${productId}/variations`);
     
-    // Log FormData contents
     console.log('FormData contents:');
     for (const [key, value] of variationData.entries()) {
       if (value instanceof File) {
@@ -36,7 +54,7 @@ export const createVariation = async (productId: string | number, variationData:
         headers: { 
           'Content-Type': 'multipart/form-data' 
         },
-        timeout: 30000 // 30 seconds timeout
+        timeout: 30000
       }
     );
     
@@ -88,14 +106,26 @@ export const getVariationById = async (productId: string | number, variationId: 
   }
 };
 
-
 export const deleteVariation = async (productId: string | number, variationId: string | number) => {
   try {
-    await axios.delete(
+    const response = await axios.delete(
       `${API_URL}/${productId}/variations/${variationId}`
     );
+    return response.data; // Trả về toàn bộ response để xử lý message
   } catch (error) {
     console.error('Delete variation error:', error);
+    throw error;
+  }
+};
+
+export const restoreVariation = async (productId: string | number, variationId: string | number) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/${productId}/variations/${variationId}/restore`
+    );
+    return response.data.data;
+  } catch (error) {
+    console.error('Restore variation error:', error);
     throw error;
   }
 };

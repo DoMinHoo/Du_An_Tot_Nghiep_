@@ -319,10 +319,7 @@ const UpdateProductVariationPage = () => {
                     rules={[
                       {
                         validator: (_, fileList) => {
-                          const hasNewImage = fileList?.some((file) => file.originFileObj)
-                          if (!hasNewImage) {
-                            return Promise.reject(new Error("Vui lòng thêm 1 ảnh màu mới"))
-                          }
+
                           if (fileList.length > 1) {
                             return Promise.reject(new Error("Chỉ được phép chọn 1 ảnh"))
                           }

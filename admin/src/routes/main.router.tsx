@@ -34,6 +34,10 @@ import ListPromotion from '../pages/Promotions/listPromotion';
 import UpdatePromotion from '../pages/Promotions/updatePromotion';
 import CreatePromotion from '../pages/Promotions/createPromotion';
 import Dashboard from '../pages/Dashboard/dashboard';
+import RestoreVariationList from '../pages/Products/ProductVariants/RestoreVariationList';
+import PostList from '../pages/Post/PostList';
+import PostForm from '../pages/Post/PostForm';
+import EditPost from '../pages/Post/EditPost';
 
 const routes: RouteObject[] = [
   {
@@ -77,6 +81,10 @@ const routes: RouteObject[] = [
           {
             path: 'variants/:id/edit/:variationId',
             element: <UpdateProductVariationPage />,
+          },
+          {
+            path: 'variants/:id/deleted',
+            element: <RestoreVariationList />,
           },
         ],
       },
@@ -179,6 +187,23 @@ const routes: RouteObject[] = [
           {
             index: true,
             element: <MaterialAdmin />,
+          },
+        ],
+      },
+      {
+        path: 'posts',
+        children: [
+          {
+            index: true,
+            element: <PostList />,
+          },
+          {
+            path: 'create',
+            element: <PostForm />,
+          },
+          {
+            path: 'edit/:id',
+            element: <EditPost />,
           },
         ],
       },

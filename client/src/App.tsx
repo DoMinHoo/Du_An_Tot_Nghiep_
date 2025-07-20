@@ -17,9 +17,16 @@ import CheckPayment from './Pages/CheckPayment';
 import AboutPage from './Pages/About';
 import UserAccount from './Pages/account';
 import ContactPage from './Pages/Contact';
+
 import ReturnVnpayPage from './Pages/ReturnVnpayPage';
 import SalePage from './Pages/Sale';
 import ThankYouPage from './Pages/ThankYouPage';
+
+import NewsDetailPage from './Pages/NewsDetailPage';
+import NewsPage from './Pages/NewsPage';
+import SearchPage from './Pages/SearchPage';
+import ProductsPage from './Pages/ProductPage';
+
 
 
 
@@ -63,13 +70,22 @@ function App() {
 
         <Route path="/order-history" element={<OrderHistoryPage />} />
         <Route path="/check-payment" element={<CheckPayment />} />
+        <Route path="/search" element={<SearchPage />} />
+
+        <Route path="/products" element={<ProductsPage />} />
 
         <Route path='/thank-you' element={<ThankYouPage />} />
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />
+
         <Route path="/sales" element={<SalePage />} />
 
+
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/news/:slug" element={<NewsDetailPage />} />
+
       </Route>
+
       <Route path="/signin" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/set-user" element={<SetUser />} />
