@@ -66,7 +66,7 @@ const EditBanner: React.FC = () => {
     const onFinish = async (values: any) => {
         const formData = new FormData();
         formData.append('title', values.title);
-        formData.append('link', values.link);
+        formData.append('link', values.link || 'http://localhost:5173/'); // Nếu không có link thì dùng mặc định
         formData.append('position', values.position);
         formData.append('collection', values.collection);
 

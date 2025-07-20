@@ -88,7 +88,7 @@ const AdminSidebar: React.FC = () => {
           textAlign: "center",
         }}
       >
-        <Link to="/admin">
+        <Link to="/admin/dashboard">
           <img
             src={logo}
             alt="Logo"

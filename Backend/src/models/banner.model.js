@@ -12,7 +12,7 @@ const bannerSchema = new mongoose.Schema({
             },
             message: props => `${props.value} không phải là một URL hợp lệ!`,
         },
-        default: '#',
+        default: 'http://localhost:5173/',
     },
     isActive: { type: Boolean, default: true },
     position: {

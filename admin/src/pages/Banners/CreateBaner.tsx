@@ -17,7 +17,7 @@ const CreateBanner: React.FC = () => {
 
         const formData = new FormData();
         formData.append('title', values.title);
-        formData.append('link', values.link);
+        formData.append('link', values.link || 'http://localhost:5173/');
         formData.append('collection', values.collection);
         formData.append('image', fileList[0].originFileObj); // ảnh thực
 
@@ -46,12 +46,12 @@ const CreateBanner: React.FC = () => {
             <Form.Item
                 name="link"
                 label="Liên kết"
-                rules={[{ required: true, type: 'url', message: 'Link không hợp lệ' }]}
+                rules={[{ type: 'url', message: 'Link không hợp lệ' }]}
             >
                 <Input placeholder="https://hoặc /collections/..." />
             </Form.Item>
 
-            <Form.Item name="collection" label="Collection" rules={[{ required: true }]}>
+            <Form.Item name="collection" label="Collection" >
                 <Input placeholder="summer-sale, trending, ..." />
             </Form.Item>
 
