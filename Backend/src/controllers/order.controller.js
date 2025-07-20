@@ -9,7 +9,7 @@ const Cart = require('../models/cart.model');
 const ProductVariation = require('../models/product_variations.model');
 const Product = require('../models/products.model');
 const User = require('../models/user.model');
-const { sendPaymentSuccessEmail, sendOrderSuccessEmail } = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
+const { sendPaymentSuccessEmail, sendOrderSuccessEmail ,sendOrderStatusUpdateEmail} = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
 
 
 
@@ -382,18 +382,17 @@ exports.updateOrder = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
         }
 
-        // ❌ Nếu yêu cầu huỷ nhưng trạng thái hiện tại không cho phép
+        // Kiểm tra nếu yêu cầu hủy nhưng trạng thái không cho phép
         if (status === 'canceled') {
             if (order.status !== 'pending') {
                 return res.status(400).json({
                     success: false,
-                    message: `Không thể huỷ đơn hàng ở trạng thái "${order.status}".`
+                    message: `Không thể hủy đơn hàng ở trạng thái "${order.status}".`
                 });
             }
         }
 
-
-        // ❌ Nếu không đổi trạng thái => không làm gì
+        // Kiểm tra nếu trạng thái không đổi hoặc không hợp lệ
         if (!status || order.status === status) {
             return res.status(400).json({
                 success: false,
@@ -401,7 +400,7 @@ exports.updateOrder = async (req, res) => {
             });
         }
 
-        // ✅ Nếu huỷ => hoàn tồn kho
+        // Hoàn tồn kho nếu hủy
         if (status === 'canceled' && order.status !== 'completed') {
             for (const item of order.items) {
                 await ProductVariation.findByIdAndUpdate(item.variationId, {
@@ -410,7 +409,7 @@ exports.updateOrder = async (req, res) => {
             }
         }
 
-        // ✅ Nếu hoàn tất => tăng lượt mua
+        // Tăng lượt mua nếu hoàn tất
         if (status === 'completed' && order.status !== 'completed') {
             for (const item of order.items) {
                 const variation = await ProductVariation.findById(item.variationId);
@@ -422,12 +421,7 @@ exports.updateOrder = async (req, res) => {
             }
         }
 
-        // ✅ Gửi mail nếu COD hoàn tất
-        if (status === 'completed' && order.paymentMethod === 'cod') {
-            await sendOrderSuccessEmail(id);
-        }
-
-        // ✅ Cập nhật trạng thái và ghi log
+        // Cập nhật trạng thái và ghi log
         const updateData = {
             status,
             ...(status === 'canceled' && note ? { cancellationReason: note } : {})
@@ -443,6 +437,14 @@ exports.updateOrder = async (req, res) => {
                 }
             }
         });
+
+        // Gửi email thông báo cập nhật trạng thái
+        try {
+            await sendOrderStatusUpdateEmail(id, status, note);
+        } catch (emailError) {
+            console.error('Lỗi gửi email thông báo trạng thái:', emailError);
+            // Không trả về lỗi cho client, chỉ ghi log
+        }
 
         return res.status(200).json({
             success: true,

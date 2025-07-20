@@ -174,7 +174,7 @@ const axios = require('axios');
 const CryptoJS = require('crypto-js');
 const moment = require('moment');
 const Order = require('../../models/order.model');
-const { sendPaymentSuccessEmail } = require('../../untils/sendPaymentSuccessEmail');
+const { sendOrderStatusUpdateEmail } = require('../../untils/sendPaymentSuccessEmail');
 
 const config = {
     app_id: "2553",
@@ -261,7 +261,7 @@ async function handlePaymentCallback(req, res) { // Xử lý callback thanh toá
         order.paymentData = decodedData;
         await order.save();
         // Gửi email xác nhận
-        const emailResult = await sendPaymentSuccessEmail(order._id);
+        const emailResult = await sendOrderStatusUpdateEmail(order._id);
         if (!emailResult.success) {
             console.error('Failed to send payment success email:', emailResult.message);
         }
@@ -284,7 +284,7 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
             order.paymentStatus = "completed";
             order.status = "pending";
             await order.save();
-            const emailResult = await sendPaymentSuccessEmail(order._id);
+            const emailResult = await sendOrderStatusUpdateEmail(order._id);
             if (!emailResult.success) {
                 console.error('Failed to send payment success email:', emailResult.message);
             }
