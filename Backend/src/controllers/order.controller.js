@@ -282,6 +282,17 @@ exports.createOrder = async (req, res) => {
 
         // Lưu đơn hàng
         const savedOrder = await newOrder.save();
+        // Gửi email xác nhận đơn hàng
+        // Nếu không phải thanh toán bằng tài khoản (online_payment) thì gửi email xác nhận đơn hàng
+        if (paymentMethod !== 'online_payment') {
+            try {
+            await sendOrderStatusUpdateEmail(savedOrder._id, 'pending', 'Đơn hàng đã được tạo thành công');
+            }
+            catch (emailError) {
+            console.error('Lỗi gửi email xác nhận đơn hàng:', emailError);
+            // Không trả về lỗi cho client, chỉ ghi log
+            }
+        }
 
         // Cập nhật giỏ hàng: xóa các sản phẩm được chọn
         cart.items = cart.items.filter((item) => !selectedItems.includes(item.variationId._id.toString()));
