@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,10 +82,10 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
-      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-    ];
+    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+  ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
   const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
@@ -105,7 +104,7 @@ const CheckoutPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Đặt hàng thành công!', { autoClose: 1500 });
-       sessionStorage.removeItem('pendingOrderInfo'); 
+      sessionStorage.removeItem('pendingOrderInfo');
       setTimeout(() => navigate('/thank-you'), 1600);
     },
     onError: () => {
@@ -182,7 +181,9 @@ const CheckoutPage: React.FC = () => {
   // Lấy danh sách phường/xã khi chọn quận/huyện
   useEffect(() => {
     if (districtId) {
-      getWards(districtId).then(setWardList).catch(() => setWardList([]));
+      getWards(districtId)
+        .then(setWardList)
+        .catch(() => setWardList([]));
     } else {
       setWardList([]);
       setWard('');
@@ -267,18 +268,18 @@ const CheckoutPage: React.FC = () => {
       };
 
       sessionStorage.setItem(
-      'shippingInfo',
-      JSON.stringify({
-        fullName,
-        phone,
-        email: finalEmail,
-        province,
-        district,
-        ward,
-        street,
-        detailAddress,
-      })
-    );
+        'shippingInfo',
+        JSON.stringify({
+          fullName,
+          phone,
+          email: finalEmail,
+          province,
+          district,
+          ward,
+          street,
+          detailAddress,
+        })
+      );
 
       const orderRes = await orderMutation.mutateAsync(orderData);
 
@@ -360,7 +361,6 @@ const CheckoutPage: React.FC = () => {
 
   // State cho địa chỉ động
 
-
   // Lấy danh sách tỉnh/thành khi mount
   useEffect(() => {
     getProvinces()
@@ -399,7 +399,9 @@ const CheckoutPage: React.FC = () => {
   // Lấy danh sách phường/xã khi chọn quận/huyện
   useEffect(() => {
     if (districtId) {
-      getWards(districtId).then(setWardList).catch(() => setWardList([]));
+      getWards(districtId)
+        .then(setWardList)
+        .catch(() => setWardList([]));
     } else {
       setWardList([]);
       setWard('');
@@ -439,9 +441,7 @@ const CheckoutPage: React.FC = () => {
     }
   }, [provinceId, districtId, wardCode, totalPrice]);
 
-  const handleProvinceChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = Number(e.target.value);
     setProvinceId(id || null);
     setProvince(e.target.selectedOptions[0]?.text || '');
@@ -456,9 +456,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   // Thay đổi select quận/huyện
-  const handleDistrictChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = Number(e.target.value);
     setDistrictId(id || null);
     setDistrict(e.target.selectedOptions[0]?.text || '');
@@ -471,8 +469,15 @@ const CheckoutPage: React.FC = () => {
   };
 
   // Lọc danh sách tỉnh/thành theo từ khóa tìm kiếm
-  const filteredProvinceList = (Array.isArray(provinceList) ? provinceList : []).filter((item) => {
-    const name = (item.ProvinceName || item.province_name || item.name || '').toLowerCase();
+  const filteredProvinceList = (
+    Array.isArray(provinceList) ? provinceList : []
+  ).filter((item) => {
+    const name = (
+      item.ProvinceName ||
+      item.province_name ||
+      item.name ||
+      ''
+    ).toLowerCase();
     return name.includes(provinceSearch.trim().toLowerCase());
   });
 
@@ -555,11 +560,13 @@ const CheckoutPage: React.FC = () => {
                   disabled={!provinceId}
                 >
                   <option value="">Chọn quận/huyện</option>
-                  {(Array.isArray(districtList) ? districtList : []).map((item) => (
-                    <option key={item.DistrictID} value={item.DistrictID}>
-                      {item.DistrictName}
-                    </option>
-                  ))}
+                  {(Array.isArray(districtList) ? districtList : []).map(
+                    (item) => (
+                      <option key={item.DistrictID} value={item.DistrictID}>
+                        {item.DistrictName}
+                      </option>
+                    )
+                  )}
                 </select>
                 {errors.district && (
                   <p className="text-red-500 text-sm mt-1">{errors.district}</p>
@@ -627,9 +634,9 @@ const CheckoutPage: React.FC = () => {
                   onChange={(e) =>
                     setPaymentMethod(
                       e.target.value as
-                      | 'cod'
-                      | 'bank_transfer'
-                      | 'online_payment'
+                        | 'cod'
+                        | 'bank_transfer'
+                        | 'online_payment'
                     )
                   }
                   className="mr-2"
@@ -694,24 +701,33 @@ const CheckoutPage: React.FC = () => {
                       e.currentTarget.src = '/placeholder.png';
                     }}
                   />
-                  <div>
-                    <p className="font-medium">{item.variationId.name}</p>
-                    <p className="text-gray-500 text-sm">
-                      {item.variationId.color}
-                    </p>
-                    {item.variationId.finalPrice !== 0 &&
+                  <div className="  grid grid-cols-2  flex-11/12 jcontent-between items-center">
+                    <div>
+                      <p className="font-medium">{item.variationId.name1}</p>
+                      <p className="text-gray-500 text-sm">
+                        {item.variationId.material}
+                      </p>
+
+                      <p className="text-gray-500 text-sm">
+                        {item.variationId.color}
+                      </p>
+                    </div>
+                    <div className="flex justify-end items-center">
+                      {item.variationId.finalPrice !== 0 &&
                       item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice < item.variationId.finalPrice ? (
-                      <p className="font-semibold">
-                        {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
-                        {item.quantity}
-                      </p>
-                    ) : (
-                      <p className="font-semibold">
-                        {item.variationId.finalPrice.toLocaleString()}₫ ×{' '}
-                        {item.quantity}
-                      </p>
-                    )}
+                      item.variationId.salePrice <
+                        item.variationId.finalPrice ? (
+                        <p className="font-semibold">
+                          {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
+                          {item.quantity}
+                        </p>
+                      ) : (
+                        <p className="font-semibold">
+                          {item.variationId.finalPrice.toLocaleString()}₫ ×{' '}
+                          {item.quantity}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -764,10 +780,11 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
-                        ? 'opacity-50 bg-gray-100'
-                        : 'hover:bg-blue-50 hover:border-blue-300'
-                        }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
+                        disabled
+                          ? 'opacity-50 bg-gray-100'
+                          : 'hover:bg-blue-50 hover:border-blue-300'
+                      }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -791,8 +808,9 @@ const CheckoutPage: React.FC = () => {
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
-                              }`}
+                            className={`text-xs ${
+                              isExpired ? 'text-red-500' : 'text-gray-600'
+                            }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(
@@ -844,9 +862,9 @@ const CheckoutPage: React.FC = () => {
             <span>Phí vận chuyển:</span>
             <span>
               {provinceId && districtId && wardCode
-                ? (shippingFee > 0
+                ? shippingFee > 0
                   ? `${shippingFee.toLocaleString()}₫`
-                  : 'Đang tính phí...')
+                  : 'Đang tính phí...'
                 : 'Vui lòng chọn đủ địa chỉ'}
             </span>
           </div>
@@ -866,6 +884,5 @@ const CheckoutPage: React.FC = () => {
     </div>
   );
 };
-
 
 export default CheckoutPage;

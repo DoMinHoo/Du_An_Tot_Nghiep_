@@ -8,12 +8,11 @@ import {
   calculateDiscount,
   isValidPrice,
 } from '../../utils/priceUtils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Product } from '../../types/Product';
 import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
 import { v4 as uuidv4 } from 'uuid';
-import { addToCart } from '../../services/cartService';
 
 interface ProductCardProps {
   product: Product;
@@ -23,10 +22,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasVariations, setHasVariations] = useState<boolean | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const [showSuccessToast, setShowSuccessToast] = useState(false);;
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -85,94 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     };
   }, [product._id]);
 
-  // Mutation để thêm sản phẩm vào giỏ hàng
-  const addToCartMutation = useMutation({
-    mutationFn: ({
-      variationId,
-      quantity,
-    }: {
-      variationId: string;
-      quantity: number;
-    }) => addToCart(variationId, quantity, token, guestId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      setShowSuccessToast(true);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Lỗi khi thêm vào giỏ hàng', {
-        autoClose: 1000,
-      });
-    },
-    onSettled: () => setIsUpdating(false),
-  });
-
-  // Xử lý thêm vào giỏ hàng
-  const handleAddToCart = async () => {
-    if (!hasVariations || !variation || variation.stockQuantity <= 0) {
-      toast.error(
-        !hasVariations || !variation
-          ? 'Sản phẩm không có biến thể hợp lệ!'
-          : 'Sản phẩm đã hết hàng!',
-        { autoClose: 1000 }
-      );
-      return;
-    }
-
-    setIsUpdating(true);
-    addToCartMutation.mutate({ variationId: variation._id, quantity: 1 });
-  };
-
-  // Xử lý thanh toán ngay
-  const handleCheckout = async () => {
-    if (!hasVariations || !variation || variation.stockQuantity <= 0) {
-      toast.error(
-        !hasVariations || !variation
-          ? 'Sản phẩm không có biến thể hợp lệ!'
-          : 'Sản phẩm đã hết hàng!',
-        { autoClose: 1000 }
-      );
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await addToCartMutation.mutateAsync({
-        variationId: variation._id,
-        quantity: 1,
-      });
-
-      const imageUrl = variation.colorImageUrl
-        ? getImageUrl(variation.colorImageUrl)
-        : product.image && product.image.length > 0
-        ? getImageUrl(product.image[0])
-        : getImageUrl();
-
-      const checkedItem = {
-        variationId: {
-          _id: variation._id,
-          salePrice: variation.salePrice ?? 0,
-          finalPrice: variation.finalPrice ?? 0,
-          colorImageUrl: imageUrl,
-          name: product.name || 'Unnamed Product',
-          color: variation.colorName || 'Không xác định',
-          stockQuantity: variation.stockQuantity || 0,
-        },
-        quantity: 1,
-      };
-
-      const totalPrice = (variation.salePrice || variation.finalPrice || 0) * 1;
-
-      navigate('/checkout', {
-        state: {
-          selectedItems: [variation._id],
-          cartItems: [checkedItem],
-          totalPrice,
-        },
-      });
-    } catch {
-      // Lỗi đã được xử lý trong onError của mutation
-    }
-  };
+  
 
   // Hiển thị toast khi thêm vào giỏ hàng thành công
   useEffect(() => {
@@ -285,32 +194,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {formatPrice(effectiveFinalPrice)}
             </del>
           )}
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-            onClick={handleAddToCart}
-            disabled={
-              isUpdating ||
-              !hasVariations ||
-              !variation ||
-              variation.stockQuantity <= 0
-            }
-          >
-            {isUpdating ? 'Đang thêm...' : 'Thêm vào giỏ'}
-          </button>
-          <button
-            className="flex-1 bg-green-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400"
-            onClick={handleCheckout}
-            disabled={
-              isUpdating ||
-              !hasVariations ||
-              !variation ||
-              variation.stockQuantity <= 0
-            }
-          >
-            {isUpdating ? 'Đang xử lý...' : 'Thanh toán'}
-          </button>
         </div>
       </div>
     </div>
