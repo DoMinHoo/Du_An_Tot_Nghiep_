@@ -21,7 +21,7 @@ import {
   getCategories,
   updateProduct,
   getProductById,
-  deleteProduct,
+  softDeleteProduct,
 } from '../../Services/products.service';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Category } from '../../Types/product.interface';
@@ -88,7 +88,7 @@ const UpdateProductPage: React.FC = () => {
   // Mutation để xóa sản phẩm
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { mutate: deleteMutate, isPending: isDeleting } = useMutation({
-    mutationFn: deleteProduct,
+    mutationFn: softDeleteProduct,
     onSuccess: () => {
       message.success('Xóa sản phẩm thành công!');
       navigate('/admin/products');

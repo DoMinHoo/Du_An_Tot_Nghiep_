@@ -19,6 +19,7 @@ const buildCategoryBreadcrumb = async (categoryId) => {
 };
 
 // Lấy danh sách sản phẩm với filter + breadcrumb
+// Lấy danh sách sản phẩm với filter + breadcrumb
 exports.getProducts = async (req, res) => {
   try {
     const {
@@ -32,10 +33,12 @@ exports.getProducts = async (req, res) => {
       status = "active",
       flashSaleOnly = false,
       filter,
+      isDeleted, // Thêm tham số isDeleted
       search, // Thêm search vào đây để xử lý trong aggregation
       brand, // Thêm brand vào đây để xử lý trong aggregation
     } = req.query;
 
+    const query = {};  
     const safeLimit = Math.min(parseInt(limit), 100);
     const skip = (parseInt(page) - 1) * safeLimit;
 
@@ -44,6 +47,20 @@ exports.getProducts = async (req, res) => {
       isDeleted: false,
     };
 
+      if (isDeleted !== undefined) {
+      query.isDeleted = isDeleted === "true";
+    } else {
+      query.isDeleted = false; // Mặc định chỉ lấy sản phẩm chưa xóa mềm
+    }
+      if (minPrice || maxPrice) {
+      query.salePrice = {};
+      if (minPrice) query.salePrice.$gte = parseFloat(minPrice);
+      if (maxPrice) query.salePrice.$lte = parseFloat(maxPrice);
+    }
+    
+    if (status && !query.isDeleted) query.status = status; // Chỉ áp dụng status nếu không lấy sản phẩm đã xóa
+    if (category) query.categoryId = category;
+    if (color) query.color = color;
     if (status) matchConditions.status = status;
     if (category) matchConditions.categoryId = new mongoose.Types.ObjectId(category); // Đảm bảo là ObjectId
     // Lưu ý: `color` và `minPrice/maxPrice` cần được xử lý thông qua `product_variations`
@@ -53,7 +70,8 @@ exports.getProducts = async (req, res) => {
     // Đối với ví dụ này, tôi giả định `salePrice` có thể được tính/lấy từ Product.
     // Nếu salePrice chỉ tồn tại trong ProductVariation, bạn sẽ cần một $lookup khác.
 
-    // ✅ Lọc Flash Sale nếu cần
+
+    // Lọc Flash Sale
     if (flashSaleOnly === "true") {
       const now = new Date();
       matchConditions.flashSale_discountedPrice = { $gt: 0 };
@@ -71,12 +89,12 @@ exports.getProducts = async (req, res) => {
         matchConditions.brand = brand;
     }
 
-    // --- Xây dựng sortOption ---
+
     const sortOption = {};
     if (filter === "hot") {
-      sortOption.totalPurchased = -1; // bán chạy nhất
+      sortOption.totalPurchased = -1;
     } else if (filter === "new") {
-      sortOption.createdAt = -1; // mới nhất theo timestamp
+      sortOption.createdAt = -1;
     } else {
       switch (sort) {
         case "price_asc":
@@ -198,7 +216,7 @@ exports.getProducts = async (req, res) => {
     const total = result.metadata[0] ? result.metadata[0].total : 0;
 
 
-    // ✅ Breadcrumb theo danh mục
+    // Breadcrumb theo danh mục
     let breadcrumb = ["Home"];
     if (category) {
       try {
@@ -220,11 +238,12 @@ exports.getProducts = async (req, res) => {
       },
     });
   } catch (err) {
+
     console.error("Lỗi khi lấy danh sách sản phẩm:", err); // Log lỗi chi tiết
     res.status(500).json({ success: false, message: err.message });
+
   }
 };
-
 
 // Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {
@@ -377,22 +396,157 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// Xoá mềm sản phẩm
+// Xóa mềm sản phẩm (Soft Delete)
 exports.softDeleteProduct = async (req, res) => {
   try {
-    const updated = await Product.findOneAndUpdate(
-      { _id: req.params.id, isDeleted: false },
-      { isDeleted: true },
+    const productId = req.params.id;
+
+    // 1. Kiểm tra ID sản phẩm hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID sản phẩm không hợp lệ",
+      });
+    }
+
+    // 2. Kiểm tra sản phẩm có tồn tại và chưa bị xóa mềm
+    const product = await Product.findOne({
+      _id: productId,
+      isDeleted: false,
+    });
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Sản phẩm không tồn tại hoặc đã bị xóa",
+      });
+    }
+
+    // 3. Kiểm tra xem sản phẩm có biến thể không
+    const variations = await ProductVariation.find({
+      productId,
+      isDeleted: false,
+    });
+    if (variations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa sản phẩm vì vẫn còn biến thể tồn tại",
+      });
+    }
+
+    // 4. Thực hiện xóa mềm sản phẩm
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { isDeleted: true, updatedAt: new Date() },
       { new: true }
     );
-    if (!updated)
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found" });
 
-    res.json({ success: true, message: "Product soft-deleted successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Xóa mềm sản phẩm thành công",
+      data: updatedProduct,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Lỗi khi xóa mềm sản phẩm:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi xóa mềm sản phẩm",
+    });
+  }
+};
+
+// Xóa vĩnh viễn sản phẩm (Hard Delete)
+exports.hardDeleteProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    // 1. Kiểm tra ID sản phẩm hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID sản phẩm không hợp lệ",
+      });
+    }
+
+    // 2. Kiểm tra sản phẩm có tồn tại
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Sản phẩm không tồn tại",
+      });
+    }
+
+    // 3. Kiểm tra xem sản phẩm có biến thể không
+    const variations = await ProductVariation.find({
+      productId,
+      isDeleted: false,
+    });
+    if (variations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa vĩnh viễn sản phẩm vì vẫn còn biến thể tồn tại",
+      });
+    }
+
+    // 4. Thực hiện xóa vĩnh viễn sản phẩm
+    await Product.findByIdAndDelete(productId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Xóa vĩnh viễn sản phẩm thành công",
+    });
+  } catch (err) {
+    console.error("Lỗi khi xóa vĩnh viễn sản phẩm:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi xóa vĩnh viễn sản phẩm",
+    });
+  }
+};
+
+// Khôi phục sản phẩm đã xóa mềm
+exports.restoreProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    // 1. Kiểm tra ID sản phẩm hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID sản phẩm không hợp lệ",
+      });
+    }
+
+    // 2. Kiểm tra sản phẩm có tồn tại và đã bị xóa mềm
+    const product = await Product.findOne({
+      _id: productId,
+      isDeleted: true,
+    });
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Sản phẩm không tồn tại hoặc chưa bị xóa mềm",
+      });
+    }
+
+    // 3. Thực hiện khôi phục sản phẩm
+    const restoredProduct = await Product.findByIdAndUpdate(
+      productId,
+      { isDeleted: false, updatedAt: new Date() },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Khôi phục sản phẩm thành công",
+      data: restoredProduct,
+    });
+  } catch (err) {
+    console.error("Lỗi khi khôi phục sản phẩm:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi khôi phục sản phẩm",
+    });
   }
 };
 

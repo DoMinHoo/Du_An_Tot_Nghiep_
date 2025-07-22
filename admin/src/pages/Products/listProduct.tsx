@@ -16,54 +16,64 @@ import {
   DeleteOutlined,
   PlusOutlined,
   BranchesOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../Types/product.interface';
-import { deleteProduct, getProductMaterials, getProducts } from '../../Services/products.service';
+import {
+  softDeleteProduct,
+  getProductMaterials,
+  getProducts,
+} from '../../Services/products.service';
 import { useEffect, useState } from 'react';
 
 const ProductList = () => {
   const navigate = useNavigate();
-
+  const queryClient = useQueryClient();
   const [materialsMap, setMaterialsMap] = useState<Record<string, string>>({});
 
-
-
+  // Lấy danh sách sản phẩm (chưa xóa mềm)
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ['products'],
-    queryFn: getProducts,
+    queryFn: async () => {
+      const response = await fetch(
+        'http://localhost:5000/api/products?isDeleted=false'
+      );
+      const data = await response.json();
+      return data.data;
+    },
   });
 
-  const queryClient = useQueryClient();
-
-  const { mutate: deleteMutate } = useMutation({
-    mutationFn: (id: string) => deleteProduct(id),
+  // Mutation cho xóa mềm
+  const { mutate: softDeleteMutate } = useMutation({
+    mutationFn: (id: string) => softDeleteProduct(id),
     onSuccess: () => {
-      message.success('Xoá sản phẩm thành công');
+      message.success('Xóa mềm sản phẩm thành công');
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: () => {
-      message.error('Xoá sản phẩm thất bại');
+    onError: (error: any) => {
+      message.error(
+        error.response?.data?.message || 'Xóa mềm sản phẩm thất bại'
+      );
     },
   });
 
+  // Lấy danh sách chất liệu
   useEffect(() => {
     if (!products || products.length === 0) return;
 
     const fetchMaterials = async () => {
       const map: Record<string, string> = {};
-
       await Promise.all(
         products.map(async (product) => {
           try {
             const materialName = await getProductMaterials(product._id);
-            map[product._id] = materialName || "Không có";
+            map[product._id] = materialName || 'Không có';
           } catch (err) {
-            map[product._id] = "Lỗi";
+            map[product._id] = 'Lỗi';
           }
         })
       );
-
       setMaterialsMap(map);
     };
 
@@ -74,8 +84,8 @@ const ProductList = () => {
     navigate(`/admin/products/edit/${product._id}`);
   };
 
-  const handleDelete = (product: Product) => {
-    deleteMutate(product._id);
+  const handleSoftDelete = (product: Product) => {
+    softDeleteMutate(product._id);
   };
 
   const columns = [
@@ -120,7 +130,8 @@ const ProductList = () => {
     {
       title: 'Chất liệu',
       key: 'material',
-      render: (_: any, record: Product) => materialsMap[record._id] || 'Đang tải...',
+      render: (_: any, record: Product) =>
+        materialsMap[record._id] || 'Đang tải...',
     },
     {
       title: 'Danh mục',
@@ -142,8 +153,8 @@ const ProductList = () => {
           status === 'active'
             ? 'green'
             : status === 'hidden'
-              ? 'orange'
-              : 'red';
+            ? 'orange'
+            : 'red';
         return <Tag color={color}>{status.toUpperCase()}</Tag>;
       },
     },
@@ -173,10 +184,10 @@ const ProductList = () => {
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          <Tooltip title="Xoá">
+          <Tooltip title="Xóa mềm">
             <Popconfirm
-              title="Xác nhận xoá sản phẩm?"
-              onConfirm={() => handleDelete(record)}
+              title="Xác nhận xóa mềm sản phẩm?"
+              onConfirm={() => handleSoftDelete(record)}
             >
               <Button danger icon={<DeleteOutlined />} shape="circle" />
             </Popconfirm>
@@ -190,13 +201,22 @@ const ProductList = () => {
     <Card
       title="🛍️ Danh sách sản phẩm"
       extra={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate('/admin/products/create')}
-        >
-          Thêm sản phẩm
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/admin/products/create')}
+          >
+            Thêm sản phẩm
+          </Button>
+          <Button
+            type="default"
+            icon={<HistoryOutlined />}
+            onClick={() => navigate('/admin/products/restore')}
+          >
+            Khôi phục/Xóa vĩnh viễn
+          </Button>
+        </Space>
       }
     >
       <Table

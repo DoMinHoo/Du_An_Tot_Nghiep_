@@ -8,12 +8,12 @@ import {
   calculateDiscount,
   isValidPrice,
 } from '../../utils/priceUtils';
+
 import { Link, useNavigate } from 'react-router-dom';
-import type { Product } from '../../types/Product'; // Sử dụng Product interface của bạn
+import type { Product } from '../../types/Product';
 import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
 import { v4 as uuidv4 } from 'uuid';
-import { addToCart } from '../../services/cartService';
 
 // Import icon ngôi sao từ react-icons/md
 import { MdStar, MdStarBorder } from 'react-icons/md';
@@ -26,10 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasVariations, setHasVariations] = useState<boolean | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const [showSuccessToast, setShowSuccessToast] = useState(false);;
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -87,6 +84,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       isMounted = false;
     };
   }, [product._id]);
+
 
   // Mutation để thêm sản phẩm vào giỏ hàng
   const addToCartMutation = useMutation({
@@ -176,6 +174,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       // Lỗi đã được xử lý trong onError của mutation
     }
   };
+
 
   // Hiển thị toast khi thêm vào giỏ hàng thành công
   useEffect(() => {
@@ -319,32 +318,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {formatPrice(effectiveFinalPrice)}
             </del>
           )}
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-            onClick={handleAddToCart}
-            disabled={
-              isUpdating ||
-              !hasVariations ||
-              !variation ||
-              variation.stockQuantity <= 0
-            }
-          >
-            {isUpdating ? 'Đang thêm...' : 'Thêm vào giỏ'}
-          </button>
-          <button
-            className="flex-1 bg-green-600 text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400"
-            onClick={handleCheckout}
-            disabled={
-              isUpdating ||
-              !hasVariations ||
-              !variation ||
-              variation.stockQuantity <= 0
-            }
-          >
-            {isUpdating ? 'Đang xử lý...' : 'Thanh toán'}
-          </button>
         </div>
       </div>
     </div>
