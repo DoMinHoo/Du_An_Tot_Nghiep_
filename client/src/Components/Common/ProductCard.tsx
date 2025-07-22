@@ -9,11 +9,14 @@ import {
   isValidPrice,
 } from '../../utils/priceUtils';
 import { Link, useNavigate } from 'react-router-dom';
-import type { Product } from '../../types/Product';
+import type { Product } from '../../types/Product'; // Sử dụng Product interface của bạn
 import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { addToCart } from '../../services/cartService';
+
+// Import icon ngôi sao từ react-icons/md
+import { MdStar, MdStarBorder } from 'react-icons/md';
 
 interface ProductCardProps {
   product: Product;
@@ -144,8 +147,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       const imageUrl = variation.colorImageUrl
         ? getImageUrl(variation.colorImageUrl)
         : product.image && product.image.length > 0
-        ? getImageUrl(product.image[0])
-        : getImageUrl();
+          ? getImageUrl(product.image[0])
+          : getImageUrl();
 
       const checkedItem = {
         variationId: {
@@ -238,6 +241,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     : false;
 
+  // Hàm render các ngôi sao đánh giá
+  const renderStars = (rating: number | undefined) => {
+    const stars = [];
+    // Làm tròn số sao để hiển thị (ví dụ 4.7 -> 5 sao, 4.3 -> 4 sao)
+    const roundedRating = rating ? Math.round(rating) : 0;
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        i <= roundedRating ? (
+          <MdStar key={i} className="text-orange-500 text-xl" /> // Sao đầy, màu cam
+        ) : (
+          <MdStarBorder key={i} className="text-gray-300 text-xl" /> // Sao rỗng, màu xám
+        )
+      );
+    }
+    return stars;
+  };
+
   return (
     <div className="relative w-full max-w-[300px] bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <ToastContainer />
@@ -276,6 +296,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.name || 'Unnamed Product'}
           </Link>
         </h3>
+        {/* Phần hiển thị đánh giá - ĐÃ THÊM VÀO ĐÂY */}
+        {product.averageRating !== undefined && product.numOfReviews !== undefined && (
+          <div className="flex items-center mt-2">
+            <div className="flex">
+              {renderStars(product.averageRating)}
+            </div>
+            {/* Hiển thị số lượt đánh giá bên cạnh số sao */}
+            <span className="text-sm text-gray-500 ml-2">
+              ({product.numOfReviews})
+            </span>
+          </div>
+        )}
+        {/* KẾT THÚC PHẦN ĐÁNH GIÁ */}
+
         <div className="mt-2 flex items-center gap-2">
           <span className="text-red-600 font-bold text-lg">
             {formatPrice(displayPrice)}

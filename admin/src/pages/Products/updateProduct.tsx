@@ -26,6 +26,10 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Category } from '../../Types/product.interface';
 
+// Import ReactQuill and its styles
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Import Quill's CSS
+
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -74,7 +78,8 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Cập nhật sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Cập nhật sản phẩm thất bại: ${
+          error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -90,7 +95,8 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Xóa sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Xóa sản phẩm thất bại: ${
+          error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -132,7 +138,7 @@ const UpdateProductPage: React.FC = () => {
     formData.append('name', values.name);
     formData.append('brand', values.brand);
     formData.append('descriptionShort', values.descriptionShort);
-    formData.append('descriptionLong', values.descriptionLong || '');
+    formData.append('descriptionLong', values.descriptionLong || ''); // This will now come from ReactQuill
     formData.append('material', values.material);
     formData.append('categoryId', values.categoryId);
     formData.append('status', values.status);
@@ -176,6 +182,26 @@ const UpdateProductPage: React.FC = () => {
       </div>
     );
   }
+
+  // ReactQuill modules and formats (you can customize these)
+  const quillModules = {
+    toolbar: [
+      [{ 'header': '1' }, { 'header': '2' }, { 'font': [] }],
+      [{ size: [] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' },
+      { 'indent': '-1' }, { 'indent': '+1' }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video'
+  ];
 
   return (
     <React.Fragment>
@@ -253,8 +279,15 @@ const UpdateProductPage: React.FC = () => {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
+                  {/* ReactQuill for descriptionLong */}
                   <Form.Item label="Mô tả chi tiết" name="descriptionLong">
-                    <TextArea rows={4} placeholder="Nhập mô tả chi tiết" />
+                    <ReactQuill
+                      theme="snow"
+                      modules={quillModules}
+                      formats={quillFormats}
+                      placeholder="Nhập mô tả chi tiết"
+                      style={{ height: '150px', marginBottom: '40px' }} // Adjust height as needed
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={12}>

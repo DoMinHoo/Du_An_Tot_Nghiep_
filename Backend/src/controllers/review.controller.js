@@ -152,8 +152,13 @@ exports.deleteReview = async (req, res) => {
 exports.getAllReviews = async (req, res) => {
   try {
     const reviews = await Review.find()
-      .populate("user", "name avatar") // ✅ Lấy cả avatar
-      .populate("product", "name"); // ✅ Lấy tên sản phẩm
+      .populate("user", "name avatar") // Lấy tên và avatar của người dùng
+      .populate("product", "name") // Lấy tên sản phẩm
+      .populate({
+        // Populate replies và admin trong replies
+        path: "replies.admin",
+        select: "name", // Chỉ lấy tên của admin đã trả lời
+      });
 
     res.status(200).json(reviews);
   } catch (err) {
@@ -191,7 +196,12 @@ exports.getReviewsByProduct = async (req, res) => {
       product: req.params.productId,
       visible: true, // Chỉ lấy đánh giá đang hiển thị
     })
-      .populate("user", "name")
+      .populate("user", "name") // Lấy tên người dùng
+      .populate({
+        // Populate replies và admin trong replies
+        path: "replies.admin",
+        select: "name", // Chỉ lấy tên của admin đã trả lời
+      })
       .sort({ createdAt: -1 });
 
     res.status(200).json(reviews);
