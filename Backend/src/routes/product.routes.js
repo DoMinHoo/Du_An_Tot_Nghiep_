@@ -16,7 +16,13 @@ router.post('/', upload.array('images', 20), productController.createProduct);
 router.put('/:id', upload.array('images', 20), productController.updateProduct);
 
 // Xóa mềm sản phẩm (admin)
-router.delete('/:id', productController.softDeleteProduct);
+router.delete('/soft/:id', productController.softDeleteProduct);
+
+// Xóa vĩnh viễn sản phẩm (admin)
+router.delete('/hard/:id', productController.hardDeleteProduct);
+
+// Khôi phục sản phẩm đã xóa mềm (admin)
+router.patch('/restore/:id', productController.restoreProduct);
 
 // Lấy danh sách chất liệu của sản phẩm theo ID
 router.get("/:productId/materials", productController.getMaterialsByProductId);

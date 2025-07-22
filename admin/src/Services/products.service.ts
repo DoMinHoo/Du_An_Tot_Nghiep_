@@ -23,7 +23,7 @@ export const createProduct = async (data: FormData): Promise<Product> => {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data.data;
+  return response.data;
 };
 
 // Cập nhật sản phẩm
@@ -33,7 +33,7 @@ export const updateProduct = async (data: UpdateProductDto): Promise<Product> =>
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data.data;
+  return response.data;
 };
 
 // Lấy chi tiết sản phẩm theo ID
@@ -43,14 +43,27 @@ export const getProductById = async (id: string): Promise<Product> => {
 };
 
 // Xóa mềm sản phẩm
-export const deleteProduct = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE}/${id}`);
+export const softDeleteProduct = async (id: string): Promise<void> => {
+  const response = await axios.delete(`${API_BASE}/soft/${id}`);
+  return response.data;
+};
+
+// Xóa vĩnh viễn sản phẩm
+export const hardDeleteProduct = async (id: string): Promise<void> => {
+  const response = await axios.delete(`${API_BASE}/hard/${id}`);
+  return response.data;
+};
+
+// Khôi phục sản phẩm đã xóa mềm
+export const restoreProduct = async (id: string): Promise<Product> => {
+  const response = await axios.patch(`${API_BASE}/restore/${id}`);
+  return response.data.data;
 };
 
 // Lấy danh sách vật liệu của sản phẩm
 export const getProductMaterials = async (productId: string): Promise<string> => {
-  const res = await fetch(`/api/products/${productId}/materials`);
-  if (!res.ok) throw new Error("Failed to fetch materials");
+  const res = await fetch(`${API_BASE}/${productId}/materials`);
+  if (!res.ok) throw new Error("Không thể lấy danh sách chất liệu");
   const data = await res.json();
-  return data.materials || "N/A"; // ✅ lấy đúng field
+  return data.materials || "N/A";
 };

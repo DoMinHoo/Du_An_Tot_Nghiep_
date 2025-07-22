@@ -38,6 +38,7 @@ import RestoreVariationList from '../pages/Products/ProductVariants/RestoreVaria
 import PostList from '../pages/Post/PostList';
 import PostForm from '../pages/Post/PostForm';
 import EditPost from '../pages/Post/EditPost';
+import RestoreProduct from '../pages/Products/RestoreProduct';
 
 const routes: RouteObject[] = [
   {
@@ -85,6 +86,10 @@ const routes: RouteObject[] = [
           {
             path: 'variants/:id/deleted',
             element: <RestoreVariationList />,
+          },
+          {
+            path: 'restore',
+            element: <RestoreProduct />,
           },
         ],
       },
