@@ -160,12 +160,6 @@ const Header: React.FC = () => {
             </div>
           </div>
 
-          <Link to="/favorites" className="hover:font-semibold flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-            </svg>
-            Sản phẩm yêu thích
-          </Link>
           <Link to="/sales" className="hover:font-semibold">Khuyến mãi</Link>
           <Link to="/news" className="hover:font-semibold">Tin tức</Link>
           <Link to="/contact" className="hover:font-semibold">Liên hệ</Link>
