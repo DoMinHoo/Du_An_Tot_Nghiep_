@@ -10,37 +10,11 @@ import { formatPrice, isValidPrice } from '../utils/priceUtils';
 import { getImageUrl } from '../utils/imageUtils';
 import type { Product } from '../types/Product';
 import type { Variation } from '../types/Variations';
-import { MdNavigateNext, MdStar, MdStarBorder } from 'react-icons/md';
+import { MdNavigateNext } from 'react-icons/md';
 import { createReview } from '../services/reviewService';
 import { useQuery } from '@tanstack/react-query';
 import { getReviewsByProduct } from '../services/reviewService';
 import { v4 as uuidv4 } from 'uuid';
-
-// --- CẬP NHẬT INTERFACE BẮT ĐẦU ---
-interface UserInfo {
-  _id: string;
-  name: string;
-}
-
-interface Reply {
-  _id: string;
-  content: string;
-  createdAt: string;
-  admin: UserInfo;
-}
-
-interface Review {
-  _id: string;
-  product: string;
-  user: UserInfo | null;
-  rating: number;
-  comment?: string;
-  createdAt: string;
-  visible: boolean;
-  flagged: boolean;
-  replies: Reply[];
-}
-// --- CẬP NHẬT INTERFACE KẾT THÚT ---
 
 interface PriceAndStockDetails {
   salePrice: number;
@@ -80,17 +54,6 @@ const getPriceAndStockDetails = (
   };
 };
 
-// Hàm này chỉ nên dùng cho văn bản thuần túy có ngắt dòng (\n), không phải HTML
-const renderTextWithLineBreaks = (text: string | undefined) => {
-  if (!text) return null;
-  return text.split('\n').map((line, index) => (
-    <React.Fragment key={index}>
-      {line}
-      {index < text.split('\n').length - 1 && <br />}
-    </React.Fragment>
-  ));
-};
-
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -113,6 +76,7 @@ const ProductDetail: React.FC = () => {
   const token = sessionStorage.getItem('token') || undefined;
   let guestId = sessionStorage.getItem('guestId') || undefined;
 
+  // Tạo guestId mới nếu chưa có và chưa đăng nhập
   if (!token && !guestId) {
     guestId = uuidv4();
     sessionStorage.setItem('guestId', guestId);
@@ -147,7 +111,7 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const { data: reviews = [] } = useQuery<Review[]>({
+  const { data: reviews = [], refetch: refetchReviews } = useQuery({
     queryKey: ['reviews', id],
     queryFn: () => getReviewsByProduct(id!),
     enabled: !!id,
@@ -525,7 +489,10 @@ const ProductDetail: React.FC = () => {
               {selectedVariation?.colorName || 'Không xác định'}{' '}
             </p>
             <p>
-              <strong>Mô tả ngắn:</strong> {renderTextWithLineBreaks(product.descriptionShort)}
+              <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
+            </p>
+            <p>
+              <strong>Mô tả chi tiết:</strong> {product.descriptionLong || ''}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -661,29 +628,14 @@ const ProductDetail: React.FC = () => {
           </p>
         </div>
       )}
-
-      {/* NEWLY ADDED: Mô tả chi tiết section, placed outside the grid */}
-      {product.descriptionLong && (
-        <div className="mt-10 border-t pt-6 text-gray-800">
-          <h3 className="text-2xl font-bold mb-4">Mô tả chi tiết</h3>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {/* Sử dụng dangerouslySetInnerHTML cho HTML từ ReactQuill */}
-            <div
-              className="text-base leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: product.descriptionLong }}
-            />
-          </div>
-        </div>
-      )}
-
       <div className="mt-10 border-t pt-6">
         <h3 className="text-2xl font-bold text-gray-800 mb-6">
           Đánh giá sản phẩm
         </h3>
-        <div className="max-w-full bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl shadow-lg border border-blue-200 space-y-5">
+        <div className="max-w-xl bg-white p-6 rounded-lg shadow border space-y-4">
           <div>
-            <label className="block text-base font-semibold text-gray-800 mb-2">
-              Chọn số sao của bạn:
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Chọn số sao:
             </label>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -691,12 +643,12 @@ const ProductDetail: React.FC = () => {
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className={`text-4xl transition-colors duration-200 transform ${rating >= star ? 'text-yellow-500 scale-110' : 'text-gray-300 hover:text-yellow-400'
-                    } focus:outline-none`}
-
+                  className={`text-2xl transition-transform ${
+                    rating >= star ? 'text-yellow-400' : 'text-gray-300'
+                  } hover:scale-125`}
                   aria-label={`Chọn ${star} sao`}
                 >
-                  {rating >= star ? <MdStar /> : <MdStarBorder />}
+                  ★
                 </button>
               ))}
             </div>
@@ -704,113 +656,65 @@ const ProductDetail: React.FC = () => {
           <div>
             <label
               htmlFor="comment"
-              className="block text-base font-semibold text-gray-800 mb-2"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Nhận xét của bạn:
+              Nhận xét:
             </label>
             <textarea
               id="comment"
-              rows={5}
+              rows={4}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."
-              className="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-700 text-base resize-none shadow-sm"
-              maxLength={500}
+              placeholder="Nhập nhận xét của bạn về sản phẩm..."
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
-            <p className="text-sm text-gray-500 mt-1 text-right">
-              {comment.length}/500 ký tự
-            </p>
           </div>
           <button
             onClick={handleSubmitReview}
-            disabled={isSubmittingReview || !rating || comment.trim() === ''}
-            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2"
+            disabled={isSubmittingReview}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-gray-400 transition-all"
           >
-            {isSubmittingReview ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Đang gửi đánh giá...</span>
-              </>
-            ) : (
-              'Gửi đánh giá của bạn'
-            )}
+            {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
           </button>
         </div>
         <div className="mt-10">
-          <h4 className="text-2xl font-bold text-gray-800 mb-6">
-            Tất cả đánh giá ({reviews.length})
+          <h4 className="text-xl font-semibold text-gray-800 mb-4">
+            Danh sách đánh giá
           </h4>
           {reviews.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {reviews.map((review) => (
                 <div
                   key={review._id}
-                  className="bg-white rounded-xl shadow-md p-6 border border-gray-200 relative overflow-hidden group"
+                  className="border rounded-lg p-4 shadow-sm bg-white"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-extrabold text-gray-900 text-lg flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {review.user?.name || 'Khách hàng Ẩn danh'}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-800">
+                      {review.user?.name || 'Ẩn danh'}
                     </span>
-                    <div className="flex gap-0.5">
+                    <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={`text-xl ${star <= review.rating
-
+                          className={`text-lg ${
+                            star <= review.rating
                               ? 'text-yellow-400'
                               : 'text-gray-300'
                           }`}
                         >
-                          <MdStar />
+                          ★
                         </span>
                       ))}
                     </div>
                   </div>
-                  <p className="text-gray-700 text-base leading-relaxed mb-4 italic">"{review.comment}"</p>
-                  <p className="text-sm text-gray-500 text-right">
-                    Đánh giá vào: {new Date(review.createdAt).toLocaleDateString('vi-VN')}
-                  </p>
-
-                  {/* Phần hiển thị phản hồi của Admin */}
-                  {review.replies && review.replies.length > 0 && (
-                    <div className="mt-5 pt-4 border-t border-blue-100 space-y-3">
-                      {review.replies.map((reply) => (
-                        <div key={reply._id} className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm relative pl-12">
-                          <div className="absolute left-3 top-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                          </div>
-                          <p className="font-bold text-blue-700 mb-1">
-                            Phản hồi từ Quản trị viên {reply.admin?.name ? `(${reply.admin.name})` : ''}
-                          </p>
-                          {/* Sửa ở đây để hiển thị HTML của admin reply */}
-                          <div className="text-gray-800 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: reply.content }} />
-                          <p className="text-xs text-gray-500 mt-2 text-right">
-                            {new Date(reply.createdAt).toLocaleDateString('vi-VN')}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <p className="text-gray-700">{review.comment}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-600">
-              <p className="text-lg font-medium mb-3">
-                Chưa có đánh giá nào cho sản phẩm này.
-              </p>
-              <p className="text-md">
-                Hãy là người đầu tiên chia sẻ cảm nhận của bạn!
-              </p>
-            </div>
+            <p className="text-sm text-gray-500 italic">
+              Chưa có đánh giá nào cho sản phẩm này.
+            </p>
           )}
         </div>
       </div>
