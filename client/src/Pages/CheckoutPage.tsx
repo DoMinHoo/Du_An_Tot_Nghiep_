@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
+import socket from '../services/soket';
 
 import { getCart } from '../services/cartService';
 import { createOrder } from '../services/orderService';
@@ -105,7 +106,7 @@ const CheckoutPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Đặt hàng thành công!', { autoClose: 1500 });
-       sessionStorage.removeItem('pendingOrderInfo'); 
+      sessionStorage.removeItem('pendingOrderInfo');
       setTimeout(() => navigate('/thank-you'), 1600);
     },
     onError: () => {
@@ -267,18 +268,18 @@ const CheckoutPage: React.FC = () => {
       };
 
       sessionStorage.setItem(
-      'shippingInfo',
-      JSON.stringify({
-        fullName,
-        phone,
-        email: finalEmail,
-        province,
-        district,
-        ward,
-        street,
-        detailAddress,
-      })
-    );
+        'shippingInfo',
+        JSON.stringify({
+          fullName,
+          phone,
+          email: finalEmail,
+          province,
+          district,
+          ward,
+          street,
+          detailAddress,
+        })
+      );
 
       const orderRes = await orderMutation.mutateAsync(orderData);
 
@@ -320,6 +321,22 @@ const CheckoutPage: React.FC = () => {
         }
       } else {
         toast.success('Đặt hàng thành công!', { autoClose: 1500 });
+        socket.emit('new-order', {
+          orderCode: orderRes.orderCode,
+          amount: finalAmountWithShipping,
+          paymentMethod,
+          createdAt: new Date(),
+          shippingAddress: {
+            fullName,
+            phone,
+            email: finalEmail,
+            addressLine: detailAddress,
+            street,
+            province,
+            district,
+            ward,
+          },
+        });
         setTimeout(() => navigate('/thank-you'), 1600);
       }
     } catch {

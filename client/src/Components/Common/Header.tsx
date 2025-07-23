@@ -6,6 +6,8 @@ import { IoIosArrowDown } from 'react-icons/io';
 import axios from 'axios';
 import logo from '../Common/img/Logo/image 15.png';
 
+import { HeaderNotification } from './HeaderNotification';
+
 interface Category {
   _id: string;
   name: string;
@@ -94,6 +96,7 @@ const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-600">
+          <HeaderNotification />
           {user ? (
             <div className="relative">
               <button onClick={() => setOpenUserDropdown(!openUserDropdown)} className="flex items-center gap-1">
@@ -148,9 +151,8 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${
-                openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
-              }`}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+                }`}
             >
               {categories.map((cat) => (
                 <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-2 hover:bg-gray-100">

@@ -12,7 +12,6 @@ const User = require('../models/user.model');
 const { sendPaymentSuccessEmail, sendOrderSuccessEmail } = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
 
 
-
 // Tạo mã đơn hàng ngẫu nhiên
 const generateOrderCode = () => {
     return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -282,6 +281,12 @@ exports.createOrder = async (req, res) => {
 
         // Lưu đơn hàng
         const savedOrder = await newOrder.save();
+
+        const io = req.app.get("io");
+        io.emit("newOrder", savedOrder);
+
+
+
 
         // Cập nhật giỏ hàng: xóa các sản phẩm được chọn
         cart.items = cart.items.filter((item) => !selectedItems.includes(item.variationId._id.toString()));

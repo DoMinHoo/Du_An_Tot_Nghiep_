@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import socket from './services/soket';
+
 import MainLayout from './Components/Layout/MainLayout';
 import Home from './Pages/Home';
 
@@ -26,12 +29,41 @@ import NewsDetailPage from './Pages/NewsDetailPage';
 import NewsPage from './Pages/NewsPage';
 import SearchPage from './Pages/SearchPage';
 import ProductsPage from './Pages/ProductPage';
+import { toast } from 'react-toastify';
+
 
 
 
 
 
 function App() {
+  useEffect(() => {
+    // Khi kết nối thành công
+    socket.on('connect', () => {
+      console.log('✅ Connected to Socket.IO server');
+    });
+
+    // Nghe event từ server (ví dụ 'newOrder')
+    socket.on('newOrder', (order) => {
+      console.log('🆕 New Order received:', order);
+
+    });
+
+    socket.on('order-notification', (data) => {
+      console.log("🛒 [Client] Có đơn hàng mới:", data);
+      toast.success("Bạn vừa tạo đơn hàng thành công!"); // hoặc dùng toast
+    });
+
+
+    // Cleanup khi unmount
+    return () => {
+      socket.off('connect');
+      socket.off('newOrder');
+      socket.off('order-notification');
+
+    };
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>
