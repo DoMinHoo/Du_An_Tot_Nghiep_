@@ -137,16 +137,3 @@
 
 {"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: acebcb47-3923-4b47-9e8f-4504516b0362","timestamp":"2025-07-19 15:26:09"}
 {"level":"info","message":"Giỏ hàng người dùng với userId: 684e7db9b88d5970104db7ed đã chứa sản phẩm, xóa guestCart: d5d3f801-2ec1-47d5-8061-d7bbd582cddd","timestamp":"2025-07-20 17:20:14"}
-{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: ce3a5001-209d-4521-a973-132620ba69fc","timestamp":"2025-07-22 10:04:33"}
-{"level":"info","message":"Không tìm thấy guestCart với guestId: 311ccbe9-a17e-4b6d-8d6b-2c5ceccb0378 hoặc giỏ hàng rỗng","timestamp":"2025-07-22 15:47:01"}
-{"level":"info","message":"Không tìm thấy guestCart với guestId: 04f8905d-8e13-43a1-bdc6-b7f170a8c3de hoặc giỏ hàng rỗng","timestamp":"2025-07-22 15:52:28"}
-{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-22 15:52:33"}
-{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-22 15:52:46"}
-{"level":"info","message":"Giỏ hàng người dùng với userId: 68562f78099fd3e0c637a3f7 đã chứa sản phẩm, xóa guestCart: dbf3ff2d-5c70-4d98-8b37-3fd9d756a007","timestamp":"2025-07-22 15:56:52"}
-{"level":"info","message":"Không tìm thấy guestCart với guestId: 1b112b6a-2765-4727-b3a6-93bf5c3e8c23 hoặc giỏ hàng rỗng","timestamp":"2025-07-22 16:04:05"}
-{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-22 16:04:15"}
-{"level":"info","message":"Giỏ hàng người dùng với userId: 687f4ffa9eca62ee20d735da đã chứa sản phẩm, xóa guestCart: 2bcbe11b-888b-44a1-b258-7eadef4979f3","timestamp":"2025-07-22 16:07:29"}
-{"level":"info","message":"Không tìm thấy guestCart với guestId: ec490365-2167-44f0-9b98-a1b3c9765712 hoặc giỏ hàng rỗng","timestamp":"2025-07-22 16:45:06"}
-{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-22 16:45:10"}
-{"level":"info","message":"Không tìm thấy guestCart với guestId: e706c3c0-0062-4a30-80aa-a5e148a77fe7 hoặc giỏ hàng rỗng","timestamp":"2025-07-22 17:18:26"}
-{"level":"error","message":"Lỗi addToCart:","timestamp":"2025-07-22 17:18:30"}
