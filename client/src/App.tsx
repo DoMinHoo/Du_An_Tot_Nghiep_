@@ -1,3 +1,4 @@
+import FavoriteProductsPage from './Pages/FavoriteProductsPage';
 import { Route, Routes } from 'react-router-dom';
 import MainLayout from './Components/Layout/MainLayout';
 import Home from './Pages/Home';
@@ -78,9 +79,9 @@ function App() {
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />
 
+
         <Route path="/sales" element={<SalePage />} />
-
-
+        <Route path="/favorites" element={<FavoriteProductsPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsDetailPage />} />
 
