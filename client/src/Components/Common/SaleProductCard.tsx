@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getImageUrl } from '../../utils/imageUtils';
 import { addToCart } from '../../services/cartService';
@@ -132,25 +132,20 @@ const SaleProductCard: React.FC<SaleProductCardProps> = ({ product }) => {
         </div>
       )}
 
-
-      {/* Hình ảnh sản phẩm (click vào ra chi tiết) */}
+      {/* Hình ảnh sản phẩm */}
       <div className="relative group">
-        <Link to={`/products/${productId}`} title={productName} className="block">
-          <img
-            src={imageUrl}
-            alt={productName}
-            className="w-full h-[240px] object-cover"
-            onError={e => (e.currentTarget.src = getImageUrl())}
-          />
-        </Link>
+        <img
+          src={imageUrl}
+          alt={productName}
+          className="w-full h-[240px] object-cover"
+          onError={e => (e.currentTarget.src = getImageUrl())}
+        />
       </div>
 
       {/* Thông tin sản phẩm */}
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-800 truncate">
-          <Link to={`/products/${productId}`} className="hover:text-blue-600 transition-colors" title={productName}>
-            {productName}
-          </Link>
+          {productName}
         </h3>
         <div className="mt-2 flex items-center gap-2">
           <span className="text-red-600 font-bold text-lg">
