@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { v4 as uuidv4 } from 'uuid';
 import { fetchVariations } from '../../services/apiService';
+import {
+  formatPrice,
+  calculateDiscount,
+  isValidPrice,
+} from '../../utils/priceUtils';
+import { Link } from 'react-router-dom';
 import type { Product } from '../../types/Product';
 import type { Variation } from '../../types/Variations';
 import { getImageUrl } from '../../utils/imageUtils';
-import {
-  calculateDiscount,
-  formatPrice,
-  isValidPrice,
-} from '../../utils/priceUtils';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ProductCardProps {
   product: Product;
@@ -21,8 +22,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasVariations, setHasVariations] = useState<boolean | null>(null);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);;
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -81,6 +81,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     };
   }, [product._id]);
 
+  
+
   // Hiển thị toast khi thêm vào giỏ hàng thành công
   useEffect(() => {
     if (showSuccessToast) {
@@ -90,28 +92,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       });
     }
   }, [showSuccessToast]);
-
-  // Kiểm tra xem sản phẩm đã yêu thích chưa
-  useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setIsFavorite(favorites.includes(product._id));
-  }, [product._id]);
-
-  // Toggle yêu thích
-  const toggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    let updatedFavorites;
-
-    if (favorites.includes(product._id)) {
-      updatedFavorites = favorites.filter((id: string) => id !== product._id);
-      setIsFavorite(false);
-    } else {
-      updatedFavorites = [...favorites, product._id];
-      setIsFavorite(true);
-    }
-
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-  };
 
   // Hiển thị giao diện loading
   if (loading) {
@@ -127,10 +107,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     );
   }
 
+  // Kiểm tra dữ liệu sản phẩm không hợp lệ
   if (!product._id || !product.name || !Array.isArray(product.image)) {
     return null;
   }
 
+  // Xác định giá và trạng thái giảm giá
   const effectiveSalePrice =
     hasVariations &&
     variation &&
@@ -139,16 +121,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     variation.salePrice > 0
       ? variation.salePrice
       : null;
-
   const effectiveFinalPrice =
     hasVariations && variation && isValidPrice(variation.finalPrice)
       ? variation.finalPrice
       : null;
 
+  // Không hiển thị nếu không có giá hợp lệ
   if (!effectiveFinalPrice) {
     return null;
   }
 
+  // Xác định giá hiển thị và trạng thái giảm giá
   const displayPrice = effectiveSalePrice ?? effectiveFinalPrice;
   const hasDiscount =
     effectiveSalePrice &&
@@ -158,6 +141,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     ? calculateDiscount(effectiveSalePrice, effectiveFinalPrice)
     : 0;
 
+  // Kiểm tra sản phẩm mới
   const isNew = product.createdAt
     ? new Date(product.createdAt) >
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -166,28 +150,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className="relative w-full max-w-[300px] bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <ToastContainer />
-
-      {/* Badge NEW */}
       {isNew && (
         <span className="absolute top-3 right-3 z-10 bg-yellow-400 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
           New
         </span>
       )}
-
-      {/* Badge Giảm giá */}
       {hasDiscount && discountPercentage > 0 && (
         <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
           -{discountPercentage}%
         </span>
       )}
-
-
-
-
-      {/* Nút yêu thích ở góc dưới bên phải card */}
-
-
-      {/* Hình ảnh sản phẩm */}
       <div className="relative group">
         <Link to={`/products/${product._id}`} title={product.name}>
           <img
@@ -204,9 +176,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </Link>
       </div>
-
-      {/* Nội dung */}
-      <div className="p-4 pb-2">
+      <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-800 truncate">
           <Link
             to={`/products/${product._id}`}
@@ -225,25 +195,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </del>
           )}
         </div>
-      </div>
-
-      {/* Nút yêu thích ở góc dưới bên phải card */}
-      <div className="absolute bottom-3 right-3 z-20">
-        <button
-          onClick={toggleFavorite}
-          className="bg-white rounded-full p-2 shadow hover:bg-gray-100 transition-colors"
-          title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
-        >
-          {isFavorite ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 fill-current" viewBox="0 0 20 20">
-              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
-            </svg>
-          )}
-        </button>
       </div>
     </div>
   );
