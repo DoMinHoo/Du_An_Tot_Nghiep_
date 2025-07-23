@@ -9,6 +9,8 @@
     totalPurchased: number;
     isDeleted: boolean;
     status: 'active' | 'hidden' | 'sold_out';
+    averageRating?: number; 
+    numOfReviews?: number;
     createdAt: string;
     updatedAt: string;
     }
