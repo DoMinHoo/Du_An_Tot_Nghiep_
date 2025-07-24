@@ -10,11 +10,14 @@ import { formatPrice, isValidPrice } from '../utils/priceUtils';
 import { getImageUrl } from '../utils/imageUtils';
 import type { Product } from '../types/Product';
 import type { Variation } from '../types/Variations';
+import type { Review } from '../types/Review';
 import { MdNavigateNext } from 'react-icons/md';
 import { createReview } from '../services/reviewService';
 import { useQuery } from '@tanstack/react-query';
 import { getReviewsByProduct } from '../services/reviewService';
 import { v4 as uuidv4 } from 'uuid';
+import { FaUserCircle } from 'react-icons/fa'; // Import icon người dùng
+import { FaBuilding } from 'react-icons/fa'; // Import icon công ty/admin
 
 interface PriceAndStockDetails {
   salePrice: number;
@@ -82,6 +85,8 @@ const ProductDetail: React.FC = () => {
     sessionStorage.setItem('guestId', guestId);
   }
 
+  const MAX_COMMENT_LENGTH = 500; // Giới hạn ký tự cho nhận xét
+
   const handleSubmitReview = async () => {
     if (!token) {
       toast.warning('Bạn cần đăng nhập để đánh giá!');
@@ -90,6 +95,11 @@ const ProductDetail: React.FC = () => {
 
     if (!rating || comment.trim() === '') {
       toast.warning('Vui lòng nhập đầy đủ nội dung và đánh giá sao!');
+      return;
+    }
+
+    if (comment.length > MAX_COMMENT_LENGTH) {
+      toast.warning(`Nhận xét không được vượt quá ${MAX_COMMENT_LENGTH} ký tự.`);
       return;
     }
 
@@ -111,7 +121,8 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const { data: reviews = [], refetch: refetchReviews } = useQuery({
+  // Sử dụng Review[] làm kiểu dữ liệu cho reviews
+  const { data: reviews = [], refetch: refetchReviews } = useQuery<Review[]>({
     queryKey: ['reviews', id],
     queryFn: () => getReviewsByProduct(id!),
     enabled: !!id,
@@ -639,13 +650,18 @@ const ProductDetail: React.FC = () => {
           </p>
         </div>
       )}
-      <div className="mt-10 border-t pt-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6">
+
+      {/* --- Phần Đánh Giá Sản Phẩm (Form) --- */}
+      <div className="mt-12 border-t pt-8 w-full">
+        <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           Đánh giá sản phẩm
         </h3>
-        <div className="max-w-xl bg-white p-6 rounded-lg shadow border space-y-4">
+        <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 space-y-6 w-full">
+          <p className="text-lg font-semibold text-gray-700">
+            Chia sẻ cảm nhận của bạn về sản phẩm này!
+          </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-2">
               Chọn số sao:
             </label>
             <div className="flex items-center gap-1">
@@ -654,9 +670,9 @@ const ProductDetail: React.FC = () => {
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className={`text-2xl transition-transform ${
-                    rating >= star ? 'text-yellow-400' : 'text-gray-300'
-                  } hover:scale-125`}
+                  className={`text-4xl transition-all duration-200 ${
+  rating >= star ? 'text-yellow-500' : 'text-gray-300'
+} hover:scale-110`}
                   aria-label={`Chọn ${star} sao`}
                 >
                   ★
@@ -667,47 +683,61 @@ const ProductDetail: React.FC = () => {
           <div>
             <label
               htmlFor="comment"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-base font-medium text-gray-700 mb-2"
             >
-              Nhận xét:
+              Nhận xét của bạn:
             </label>
-            <textarea
-              id="comment"
-              rows={4}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Nhập nhận xét của bạn về sản phẩm..."
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
+            <div className="relative">
+              <textarea
+                id="comment"
+                rows={5}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Sản phẩm này tuyệt vời! Tôi rất thích..."
+                className="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-500 resize-none transition-shadow duration-200"
+              />
+              <span className="absolute bottom-2 right-3 text-sm text-gray-500">
+                {comment.length}/{MAX_COMMENT_LENGTH} ký tự
+              </span>
+            </div>
           </div>
           <button
             onClick={handleSubmitReview}
-            disabled={isSubmittingReview}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-gray-400 transition-all"
+            disabled={isSubmittingReview || rating === 0 || comment.trim() === '' || comment.length > MAX_COMMENT_LENGTH}
+            className={`w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 transform ${
+              rating === 0 || comment.trim() === '' || comment.length > MAX_COMMENT_LENGTH || isSubmittingReview
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
+            }`}
           >
-            {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+            {isSubmittingReview ? 'Đang gửi đánh giá...' : 'Gửi đánh giá'}
           </button>
         </div>
-        <div className="mt-10">
-          <h4 className="text-xl font-semibold text-gray-800 mb-4">
-            Danh sách đánh giá
+
+        {/* --- Phần Danh sách đánh giá --- */}
+        <div className="mt-12 w-full">
+          <h4 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            Tất cả đánh giá ({reviews.length})
           </h4>
           {reviews.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6 w-full">
               {reviews.map((review) => (
                 <div
                   key={review._id}
-                  className="border rounded-lg p-4 shadow-sm bg-white"
+                  className="bg-white rounded-xl shadow-md border border-gray-100 p-6 flex flex-col space-y-4"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-800">
-                      {review.user?.name || 'Ẩn danh'}
-                    </span>
-                    <div className="flex gap-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <FaUserCircle className="text-gray-500 text-3xl" /> {/* Icon người dùng */}
+                      <span className="font-semibold text-lg text-gray-900">
+                        {review.user?.name || 'Người dùng ẩn danh'} {/* Giữ tên Phạm Lương nếu không có user.name */}
+                      </span>
+                    </div>
+                    <div className="flex gap-1"> {/* Giảm khoảng cách giữa các sao */}
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={`text-lg ${
+                          className={`text-xl ${
                             star <= review.rating
                               ? 'text-yellow-400'
                               : 'text-gray-300'
@@ -718,13 +748,52 @@ const ProductDetail: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  <p className="text-gray-700">{review.comment}</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    "{review.comment}"
+                  </p> {/* Thêm padding-left để thụt vào */}
+
+                  <div className="text-sm text-gray-500 mt-2 text-right">
+                    Đánh giá vào:{' '}
+                    {new Date(review.createdAt).toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+
+                  {/* Phần hiển thị phản hồi của Admin */}
+                  {review.replies && review.replies.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                      {review.replies.map((reply) => (
+                        <div
+                          key={reply._id}
+                          className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm flex items-start space-x-3" // Giảm padding
+                        >
+                          <FaBuilding className="text-blue-600 text-2xl mt-1" /> {/* Icon admin/công ty */}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="font-bold text-blue-800">
+                                Phản hồi từ Quản trị viên ({reply.admin?.name || 'Cửa hàng'}) {/* Giữ tên Lương nếu không có admin.name */}
+                              </span>
+                              <span className="text-gray-600">
+                                {new Date(reply.createdAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            </div>
+                            <p className="text-gray-800 italic leading-snug">{reply.content}</p> {/* Thụt nội dung phản hồi */}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Kết thúc phần hiển thị phản hồi của Admin */}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">
-              Chưa có đánh giá nào cho sản phẩm này.
+            <p className="text-center text-lg text-gray-500 italic py-8 bg-white rounded-xl shadow-sm border border-gray-100 w-full">
+              Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên để lại nhận xét!
             </p>
           )}
         </div>
