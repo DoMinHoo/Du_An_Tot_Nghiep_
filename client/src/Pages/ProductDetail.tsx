@@ -510,12 +510,16 @@ const ProductDetail: React.FC = () => {
               <strong>Mau sắc:</strong>{' '}
               {selectedVariation?.colorName || 'Không xác định'}{' '}
             </p>
-            <p>
-              <strong>Mô tả ngắn:</strong> {product.descriptionShort || ''}
-            </p>
-            <p>
-              <strong>Mô tả chi tiết:</strong> {product.descriptionLong || ''}
-            </p>
+            {/* GIỮ PHẦN MÔ TẢ NGẮN Ở ĐÂY */}
+            {product.descriptionShort && (
+              <p>
+                <strong>Mô tả ngắn:</strong>{' '}
+                <span
+                  className="whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: product.descriptionShort }}
+                ></span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex border rounded overflow-hidden">
@@ -651,6 +655,29 @@ const ProductDetail: React.FC = () => {
         </div>
       )}
 
+      {/* --- Phần Mô Tả Chi Tiết Sản Phẩm (MỚI) --- */}
+      {product.descriptionLong && (
+        <div className="mt-12 border-t pt-8 w-full">
+          <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+            Mô tả chi tiết sản phẩm
+          </h3>
+          <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 w-full text-gray-700">
+            <span
+              className="whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: product.descriptionLong }}
+            ></span>
+          </div>
+        </div>
+      )}
+      {!product.descriptionShort && !product.descriptionLong && ( // Thêm điều kiện này nếu cả 2 mô tả đều không có
+        <div className="mt-12 border-t pt-8 w-full">
+            <p className="text-center text-lg text-gray-500 italic py-8 bg-white rounded-xl shadow-sm border border-gray-100 w-full">
+              Sản phẩm này chưa có mô tả chi tiết.
+            </p>
+        </div>
+      )}
+
+
       {/* --- Phần Đánh Giá Sản Phẩm (Form) --- */}
       <div className="mt-12 border-t pt-8 w-full">
         <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">
@@ -671,8 +698,8 @@ const ProductDetail: React.FC = () => {
                   type="button"
                   onClick={() => setRating(star)}
                   className={`text-4xl transition-all duration-200 ${
-  rating >= star ? 'text-yellow-500' : 'text-gray-300'
-} hover:scale-110`}
+                    rating >= star ? 'text-yellow-500' : 'text-gray-300'
+                  } hover:scale-110`}
                   aria-label={`Chọn ${star} sao`}
                 >
                   ★
@@ -730,7 +757,7 @@ const ProductDetail: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <FaUserCircle className="text-gray-500 text-3xl" /> {/* Icon người dùng */}
                       <span className="font-semibold text-lg text-gray-900">
-                        {review.user?.name || 'Người dùng ẩn danh'} {/* Giữ tên Phạm Lương nếu không có user.name */}
+                        {review.user?.name || 'Người dùng ẩn danh'}
                       </span>
                     </div>
                     <div className="flex gap-1"> {/* Giảm khoảng cách giữa các sao */}
@@ -750,7 +777,7 @@ const ProductDetail: React.FC = () => {
                   </div>
                   <p className="text-gray-700 leading-relaxed">
                     "{review.comment}"
-                  </p> {/* Thêm padding-left để thụt vào */}
+                  </p>
 
                   <div className="text-sm text-gray-500 mt-2 text-right">
                     Đánh giá vào:{' '}
@@ -769,19 +796,19 @@ const ProductDetail: React.FC = () => {
                       {review.replies.map((reply) => (
                         <div
                           key={reply._id}
-                          className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm flex items-start space-x-3" // Giảm padding
+                          className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm flex items-start space-x-3"
                         >
                           <FaBuilding className="text-blue-600 text-2xl mt-1" /> {/* Icon admin/công ty */}
                           <div className="flex-1">
                             <div className="flex items-center justify-between text-sm mb-1">
                               <span className="font-bold text-blue-800">
-                                Phản hồi từ Quản trị viên ({reply.admin?.name || 'Cửa hàng'}) {/* Giữ tên Lương nếu không có admin.name */}
+                                Phản hồi từ Quản trị viên ({reply.admin?.name || 'Cửa hàng'})
                               </span>
                               <span className="text-gray-600">
                                 {new Date(reply.createdAt).toLocaleDateString('vi-VN')}
                               </span>
                             </div>
-                            <p className="text-gray-800 italic leading-snug">{reply.content}</p> {/* Thụt nội dung phản hồi */}
+                            <p className="text-gray-800 italic leading-snug">{reply.content}</p>
                           </div>
                         </div>
                       ))}
