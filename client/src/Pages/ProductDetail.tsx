@@ -295,6 +295,13 @@ const ProductDetail: React.FC = () => {
       setQuantity('1');
       return;
     }
+    if (parsedQty > (selectedVariation.stockQuantity || 0)) {
+      toast.error(
+        `Số lượng vượt quá tồn kho (${selectedVariation.stockQuantity} đơn vị)!`,
+        { autoClose: 1000 }
+      );
+      return;
+    }
     setIsUpdating(true);
     try {
       const imageUrl = getImageUrl(selectedVariation.colorImageUrl);
@@ -304,13 +311,16 @@ const ProductDetail: React.FC = () => {
           salePrice: selectedVariation.salePrice ?? 0,
           finalPrice: selectedVariation.finalPrice ?? 0,
           colorImageUrl: imageUrl,
-          name1: selectedVariation.name,
-          material:
-            typeof selectedVariation.material === 'object'
-              ? selectedVariation.material.name
-              : selectedVariation.material,
-          color: selectedVariation.colorName || 'Không xác định',
+          name: selectedVariation.name,
+          material: {
+            name:
+              typeof selectedVariation.material === 'object'
+                ? selectedVariation.material.name
+                : selectedVariation.material,
+          },
+          colorName: selectedVariation.colorName || 'Không xác định',
           stockQuantity: selectedVariation.stockQuantity || 0,
+          productId: selectedVariation._id, // Thêm productId để backend kiểm tra
         },
         quantity: parsedQty,
       };
@@ -324,6 +334,7 @@ const ProductDetail: React.FC = () => {
           selectedItems: [selectedVariation._id],
           cartItems: [checkedItem],
           totalPrice,
+          isDirectPurchase: true, // Thêm flag để báo hiệu mua trực tiếp
         },
       });
     } finally {
