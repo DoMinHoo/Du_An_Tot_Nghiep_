@@ -191,11 +191,13 @@ exports.getReviewsByProduct = async (req, res) => {
       product: req.params.productId,
       visible: true, // Chỉ lấy đánh giá đang hiển thị
     })
-      .populate("user", "name")
-      .sort({ createdAt: -1 });
+      .populate("user", "name avatar") // Lấy tên và avatar của người dùng
+      .populate("replies.admin", "name") // ✨ Dòng này rất quan trọng để lấy tên admin trả lời
+      .sort({ createdAt: -1 }); // Sắp xếp theo thời gian mới nhất
 
     res.status(200).json(reviews);
   } catch (err) {
+    console.error("❌ Lỗi khi lấy đánh giá sản phẩm:", err); // Thêm log lỗi chi tiết
     res.status(500).json({
       message: "Không thể lấy đánh giá",
       error: err.message,
