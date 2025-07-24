@@ -51,6 +51,7 @@ const CheckoutPage: React.FC = () => {
     selectedItems?: string[];
     cartItems?: any[];
     totalPrice?: number;
+    isDirectPurchase?: boolean;
   };
 
   useEffect(() => {
@@ -91,13 +92,18 @@ const CheckoutPage: React.FC = () => {
   const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
   const [initCartItems] = useState(() => passedState?.cartItems || undefined);
   const [initTotalPrice] = useState(() => passedState?.totalPrice);
+  const [isDirectPurchase] = useState(
+    () => passedState?.isDirectPurchase || false
+  );
 
   const fallbackCart = data?.data?.cart;
   const fallbackTotalPrice = data?.data?.totalPrice || 0;
 
   const selectedItems = initSelectedItems;
-  const cartItems = initCartItems ?? fallbackCart?.items ?? [];
-  const totalPrice = initTotalPrice ?? fallbackTotalPrice; // Xóa shippingFee
+  const cartItems = isDirectPurchase
+    ? initCartItems
+    : initCartItems ?? fallbackCart?.items ?? [];
+  const totalPrice = initTotalPrice ?? fallbackTotalPrice;
 
   const orderMutation = useMutation({
     mutationFn: (orderData: any) => createOrder(orderData, token, guestId),
@@ -242,12 +248,13 @@ const CheckoutPage: React.FC = () => {
     }
     if (!finalEmail) finalEmail = 'guest@example.com';
 
-    if (!fallbackCart || !fallbackCart._id) {
-      toast.error('Không tìm thấy giỏ hàng. Vui lòng thử lại.');
-      return;
-    }
-
     try {
+      const items = cartItems.map((item: any) => ({
+        variationId: item.variationId._id,
+        quantity: item.quantity,
+        salePrice: item.variationId.salePrice || item.variationId.finalPrice,
+      }));
+
       const orderData = {
         shippingAddress: {
           fullName,
@@ -260,11 +267,12 @@ const CheckoutPage: React.FC = () => {
           ward,
         },
         paymentMethod,
-        cartId: fallbackCart._id,
+        cartId: isDirectPurchase ? null : fallbackCart?._id, // Gửi null nếu là mua trực tiếp
         couponCode: couponCode || undefined,
-        finalAmount: finalAmountWithShipping, // Gửi tổng tiền đã cộng phí vận chuyển
-        shippingFee, // lưu phí vận chuyển thực tế
-        selectedItems, // Đảm bảo gửi selectedItems
+        finalAmount: finalAmountWithShipping,
+        shippingFee,
+        selectedItems: isDirectPurchase ? selectedItems : selectedItems, // Đảm bảo gửi đúng selectedItems
+        items,
       };
 
       sessionStorage.setItem(
@@ -291,7 +299,7 @@ const CheckoutPage: React.FC = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              amount: finalAmountWithShipping, // Sử dụng tổng tiền đã cộng phí vận chuyển
+              amount: finalAmountWithShipping,
             }),
           }
         );
@@ -323,8 +331,9 @@ const CheckoutPage: React.FC = () => {
         toast.success('Đặt hàng thành công!', { autoClose: 1500 });
         setTimeout(() => navigate('/thank-you'), 1600);
       }
-    } catch {
+    } catch (error) {
       toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
+      console.error('Lỗi handleSubmitOrder:', error);
     }
   };
 
@@ -703,13 +712,13 @@ const CheckoutPage: React.FC = () => {
                   />
                   <div className="  grid grid-cols-2  flex-11/12 jcontent-between items-center">
                     <div>
-                      <p className="font-medium">{item.variationId.name1}</p>
+                      <p className="font-medium">{item.variationId.name}</p>
                       <p className="text-gray-500 text-sm">
-                        {item.variationId.material}
+                        {item.variationId.material.name}
                       </p>
 
                       <p className="text-gray-500 text-sm">
-                        {item.variationId.color}
+                        {item.variationId.colorName}
                       </p>
                     </div>
                     <div className="flex justify-end items-center">
