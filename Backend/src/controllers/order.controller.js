@@ -487,13 +487,11 @@ exports.updateOrder = async (req, res) => {
             }
         });
 
-        // Gửi email thông báo cập nhật trạng thái
-        try {
-            await sendOrderStatusUpdateEmail(id, status, note);
-        } catch (emailError) {
-            console.error('Lỗi gửi email thông báo trạng thái:', emailError);
-            // Không trả về lỗi cho client, chỉ ghi log
-        }
+        // Gửi email thông báo cập nhật trạng thái bất đồng bộ
+        sendOrderStatusUpdateEmail(id, status, note)
+            .catch((emailError) => {
+                console.error('Lỗi gửi email thông báo trạng thái:', emailError);
+            });
 
         return res.status(200).json({
             success: true,
@@ -505,7 +503,6 @@ exports.updateOrder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
     }
 };
-
 
 
 // Xóa đơn hàng
