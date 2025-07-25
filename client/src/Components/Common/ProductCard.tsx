@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+// import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { fetchVariations } from '../../services/apiService';
@@ -23,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [loading, setLoading] = useState(true);
   const [hasVariations, setHasVariations] = useState<boolean | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);;
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -92,6 +93,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       });
     }
   }, [showSuccessToast]);
+
+   // Kiểm tra xem sản phẩm đã yêu thích chưa
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setIsFavorite(favorites.includes(product._id));
+  }, [product._id]);
+
+  // Toggle yêu thích
+  const toggleFavorite = () => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    let updatedFavorites;
+
+    if (favorites.includes(product._id)) {
+      updatedFavorites = favorites.filter((id: string) => id !== product._id);
+      setIsFavorite(false);
+    } else {
+      updatedFavorites = [...favorites, product._id];
+      setIsFavorite(true);
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  };
+
 
   // Hiển thị giao diện loading
   if (loading) {
@@ -195,6 +219,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </del>
           )}
         </div>
+      </div>
+      {/* Nút yêu thích ở góc dưới bên phải card */}
+      <div className="absolute bottom-3 right-3 z-20">
+        <button
+          onClick={toggleFavorite}
+          className="bg-white rounded-full p-2 shadow hover:bg-gray-100 transition-colors"
+          title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+        >
+          {isFavorite ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 fill-current" viewBox="0 0 20 20">
+              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   );
