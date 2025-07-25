@@ -158,7 +158,7 @@ const CartItemComponent: React.FC<CartItemProps> = ({
             onChange={handleQuantityChange}
             onBlur={handleQuantitySubmit}
             onKeyDown={handleKeyDown}
-            className="w-10 text-center border-x border-x-1 outline-none text-sm py-1"
+            className="w-10 text-center border-x outline-none text-sm py-1"
             aria-label="Số lượng"
           />
           <button
