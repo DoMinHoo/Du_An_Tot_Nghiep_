@@ -5,6 +5,7 @@ import { FaSearch, FaShoppingCart, FaUser } from 'react-icons/fa';
 import { IoIosArrowDown } from 'react-icons/io';
 import axios from 'axios';
 import logo from '../Common/img/Logo/image 15.png';
+import NotificationBell from './NotificationBell';
 
 interface Category {
   _id: string;
@@ -58,7 +59,8 @@ const Header: React.FC = () => {
     sessionStorage.removeItem('guestId');
     setUser(null);
     setOpenUserDropdown(false);
-    navigate('/');
+    navigate(`/`);
+    window.location.reload();
   };
 
   const handleSearch = () => {
@@ -94,6 +96,7 @@ const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-600">
+
           {user ? (
             <div className="relative">
               <button onClick={() => setOpenUserDropdown(!openUserDropdown)} className="flex items-center gap-1">
@@ -101,7 +104,7 @@ const Header: React.FC = () => {
                 <IoIosArrowDown className="text-xs mt-1" />
               </button>
               {openUserDropdown && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+                <div className="absolute right-0 top-full mt-2  w-40 bg-white border shadow-lg rounded z-50">
                   <div
                     onClick={() => {
                       navigate('/order-history');
@@ -132,6 +135,10 @@ const Header: React.FC = () => {
           <Link to="/cart" className="flex items-center gap-1">
             <FaShoppingCart className="text-lg" /> Giỏ hàng
           </Link>
+          <div className='ml-10 relative'>
+            <NotificationBell />
+          </div>
+
         </div>
       </div>
 
@@ -148,9 +155,8 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${
-                openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
-              }`}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+                }`}
             >
               {categories.map((cat) => (
                 <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-2 hover:bg-gray-100">
