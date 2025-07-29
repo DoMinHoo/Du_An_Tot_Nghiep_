@@ -41,7 +41,6 @@ const SalePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4">Sản phẩm khuyến mãi</h1>
       {/* Sản phẩm có ngày/giờ khuyến mãi */}
       {timedSaleProducts.length > 0 && (
         <SaleProductSection title="Khuyến mãi Hot" products={timedSaleProducts} />
