@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+
 import {
   Button,
   Layout,
@@ -6,6 +7,7 @@ import {
   Space,
   Table,
   message,
+  Input,
 } from "antd";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCategory, getCategories } from "../../Services/categories.service";
@@ -16,13 +18,17 @@ const { Content } = Layout;
 const CategoryManager: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
+  const [searchText, setSearchText] = useState(""); // lọc
   // Lấy danh sách danh mục
   const { data = [], isLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
   });
 
+    // Lọc dữ liệu theo tên danh mục
+  const filteredData = data.filter((item: any) =>
+    item.name?.toLowerCase().includes(searchText.toLowerCase())
+  );
   // Mutation xoá danh mục
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
@@ -83,7 +89,13 @@ const CategoryManager: React.FC = () => {
 
   return (
     <Content style={{ padding: 24, background: "#fff" }}>
-      <div style={{ marginBottom: 16 }}>
+         <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <Input.Search
+        placeholder="Tìm theo tên danh mục"//lọc
+        allowClear
+        onChange={(e) => setSearchText(e.target.value)}
+        style={{ maxWidth: 300 }}
+      /> 
         <Link to="/admin/categories/create">
           <Button type="primary">Thêm danh mục</Button>
         </Link>
@@ -92,7 +104,7 @@ const CategoryManager: React.FC = () => {
       <Table
         rowKey="_id"
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}// loc
         loading={isLoading}
       />
     </Content>

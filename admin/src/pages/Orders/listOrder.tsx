@@ -10,11 +10,13 @@ import {
   Spin,
   Tag,
   Tooltip,
+  Select,
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getOrders, deleteOrder } from "../../Services/orders.service";
 
 const { Content } = Layout;
+const { Option } = Select; // lọc
 
 interface ShippingAddress {
   fullName: string;
@@ -74,6 +76,7 @@ const OrderManager: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");//lọc
 
   useEffect(() => {
     fetchOrders();
@@ -121,11 +124,16 @@ const OrderManager: React.FC = () => {
     navigate(`/admin/orders/${orderId}`);
   };
 
-  const filteredOrders = orders.filter(
-    (order) =>
+  // Bộ lọc đơn hàng theo tìm kiếm + trạng thái
+  const filteredOrders = orders.filter((order) => {
+    const matchSearch =
       order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shippingAddress.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      order.shippingAddress.fullName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchStatus = selectedStatus === "all" || order.status === selectedStatus;
+
+    return matchSearch && matchStatus;
+  });
 
   const columns = [
     {
@@ -245,31 +253,50 @@ const OrderManager: React.FC = () => {
           </Popconfirm>
         </Space>
       ),
-    },
+    }, 
   ];
 
   return (
     <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-      <Input
-        placeholder="Tìm kiếm đơn hàng..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{ width: 300, marginBottom: 16 }}
-      />
-      <div>
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "50px 0" }}>
-            <Spin tip="Đang tải đơn hàng..." size="large" />
-          </div>
-        ) : (
-          <Table
-            dataSource={filteredOrders}
-            columns={columns}
-            rowKey={(record) => record._id}
-            pagination={{ pageSize: 5, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }}
-          />
-        )}
-      </div>
+      <Space style={{ marginBottom: 16, display: "flex", flexWrap: "wrap" }}>
+        <Input
+          placeholder="Tìm theo mã đơn hàng hoặc tên khách..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: 300 }}
+        />
+        <Select
+          placeholder="Lọc theo trạng thái"
+          value={selectedStatus}
+          onChange={setSelectedStatus}
+          style={{ width: 200 }}
+          allowClear={false}
+        >
+          <Option value="all">Tất cả</Option>
+          <Option value="pending">Chờ xác nhận</Option>
+          <Option value="confirmed">Đã xác nhận</Option>
+          <Option value="shipping">Đang giao</Option>
+          <Option value="completed">Đã giao</Option>
+          <Option value="canceled">Đã hủy</Option>
+        </Select>
+      </Space>
+
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "50px 0" }}>
+          <Spin tip="Đang tải đơn hàng..." size="large" />
+        </div>
+      ) : (
+        <Table
+          dataSource={filteredOrders}
+          columns={columns}
+          rowKey={(record) => record._id}
+          pagination={{
+            pageSize: 5,
+            showSizeChanger: true,
+            pageSizeOptions: ["5", "10", "20", "50"],
+          }}
+        />
+      )}
     </Content>
   );
 };
