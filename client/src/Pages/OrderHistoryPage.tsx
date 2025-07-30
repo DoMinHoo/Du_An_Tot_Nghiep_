@@ -287,7 +287,7 @@ const OrderHistoryPage: React.FC = () => {
 
                 </div>
 
-                {order.status === 'pending' && (
+                {order.status === 'pending' && order.paymentStatus === 'pending' && (
                   <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
                     {order.paymentMethod === 'online_payment' && (
                       <button

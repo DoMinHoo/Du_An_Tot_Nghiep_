@@ -290,7 +290,7 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
             }
         } else {
             order.paymentStatus = "pending";
-            order.status = "canceled";
+            order.status = "pending";
         }
 
         await order.save();

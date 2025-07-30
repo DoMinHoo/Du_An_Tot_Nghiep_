@@ -169,7 +169,7 @@ const Header: React.FC = () => {
             ref={dropdownRef}
           >
             <div className="flex items-center gap-1 hover:font-semibold">
-              <Link to="/categories">Danh mục Sản phẩm</Link>
+              <Link to="/categories">Danh mục</Link>
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
@@ -197,9 +197,8 @@ const Header: React.FC = () => {
                   {/* Submenu cho danh mục con */}
                   {cat.children && cat.children.length > 0 && (
                     <div
-                      className={`absolute top-0 left-full ml-1 w-48 bg-white border shadow-md z-20 transition-all duration-300 transform origin-left ${
-                        openSubmenuId === cat._id ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'
-                      }`}
+                      className={`absolute top-0 left-full ml-1 w-48 bg-white border shadow-md z-20 transition-all duration-300 transform origin-left ${openSubmenuId === cat._id ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'
+                        }`}
                     >
                       {cat.children.map((childCat) => (
                         <Link
