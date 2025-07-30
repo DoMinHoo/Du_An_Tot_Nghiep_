@@ -294,8 +294,8 @@ exports.createOrder = async (req, res) => {
                     note: cartId ? "Đơn hàng được tạo từ giỏ hàng" : "Đơn hàng được tạo trực tiếp",
                 },
             ],
-        }],},);
-    
+        },);
+
         // Giảm tồn kho
         for (const item of orderItems) {
             await ProductVariation.findByIdAndUpdate(item.variationId, {
