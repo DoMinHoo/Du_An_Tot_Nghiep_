@@ -15,7 +15,6 @@ import {
   message,
   Card,
   Tooltip,
-  Input, // ⬅️ thêm
 } from 'antd';
 import {
   PlusOutlined,
@@ -26,9 +25,6 @@ import {
   fetchPromotions,
   deletePromotion,
 } from '../../Services/promotion.service';
-
-// ⬅️ thêm
-import { useMemo, useState } from 'react';
 
 const { Title } = Typography;
 
@@ -61,45 +57,6 @@ const ListPromotion: React.FC = () => {
       style: 'currency',
       currency: 'VND',
     });
-
-  // ======= Thêm: Tìm kiếm 1 ô cho mã, loại, giới hạn =======
-  const [searchText, setSearchText] = useState('');
-
-  const normalize = (str?: string) =>
-    (str ?? '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-
-  const filteredData = useMemo(() => {
-    if (!searchText) return data;
-    const q = normalize(searchText);
-
-    // Hỗ trợ tìm theo: 'percentage' | 'phan tram' | 'phần trăm'
-    // và 'fixed' (ở đây là discountType khác 'percentage') | 'co dinh' | 'cố định' | 'vnd'
-    return (data ?? []).filter((p: any) => {
-      const code = normalize(p?.code);
-
-      const typeRaw: string = p?.discountType ?? '';
-      const typeLabel = typeRaw === 'percentage' ? 'phần trăm' : 'cố định';
-      const typeSearchStr = normalize(
-        `${typeRaw} ${typeLabel} ${typeRaw === 'percentage' ? '%' : 'vnd'}`
-      );
-
-      const limitVal = typeof p?.usageLimit === 'number' ? p.usageLimit : '';
-      const limitText =
-        limitVal === 0 ? 'không giới hạn' : String(limitVal);
-      const limitSearchStr = normalize(limitText);
-
-      return (
-        code.includes(q) ||
-        typeSearchStr.includes(q) ||
-        limitSearchStr.includes(q)
-      );
-    });
-  }, [data, searchText]);
-  // =========================================================
 
   const columns = [
     {
@@ -219,30 +176,20 @@ const ListPromotion: React.FC = () => {
       <Card
         title={<Title level={4}>🎁 Danh sách Mã Khuyến Mãi</Title>}
         extra={
-          <Space>
-            {/* ⬅️ Ô lọc 1 chỗ cho mã/loại/giới hạn */}
-            <Input
-              placeholder="Tìm theo mã, loại (phần trăm | cố định), giới hạn..."
-              allowClear
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 320 }}
-            />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/admin/promotions/create')}
-            >
-              Thêm mới
-            </Button>
-          </Space>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/admin/promotions/create')}
+          >
+            Thêm mới
+          </Button>
         }
         bordered
         style={{ borderRadius: 12 }}
       >
         <Table
           columns={columns}
-          dataSource={filteredData}
+          dataSource={data}
           rowKey="_id"
           pagination={{ pageSize: 8 }}
           scroll={{ x: 'max-content' }}
