@@ -7,10 +7,12 @@ import axios from 'axios';
 import logo from '../Common/img/Logo/image 15.png';
 import NotificationBell from './NotificationBell';
 
+// Cập nhật interface Category để bao gồm danh mục con
 interface Category {
   _id: string;
   name: string;
   slug: string;
+  children?: Category[]; // Danh mục con, là một mảng Category
 }
 
 const Header: React.FC = () => {
@@ -23,9 +25,13 @@ const Header: React.FC = () => {
   const [openUserDropdown, setOpenUserDropdown] = useState(false);
   let timeout: ReturnType<typeof setTimeout>;
 
+  // Thêm state để quản lý submenu nào đang mở
+  const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
+
   useEffect(() => {
+    // Thay đổi endpoint để lấy danh mục có con
     axios
-      .get('http://localhost:5000/api/categories')
+      .get('http://localhost:5000/api/categories/all/with-children')
       .then((res) => setCategories(res.data))
       .catch((err) => console.error('Lỗi lấy danh mục:', err));
   }, []);
@@ -50,8 +56,20 @@ const Header: React.FC = () => {
   const handleMouseLeave = () => {
     timeout = setTimeout(() => {
       setOpenDropdown(false);
+      setOpenSubmenuId(null); // Đóng tất cả submenu khi rời khỏi dropdown chính
     }, 200);
   };
+
+  // Hàm xử lý khi di chuột vào danh mục cha để mở submenu
+  const handleParentCategoryMouseEnter = (categoryId: string) => {
+    setOpenSubmenuId(categoryId);
+  };
+
+  // Hàm xử lý khi di chuột ra khỏi danh mục cha để đóng submenu
+  const handleParentCategoryMouseLeave = () => {
+    setOpenSubmenuId(null);
+  };
+
 
   const handleLogout = () => {
     sessionStorage.removeItem('currentUser');
@@ -159,9 +177,43 @@ const Header: React.FC = () => {
                 }`}
             >
               {categories.map((cat) => (
-                <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-2 hover:bg-gray-100">
-                  {cat.name}
-                </Link>
+                <div
+                  key={cat._id}
+                  className="relative"
+                  onMouseEnter={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseEnter(cat._id)}
+                  onMouseLeave={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseLeave()}
+                >
+                  <Link
+                    to={`/categories/${cat.slug}`}
+                    className="flex items-center justify-between px-4 py-2 hover:bg-gray-100"
+                    onClick={() => setOpenDropdown(false)} // Đóng dropdown khi click vào danh mục cha
+                  >
+                    {cat.name}
+                    {cat.children && cat.children.length > 0 && (
+                      <IoIosArrowDown className="text-xs rotate-[-90deg]" />
+                    )}
+                  </Link>
+
+                  {/* Submenu cho danh mục con */}
+                  {cat.children && cat.children.length > 0 && (
+                    <div
+                      className={`absolute top-0 left-full ml-1 w-48 bg-white border shadow-md z-20 transition-all duration-300 transform origin-left ${
+                        openSubmenuId === cat._id ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'
+                      }`}
+                    >
+                      {cat.children.map((childCat) => (
+                        <Link
+                          key={childCat._id}
+                          to={`/categories/${childCat.slug}`}
+                          className="block px-4 py-2 hover:bg-gray-100"
+                          onClick={() => { setOpenDropdown(false); setOpenSubmenuId(null); }} // Đóng cả hai dropdown khi click vào danh mục con
+                        >
+                          {childCat.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -171,7 +223,7 @@ const Header: React.FC = () => {
           <Link to="/contact" className="hover:font-semibold">Liên hệ</Link>
           <Link to="/about" className="hover:font-semibold">Giới thiệu</Link>
           <Link to="/showroom" className="hover:font-semibold">Showroom</Link>
-           <Link to="/favorites" className="hover:font-semibold flex items-center gap-1">
+          <Link to="/favorites" className="hover:font-semibold flex items-center gap-1">
             Sản phẩm yêu thích
           </Link>
         </div>
