@@ -163,60 +163,60 @@ const Header: React.FC = () => {
       <nav className="bg-white text-sm relative">
         <div className="container mx-auto px-4 py-3 mb-3 flex gap-8 text-black text-base">
           <div
-    className="relative cursor-pointer"
-    onMouseEnter={handleMouseEnter}
-    onMouseLeave={handleMouseLeave}
-    ref={dropdownRef}
->
-    <div className="flex items-center gap-2 text-gray-800">
-        <Link to="/categories" className="hover:font-semibold">Sản phẩm</Link>
-        
-    </div>
-    <div
-        className={`absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
-            }`}
-    >
-        {categories.map((cat) => (
+            className="relative cursor-pointer"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            ref={dropdownRef}
+          >
+            <div className="flex items-center gap-1 hover:font-semibold">
+              <Link to="/categories">Danh mục Sản phẩm</Link>
+              <IoIosArrowDown className="text-xs mt-[2px]" />
+            </div>
             <div
-                key={cat._id}
-                className="relative"
-                onMouseEnter={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseEnter(cat._id)}
-                onMouseLeave={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseLeave()}
+              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+                }`}
             >
-                <Link
-                    to={`/categories/${cat.slug}`}
-                    className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100" // Comment đã được xóa khỏi đây
-                    onClick={() => setOpenDropdown(false)}
+              {categories.map((cat) => (
+                <div
+                  key={cat._id}
+                  className="relative"
+                  onMouseEnter={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseEnter(cat._id)}
+                  onMouseLeave={() => cat.children && cat.children.length > 0 && handleParentCategoryMouseLeave()}
                 >
+                  <Link
+                    to={`/categories/${cat.slug}`}
+                    className="flex items-center justify-between px-4 py-2 hover:bg-gray-100"
+                    onClick={() => setOpenDropdown(false)} // Đóng dropdown khi click vào danh mục cha
+                  >
                     {cat.name}
                     {cat.children && cat.children.length > 0 && (
-                        <IoIosArrowDown className="text-xs" />
+                      <IoIosArrowDown className="text-xs rotate-[-90deg]" />
                     )}
-                </Link>
+                  </Link>
 
-                {/* Submenu cho danh mục con */}
-                {cat.children && cat.children.length > 0 && (
+                  {/* Submenu cho danh mục con */}
+                  {cat.children && cat.children.length > 0 && (
                     <div
-                        className={`absolute top-0 left-full ml-0.5 w-48 bg-white border border-gray-200 shadow-md z-20 transition-all duration-300 transform origin-left ${
-                            openSubmenuId === cat._id ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'
-                        }`}
+                      className={`absolute top-0 left-full ml-1 w-48 bg-white border shadow-md z-20 transition-all duration-300 transform origin-left ${
+                        openSubmenuId === cat._id ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'
+                      }`}
                     >
-                        {cat.children.map((childCat) => (
-                            <Link
-                                key={childCat._id}
-                                to={`/categories/${childCat.slug}`}
-                                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                onClick={() => { setOpenDropdown(false); setOpenSubmenuId(null); }}
-                            >
-                                {childCat.name}
-                            </Link>
-                        ))}
+                      {cat.children.map((childCat) => (
+                        <Link
+                          key={childCat._id}
+                          to={`/categories/${childCat.slug}`}
+                          className="block px-4 py-2 hover:bg-gray-100"
+                          onClick={() => { setOpenDropdown(false); setOpenSubmenuId(null); }} // Đóng cả hai dropdown khi click vào danh mục con
+                        >
+                          {childCat.name}
+                        </Link>
+                      ))}
                     </div>
-                )}
+                  )}
+                </div>
+              ))}
             </div>
-        ))}
-    </div>
-</div>
+          </div>
 
           <Link to="/sales" className="hover:font-semibold">Khuyến mãi</Link>
           <Link to="/news" className="hover:font-semibold">Tin tức</Link>
