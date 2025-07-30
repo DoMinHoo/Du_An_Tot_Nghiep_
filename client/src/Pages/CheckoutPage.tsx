@@ -83,10 +83,10 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
-    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
-    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-  ];
+      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+    ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
   const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
@@ -328,8 +328,7 @@ const CheckoutPage: React.FC = () => {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
       } else {
-        toast.success('Đặt hàng thành công!', { autoClose: 1500 });
-        setTimeout(() => navigate('/thank-you'), 1600);
+        setTimeout(() => { navigate('/thank-you'); window.location.reload(); }, 1600);
       }
     } catch (error) {
       toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
@@ -643,9 +642,9 @@ const CheckoutPage: React.FC = () => {
                   onChange={(e) =>
                     setPaymentMethod(
                       e.target.value as
-                        | 'cod'
-                        | 'bank_transfer'
-                        | 'online_payment'
+                      | 'cod'
+                      | 'bank_transfer'
+                      | 'online_payment'
                     )
                   }
                   className="mr-2"
@@ -723,8 +722,8 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <div className="flex justify-end items-center">
                       {item.variationId.finalPrice !== 0 &&
-                      item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice <
+                        item.variationId.salePrice !== 0 &&
+                        item.variationId.salePrice <
                         item.variationId.finalPrice ? (
                         <p className="font-semibold">
                           {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
@@ -789,11 +788,10 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
-                        disabled
-                          ? 'opacity-50 bg-gray-100'
-                          : 'hover:bg-blue-50 hover:border-blue-300'
-                      }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
+                        ? 'opacity-50 bg-gray-100'
+                        : 'hover:bg-blue-50 hover:border-blue-300'
+                        }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -817,9 +815,8 @@ const CheckoutPage: React.FC = () => {
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${
-                              isExpired ? 'text-red-500' : 'text-gray-600'
-                            }`}
+                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
+                              }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(

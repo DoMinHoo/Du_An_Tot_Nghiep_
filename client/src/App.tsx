@@ -26,6 +26,7 @@ import NewsDetailPage from './Pages/NewsDetailPage';
 import NewsPage from './Pages/NewsPage';
 import SearchPage from './Pages/SearchPage';
 import ProductsPage from './Pages/ProductPage';
+import FavoriteProductsPage from './Pages/FavoriteProductsPage';
 
 
 
@@ -79,6 +80,7 @@ function App() {
         <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/sales" element={<SalePage />} />
+        <Route path="/favorites" element={<FavoriteProductsPage />} />
 
 
         <Route path="/news" element={<NewsPage />} />

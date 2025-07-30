@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+// import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { fetchVariations } from '../../services/apiService';
@@ -23,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [loading, setLoading] = useState(true);
   const [hasVariations, setHasVariations] = useState<boolean | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);;
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // Lấy token hoặc guestId từ sessionStorage
   const token = sessionStorage.getItem('token') || undefined;
@@ -93,6 +94,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
   }, [showSuccessToast]);
 
+   // Kiểm tra xem sản phẩm đã yêu thích chưa
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setIsFavorite(favorites.includes(product._id));
+  }, [product._id]);
+
+  // Toggle yêu thích
+  const toggleFavorite = () => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    let updatedFavorites;
+
+    if (favorites.includes(product._id)) {
+      updatedFavorites = favorites.filter((id: string) => id !== product._id);
+      setIsFavorite(false);
+    } else {
+      updatedFavorites = [...favorites, product._id];
+      setIsFavorite(true);
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  };
+
+
   // Hiển thị giao diện loading
   if (loading) {
     return (
@@ -147,6 +171,65 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     : false;
 
+  // --- Logic hiển thị số sao và đánh giá ---
+  const averageRating = product.averageRating || 0; // Đảm bảo có giá trị mặc định
+  const totalReviews = product.totalReviews || 0; // Đảm bảo có giá trị mặc định
+
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0; // Kiểm tra có phần thập phân
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(
+        <svg
+          key={`full-${i}`}
+          className="w-4 h-4 text-yellow-400"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+        </svg>
+      );
+    }
+    if (hasHalfStar) {
+      stars.push(
+        <svg
+          key="half"
+          className="w-4 h-4 text-yellow-400"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Định nghĩa gradient cho sao nửa ở đây */}
+          <defs>
+            <linearGradient id="half-gradient">
+              <stop offset="50%" stopColor="currentColor" />
+              <stop offset="50%" stopColor="transparent" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" fill="url(#half-gradient)"></path>
+        </svg>
+      );
+    }
+    const remainingStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < remainingStars; i++) {
+      stars.push(
+        <svg
+          key={`empty-${i}`}
+          className="w-4 h-4 text-gray-300" // Màu xám cho sao rỗng
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+        </svg>
+      );
+    }
+    return stars;
+  };
+
   return (
     <div className="relative w-full max-w-[300px] bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <ToastContainer />
@@ -195,6 +278,39 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </del>
           )}
         </div>
+        {/* HIỂN THỊ SỐ SAO TRUNG BÌNH VÀ TỔNG SỐ ĐÁNH GIÁ */}
+        <div className="flex items-center mt-1 text-sm text-gray-600">
+          <div className="flex -space-x-1 rtl:space-x-reverse">
+            {renderStars(averageRating)}
+          </div>
+          <span className="ms-1 font-medium text-gray-500">
+            {averageRating.toFixed(1)}
+          </span>
+          <span className="w-1 h-1 mx-1.5 bg-gray-500 rounded-full dark:bg-gray-400"></span>
+          {/* Đã bỏ class underline và hover:no-underline */}
+          <span className="text-gray-900">
+            {totalReviews === 0 ? 'Chưa có đánh giá' : `(${totalReviews})`}
+          </span>
+        </div>
+        {/* KẾT THÚC PHẦN HIỂN THỊ ĐÁNH GIÁ */}
+      </div>
+      {/* Nút yêu thích ở góc dưới bên phải card */}
+      <div className="absolute bottom-3 right-3 z-20">
+        <button
+          onClick={toggleFavorite}
+          className="bg-white rounded-full p-2 shadow hover:bg-gray-100 transition-colors"
+          title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+        >
+          {isFavorite ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 fill-current" viewBox="0 0 20 20">
+              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   );
