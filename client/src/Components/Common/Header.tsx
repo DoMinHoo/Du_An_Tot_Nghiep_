@@ -145,26 +145,28 @@ const Header: React.FC = () => {
       <nav className="bg-white text-sm relative">
         <div className="container mx-auto px-4 py-3 mb-3 flex gap-8 text-black text-base">
           <div
-            className="relative cursor-pointer"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            ref={dropdownRef}
-          >
-            <div className="flex items-center gap-1 hover:font-semibold">
-              <Link to="/categories">Danh mục Sản phẩm</Link>
-              <IoIosArrowDown className="text-xs mt-[2px]" />
-            </div>
-            <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
-                }`}
-            >
-              {categories.map((cat) => (
-                <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-2 hover:bg-gray-100">
-                  {cat.name}
-                </Link>
-              ))}
-            </div>
-          </div>
+            className="relative cursor-pointer"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            ref={dropdownRef}
+          >
+            <div className="flex items-center gap-1 hover:font-semibold">
+              <Link to="/categories">Sản phẩm</Link>
+              <IoIosArrowDown className="text-xs mt-[2px]" />
+            </div>
+            <div
+              className={`absolute top-full left-0 mt-2 w-48 bg-white shadow-md z-10 transition-all duration-300 transform origin-top 
+                  max-h-60 overflow-y-auto  // <--- Thêm hai class này
+                  ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+                }`}
+            >
+              {categories.map((cat) => (
+                <Link key={cat._id} to={`/categories/${cat.slug}`} className="block px-4 py-3 hover:bg-gray-100">
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+          </div>
 
           <Link to="/sales" className="hover:font-semibold">Khuyến mãi</Link>
           <Link to="/news" className="hover:font-semibold">Tin tức</Link>
