@@ -11,7 +11,7 @@ const Product = require('../models/products.model');
 const User = require('../models/user.model');
 const { sendPaymentSuccessEmail, sendOrderSuccessEmail ,sendOrderStatusUpdateEmail} = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
 
-const generateAppTransId = () => `txn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
 
 // Tạo mã đơn hàng ngẫu nhiên
 const generateOrderCode = () => {
@@ -290,7 +290,7 @@ exports.getOrders = async (req, res) => {
         userId: req.user?.userId || null,
         cartId: cartId || null,
         orderCode: generateOrderCode(),
-        app_trans_id: generateAppTransId(),
+      
         customerName: fullName,
         phone,
         email,
