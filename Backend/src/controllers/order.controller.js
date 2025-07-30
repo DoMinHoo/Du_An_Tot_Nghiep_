@@ -11,7 +11,7 @@ const Product = require('../models/products.model');
 const User = require('../models/user.model');
 const { sendPaymentSuccessEmail, sendOrderSuccessEmail, sendOrderStatusUpdateEmail } = require('../untils/sendPaymentSuccessEmail'); // Sửa lại impor
 const Notification = require('../models/notification');
-
+const generateAppTransId = () => `txn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
 // Tạo mã đơn hàng ngẫu nhiên
 const generateOrderCode = () => {
@@ -277,6 +277,7 @@ exports.createOrder = async (req, res) => {
             userId: user?.userId || null,
             cartId: cartId || null,
             orderCode: generateOrderCode(),
+            app_trans_id: generateAppTransId(),
             customerName: fullName,
             phone,
             email,
@@ -293,8 +294,8 @@ exports.createOrder = async (req, res) => {
                     note: cartId ? "Đơn hàng được tạo từ giỏ hàng" : "Đơn hàng được tạo trực tiếp",
                 },
             ],
-        });
-
+        }],},);
+    
         // Giảm tồn kho
         for (const item of orderItems) {
             await ProductVariation.findByIdAndUpdate(item.variationId, {
