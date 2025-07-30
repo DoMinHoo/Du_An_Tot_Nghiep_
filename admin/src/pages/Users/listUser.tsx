@@ -1,11 +1,13 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Tag, Space, Button, message, Popconfirm, Input } from 'antd';
+
+import React, { useEffect, useState } from 'react';
+import { Table, Tag, Space, Button, message, Popconfirm } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
 interface Role {
   name: string;
 }
+
 
 interface User {
   _id: string;
@@ -22,70 +24,59 @@ interface User {
 const fakeUsers: User[] = [
   {
     key: '1',
-    _id: '1',
+    id: 1,
     name: 'Nguyễn Văn A',
     phone: '0901234567',
     email: 'a.nguyen@example.com',
-    roleId: { name: 'admin' },
+    role: 'admin',
     status: 'active',
     address: 'Hà Nội',
-    gender: 'male',
-    dateBirth: '1990-01-01',
   },
   {
     key: '2',
-    _id: '2',
+    id: 2,
     name: 'Trần Thị B',
     phone: '0912345678',
     email: 'b.tran@example.com',
-    roleId: { name: 'custom' },
+    role: 'custom',
     status: 'inactive',
     address: 'TP. Hồ Chí Minh',
-    gender: 'female',
-    dateBirth: '1992-02-02',
   },
   {
     key: '3',
-    _id: '3',
+    id: 3,
     name: 'Lê Văn C',
     phone: '0923456789',
     email: 'c.le@example.com',
-    roleId: { name: 'custom' },
+    role: 'custom',
     status: 'active',
     address: 'Đà Nẵng',
-    gender: 'male',
-    dateBirth: '1993-03-03',
   },
   {
     key: '4',
-    _id: '4',
+    id: 4,
     name: 'Phạm Thị D',
     phone: '0934567890',
     email: 'd.pham@example.com',
-    roleId: { name: 'custom' },
+    role: 'custom',
     status: 'inactive',
     address: 'Cần Thơ',
-    gender: 'female',
-    dateBirth: '1994-04-04',
   },
   {
     key: '5',
-    _id: '5',
+    id: 5,
     name: 'Đỗ Văn E',
     phone: '0945678901',
     email: 'e.do@example.com',
-    roleId: { name: 'admin' },
+    role: 'admin',
     status: 'active',
     address: 'Hải Phòng',
-    gender: 'male',
-    dateBirth: '1995-05-05',
   },
 ];
 
 const ListUser: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchText, setSearchText] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -96,42 +87,24 @@ const ListUser: React.FC = () => {
       message.error('Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
+
     }
   };
-
   const toggleStatus = async (id: string) => {
     try {
       const res = await axios.patch(`http://localhost:5000/api/users/${id}/toggle-status`);
+     
       message.success(res.data.message);
       fetchUsers();
     } catch (err: any) {
       message.error('Không thể cập nhật trạng thái người dùng');
     }
+
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  const normalize = (str?: string) =>
-    (str || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-
-  const filteredUsers = useMemo(() => {
-    if (!searchText) return users;
-    const q = normalize(searchText);
-    return users.filter((u) => {
-      return (
-        normalize(u.name).includes(q) ||
-        normalize(u.email).includes(q) ||
-        normalize(u.phone).includes(q) ||
-        normalize(u.address).includes(q)
-      );
-    });
-  }, [users, searchText]);
 
   const columns = [
     {
@@ -202,41 +175,33 @@ const ListUser: React.FC = () => {
       key: 'action',
       render: (_: any, record: User) => (
         <Space>
-          <Popconfirm
-            title={`Bạn có chắc chắn muốn ${record.status === 'active' ? 'khóa' : 'mở khóa'}?`}
-            onConfirm={() => toggleStatus(record._id)}
-          >
-            <Button>{record.status === 'active' ? 'Khóa' : 'Mở khóa'}</Button>
-          </Popconfirm>
+        <Popconfirm
+  title={`Bạn có chắc chắn muốn ${record.status === 'active' ? 'khóa' : 'mở khóa'}?`}
+  onConfirm={() => toggleStatus(record._id)}
+>
+  <Button>{record.status === 'active' ? 'Khóa' : 'Mở khóa'}</Button>
+</Popconfirm>
+
         </Space>
       ),
     },
   ];
 
   return (
+
     <div>
       <h2 style={{ marginBottom: 20 }}>Danh sách người dùng</h2>
-
-      <div style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Tìm theo tên, email, số điện thoại, địa chỉ..."
-          allowClear
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-      </div>
-
       <Table
         columns={columns}
-        dataSource={filteredUsers}
+        dataSource={users}
         rowKey="_id"
         loading={loading}
         bordered
         scroll={{ x: 1200 }}
       />
     </div>
+
   );
 };
- 
+
 export default ListUser;
- 

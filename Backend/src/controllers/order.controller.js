@@ -287,24 +287,6 @@ exports.createOrder = async (req, res) => {
 
         // Tạo đơn hàng
         const newOrder = new Order({
-
-        userId: req.user?.userId || null,
-        cartId: cartId || null,
-        orderCode: generateOrderCode(),
-      app_trans_id: generateAppTransId(),
-        customerName: fullName,
-        phone,
-        email,
-        totalAmount,
-        shippingFee: Number(shippingFee) || 0,
-        shippingAddress,
-        paymentMethod,
-        items: orderItems,
-        status: 'pending',
-        promotion: promotionInfo,
-        statusHistory: [
-            {
-
             userId: req.user?.userId || null,
             cartId: cartId || null,
             orderCode: generateOrderCode(),
@@ -317,7 +299,6 @@ exports.createOrder = async (req, res) => {
             shippingAddress,
             paymentMethod,
             items: orderItems,
-
             status: 'pending',
             promotion: promotionInfo,
             statusHistory: [
