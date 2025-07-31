@@ -1,13 +1,16 @@
+// src/Types/promotion.interface.ts
 export interface IPromotion {
-  _id?: string;
+  _id: string;
   code: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
-  minOrderValue?: number;
-  expiryDate?: string; // ISO date string
-  isActive?: boolean;
-  usageLimit?: number;
-  usedCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  expiryDate?: string;
+  isActive: boolean;
+  minOrderValue: number;
+  usageLimit: number;
+  usedCount: number;
+  isDeleted: boolean;
+  deletedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

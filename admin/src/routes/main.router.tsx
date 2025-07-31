@@ -40,6 +40,7 @@ import PostForm from '../pages/Post/PostForm';
 import EditPost from '../pages/Post/EditPost';
 import RestoreProduct from '../pages/Products/RestoreProduct';
 import DeletedCategoryManager from '../pages/Categories/DeletedCategoryManager';
+import DeletedPromotions from '../pages/Promotions/DeletedPromotions';
 
 const routes: RouteObject[] = [
   {
@@ -167,6 +168,10 @@ const routes: RouteObject[] = [
           {
             path: 'create',
             element: <CreatePromotion />,
+          },
+          {
+            path: 'deleted',
+            element: <DeletedPromotions />,
           },
         ],
       },
