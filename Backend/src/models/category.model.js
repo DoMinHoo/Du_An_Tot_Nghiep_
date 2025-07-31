@@ -15,6 +15,10 @@ const categorySchema = new mongoose.Schema({
         ref: 'Category',  // Tham chiếu đến bảng Category (self-reference)
         default: null,  // Nếu không có danh mục cha, giá trị mặc định là null
     },
+    isDeleted: {
+        type: Boolean,
+        default: false, // Mặc định là false (chưa bị xóa)
+    },
 
 }, {
     timestamps: true, // Tự động tạo createdAt & updatedAt
