@@ -4,7 +4,7 @@ const userController = require("../controllers/user.controller");
 const { protect } = require("../middlewares/auth.middleware");
 
 // API: Lấy thông tin profile
-router.get("/profile", protect, userController.getProfile);
+router.get("/profile", protect(), userController.getProfile);
 
 // API: Lấy danh sách người dùng
 router.get("/", userController.getAllUsers);

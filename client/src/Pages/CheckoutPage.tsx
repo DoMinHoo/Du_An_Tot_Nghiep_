@@ -14,6 +14,7 @@ import {
   getWards,
   calculateShippingFee,
 } from '../services/ghnService';
+import { fetchUserProfile } from '@/services/userService';
 
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -55,23 +56,42 @@ const CheckoutPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('shippingInfo');
-    if (saved) {
-      try {
-        const info = JSON.parse(saved);
-        setFullName(info.fullName || '');
-        setPhone(info.phone || '');
-        setEmail(info.email || '');
-        setProvince(info.province || '');
-        setDistrict(info.district || '');
-        setWard(info.ward || '');
-        setStreet(info.street || '');
-        setDetailAddress(info.detailAddress || '');
-      } catch (error) {
-        console.warn('Không thể đọc dữ liệu shippingInfo:', error);
-      }
+  const saved = sessionStorage.getItem('shippingInfo');
+  if (saved) {
+    try {
+      const info = JSON.parse(saved);
+      setFullName(info.fullName || '');
+      setPhone(info.phone || '');
+      setEmail(info.email || '');
+      setProvince(info.province || '');
+      setDistrict(info.district || '');
+      setWard(info.ward || '');
+      setStreet(info.street || '');
+      setDetailAddress(info.detailAddress || '');
+      return; // Nếu đã có thì không cần gọi API nữa
+    } catch (error) {
+      console.warn('Không thể đọc dữ liệu shippingInfo:', error);
     }
-  }, []);
+  }
+  // Nếu có token, gọi API lấy thông tin user
+  if (token) {
+    fetchUserProfile(token)
+      .then((user) => {
+        console.log('User profile:', user);
+        setFullName(user.name || user.fullName || '');
+        setPhone(user.phone || '');
+        setEmail(user.email || '');
+        setProvince(user.province || '');
+        setDistrict(user.district || '');
+        setWard(user.ward || '');
+        setStreet(user.street || '');
+        setDetailAddress(user.detailAddress || '');
+      })
+      .catch((err) => {
+        console.warn('Không lấy được thông tin user:', err);
+      });
+  }
+}, [token]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['cart'],
