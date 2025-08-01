@@ -89,10 +89,10 @@ export default function NotificationBell() {
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <div className="relative cursor-pointer">
+                <div className="relative cursor-pointer w-10 h-10 flex items-center justify-center">
                     <Bell />
                     {unreadCount > 0 && (
-                        <Badge className="absolute px-1 scroll-py-0 top-0 right-0 text-sm">
+                        <Badge className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                             {unreadCount}
                         </Badge>
                     )}
