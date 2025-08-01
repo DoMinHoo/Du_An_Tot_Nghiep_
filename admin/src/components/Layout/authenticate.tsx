@@ -1,24 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 type Props = {
-    children: React.ReactNode;
-    fallback: React.ReactNode;
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  requiredRole?: string;
 };
 
-const Authenticated = ({ children, fallback }: Props) => {
-    // Lấy user từ localStorage (tuỳ bạn lưu thế nào)
-    const userStr = localStorage.getItem("currentUser");
-    let user: any = null;
+const Authenticated = ({
+  children,
+  fallback,
+  requiredRole = "admin",
+}: Props) => {
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
     try {
-        user = userStr ? JSON.parse(userStr) : null;
+      const userStr = localStorage.getItem("currentUser");
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      const hasValidRole =
+        !!user &&
+        user.roleId &&
+        String(user.roleId).trim().toLowerCase() === requiredRole.toLowerCase();
+
+      setIsAuthenticated(hasValidRole);
     } catch {
-        user = null;
+      setIsAuthenticated(false);
+    } finally {
+      setIsChecking(false);
     }
+  }, [requiredRole]);
 
-    // Kiểm tra login và đúng role admin
-    const isAuthenticated = !!user && user.role && user.role.trim().toLowerCase() === "admin";
+  if (isChecking) {
+    return null;
+  }
 
-    return <>{isAuthenticated ? children : fallback}</>;
+  return <>{isAuthenticated ? children : fallback}</>;
 };
 
 export default Authenticated;
