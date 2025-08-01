@@ -1,5 +1,6 @@
 import {
   createBrowserRouter,
+  Navigate,
   Outlet,
   type RouteObject,
 } from 'react-router-dom';
@@ -41,20 +42,24 @@ import EditPost from '../pages/Post/EditPost';
 import RestoreProduct from '../pages/Products/RestoreProduct';
 import DeletedCategoryManager from '../pages/Categories/DeletedCategoryManager';
 import DeletedPromotions from '../pages/Promotions/DeletedPromotions';
+import Authenticated from '../components/Layout/authenticate';
 
 const routes: RouteObject[] = [
   {
     path: '/admin',
     element: (
-      // <Authenticated fallback={<Navigate to="/signin" replace />}>
-      <MainLayout>
-        <Outlet />
-      </MainLayout>
-      // {/* </Authenticated> */}
+      <Authenticated fallback={<Navigate to="/login" replace />}>
+        <MainLayout>
+          <Outlet />
+        </MainLayout>
+      </Authenticated>
     ),
     children: [
       {
         index: true,
+        element: <Navigate to="/admin/dashboard" replace />,
+      },
+      {
         path: 'dashboard',
         element: <Dashboard />,
       },

@@ -127,8 +127,8 @@ logger.warn(`Hợp nhất giỏ hàng thất bại: ${cartResponse.message}`);
       });
 
       setTimeout(() => {
-        navigate('/admin/products');
-      }, 1500);
+        navigate('/admin/dashboard', { replace: true });
+      }, 1600);
     } catch (err: any) {
       const errorMessage =
         err.message || 'Đăng nhập thất bại. Vui lòng thử lại!';
