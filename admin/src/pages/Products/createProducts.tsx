@@ -168,8 +168,8 @@ const AddProductPage: React.FC = () => {
           onFinish={handleFinish}
           initialValues={{ status: 'active', totalPurchased: 0 }}
         >
-          <Row gutter={16}>
-            <Col span={12}>
+          <Row gutter={30}>
+            <Col span={24}>
               <Form.Item
                 label="Tên sản phẩm"
                 name="name"
@@ -219,12 +219,11 @@ const AddProductPage: React.FC = () => {
                   modules={modules}
                   formats={formats}
                   placeholder="Nhập mô tả chi tiết sản phẩm..."
-                  style={{ height: '300px' }}
+                  style={{ height: '200px', marginBottom: '66px' }}
                 />
               </Form.Item>
             </Col>
-
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 label="Trạng thái"
                 name="status"

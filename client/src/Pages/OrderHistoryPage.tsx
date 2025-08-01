@@ -25,6 +25,13 @@ const OrderHistoryPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelReasonsMap, setCancelReasonsMap] = useState<Record<string, string>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20; // số đơn hàng trên mỗi trang
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, totalPages: 1 });
+
+  const totalPages = Math.ceil(orders.length / pageSize);
 
   const token = sessionStorage.getItem('token');
   const currentUser = useMemo(() => {
@@ -35,19 +42,26 @@ const OrderHistoryPage: React.FC = () => {
     }
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pageNumber = page) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/orders/user/${currentUser._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `http://localhost:5000/api/orders/user/${currentUser._id}?page=${pageNumber}&limit=${limit}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setOrders(res.data.data || []);
+      setPagination(res.data.pagination || { total: 0, page: 1, totalPages: 1 });
     } catch (error) {
       console.error('Lỗi khi lấy đơn hàng:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePage = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPage(newPage);
+      fetchOrders(newPage);
     }
   };
 
@@ -97,6 +111,11 @@ const OrderHistoryPage: React.FC = () => {
       toast.error('Hủy đơn hàng thất bại. Vui lòng thử lại sau.');
     }
   };
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return orders.slice(start, start + pageSize);
+  }, [orders, currentPage]);
 
   const handleRetryPayment = async (orderCode: string) => {
     try {
@@ -187,7 +206,7 @@ const OrderHistoryPage: React.FC = () => {
         <p>Chưa có đơn hàng nào.</p>
       ) : (
         <div className="space-y-6">
-          {orders.map((order) => {
+          {paginatedOrders.map((order) => {
             // Tính subtotal cho mỗi đơn hàng
             const subtotal = calculateSubtotal(order);
             // Tính discount amount dựa trên subtotal
@@ -339,6 +358,36 @@ const OrderHistoryPage: React.FC = () => {
               </div>
             );
           })}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center mt-6 space-x-2">
+              <button
+                onClick={() => handleChangePage(page - 1)}
+                disabled={page === 1}
+                className={`px-3 py-1 border rounded ${page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+              >
+                Trước
+              </button>
+
+              {Array.from({ length: pagination.totalPages }, (_, index) => index + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => handleChangePage(p)}
+                  className={`px-3 py-1 border rounded ${page === p ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}
+                >
+                  {p}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handleChangePage(page + 1)}
+                disabled={page === pagination.totalPages}
+                className={`px-3 py-1 border rounded ${page === pagination.totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+
         </div>
       )}
     </div>
