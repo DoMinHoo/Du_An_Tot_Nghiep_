@@ -24,7 +24,7 @@ interface PriceAndStockDetails {
   originalPrice: number;
   displayPrice: number;
   stockQuantity?: number;
-  discountPercentage: number | null;
+  discountPercentage: number | null; // 
 }
 
 const getPriceAndStockDetails = (
@@ -99,7 +99,9 @@ const ProductDetail: React.FC = () => {
     }
 
     if (comment.length > MAX_COMMENT_LENGTH) {
-      toast.warning(`Nhận xét không được vượt quá ${MAX_COMMENT_LENGTH} ký tự.`);
+      toast.warning(
+        `Nhận xét không được vượt quá ${MAX_COMMENT_LENGTH} ký tự.`
+      );
       return;
     }
 
@@ -185,27 +187,27 @@ const ProductDetail: React.FC = () => {
   const details = useMemo(
     () => getPriceAndStockDetails(product, selectedVariation),
     [product, selectedVariation]
-  );
+  ); // Tính toán giá và tồn kho dựa trên sản phẩm và biến thể đã chọn
 
   useEffect(() => {
     if (variations.length > 0 && !selectedVariation) {
-      setSelectedVariation(variations[0]);
+      setSelectedVariation(variations[0]);// Mặc định chọn biến thể đầu tiên
       setMainImage(
         variations[0].colorImageUrl
           ? getImageUrl(variations[0].colorImageUrl)
           : product?.image?.[0]
           ? getImageUrl(product.image[0])
           : getImageUrl()
-      );
+      ); 
     } else if (product && !selectedVariation) {
       setMainImage(
         product.image?.[0] ? getImageUrl(product.image[0]) : getImageUrl()
-      );
-    }
+      ); // Nếu không có biến thể, sử dụng ảnh sản phẩm đầu tiên
+    } 
     if (variations.length === 0 && !variationsQuery.isLoading) {
       toast.info('Sản phẩm này không có biến thể.', { autoClose: 1000 });
     }
-  }, [variations, product, selectedVariation, variationsQuery.isLoading]);
+  }, [variations, product, selectedVariation, variationsQuery.isLoading]); // Thiết lập ảnh chính và biến thể mặc định khi tải xong
 
   const handleVariationSelect = (variation: Variation) => {
     setSelectedVariation(variation);
@@ -319,7 +321,7 @@ const ProductDetail: React.FC = () => {
       const checkedItem = {
         variationId: {
           _id: selectedVariation._id,
-          salePrice: selectedVariation.salePrice ?? 0,
+          salePrice: selectedVariation.salePrice ?? 0, //
           finalPrice: selectedVariation.finalPrice ?? 0,
           colorImageUrl: imageUrl,
           name: selectedVariation.name,
@@ -449,7 +451,7 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col gap-3 text-gray-800">
-          <h2 className="text-2xl md:text-3xl font-semibold">{product.name}</h2>
+          <h1 className="text-3xl font-bold">{selectedVariation?.name}</h1>
           <div className="flex items-center gap-4 flex-wrap">
             <span className="text-red-600 text-2xl font-bold">
               {formatPrice(details.displayPrice)}
@@ -485,7 +487,7 @@ const ProductDetail: React.FC = () => {
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                     }`}
                   >
-                    {variation.name}
+                    {variation.colorName}
                   </button>
                 ))}
               </div>
@@ -669,14 +671,14 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       )}
-      {!product.descriptionShort && !product.descriptionLong && ( // Thêm điều kiện này nếu cả 2 mô tả đều không có
-        <div className="mt-12 border-t pt-8 w-full">
+      {!product.descriptionShort &&
+        !product.descriptionLong && ( // Thêm điều kiện này nếu cả 2 mô tả đều không có
+          <div className="mt-12 border-t pt-8 w-full">
             <p className="text-center text-lg text-gray-500 italic py-8 bg-white rounded-xl shadow-sm border border-gray-100 w-full">
               Sản phẩm này chưa có mô tả chi tiết.
             </p>
-        </div>
-      )}
-
+          </div>
+        )}
 
       {/* --- Phần Đánh Giá Sản Phẩm (Form) --- */}
       <div className="mt-12 border-t pt-8 w-full">
@@ -730,9 +732,17 @@ const ProductDetail: React.FC = () => {
           </div>
           <button
             onClick={handleSubmitReview}
-            disabled={isSubmittingReview || rating === 0 || comment.trim() === '' || comment.length > MAX_COMMENT_LENGTH}
+            disabled={
+              isSubmittingReview ||
+              rating === 0 ||
+              comment.trim() === '' ||
+              comment.length > MAX_COMMENT_LENGTH
+            }
             className={`w-full font-bold py-3 px-6 rounded-lg transition-all duration-300 transform ${
-              rating === 0 || comment.trim() === '' || comment.length > MAX_COMMENT_LENGTH || isSubmittingReview
+              rating === 0 ||
+              comment.trim() === '' ||
+              comment.length > MAX_COMMENT_LENGTH ||
+              isSubmittingReview
                 ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
             }`}
@@ -755,12 +765,15 @@ const ProductDetail: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <FaUserCircle className="text-gray-500 text-3xl" /> {/* Icon người dùng */}
+                      <FaUserCircle className="text-gray-500 text-3xl" />{' '}
+                      {/* Icon người dùng */}
                       <span className="font-semibold text-lg text-gray-900">
                         {review.user?.name || 'Người dùng ẩn danh'}
                       </span>
                     </div>
-                    <div className="flex gap-1"> {/* Giảm khoảng cách giữa các sao */}
+                    <div className="flex gap-1">
+                      {' '}
+                      {/* Giảm khoảng cách giữa các sao */}
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
@@ -798,17 +811,23 @@ const ProductDetail: React.FC = () => {
                           key={reply._id}
                           className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm flex items-start space-x-3"
                         >
-                          <FaBuilding className="text-blue-600 text-2xl mt-1" /> {/* Icon admin/công ty */}
+                          <FaBuilding className="text-blue-600 text-2xl mt-1" />{' '}
+                          {/* Icon admin/công ty */}
                           <div className="flex-1">
                             <div className="flex items-center justify-between text-sm mb-1">
                               <span className="font-bold text-blue-800">
-                                Phản hồi từ Quản trị viên ({reply.admin?.name || 'Cửa hàng'})
+                                Phản hồi từ Quản trị viên (
+                                {reply.admin?.name || 'Cửa hàng'})
                               </span>
                               <span className="text-gray-600">
-                                {new Date(reply.createdAt).toLocaleDateString('vi-VN')}
+                                {new Date(reply.createdAt).toLocaleDateString(
+                                  'vi-VN'
+                                )}
                               </span>
                             </div>
-                            <p className="text-gray-800 italic leading-snug">{reply.content}</p>
+                            <p className="text-gray-800 italic leading-snug">
+                              {reply.content}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -820,7 +839,8 @@ const ProductDetail: React.FC = () => {
             </div>
           ) : (
             <p className="text-center text-lg text-gray-500 italic py-8 bg-white rounded-xl shadow-sm border border-gray-100 w-full">
-              Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên để lại nhận xét!
+              Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên để
+              lại nhận xét!
             </p>
           )}
         </div>
