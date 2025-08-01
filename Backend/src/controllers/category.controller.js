@@ -1,17 +1,11 @@
-// src/controllers/category.controller.js
-
 const Category = require("../models/category.model");
+const Product = require("../models/products.model");
 const {
   createCategorySchema,
   updateCategorySchema,
 } = require("../validators/categoties.validate");
 const slugify = require("../untils/slugify");
-// THÊM CÁC IMPORTS SAU CHO LOGIC LỌC SẢN PHẨM
 const mongoose = require("mongoose");
-const Product = require("../models/products.model"); // Đảm bảo đã import model Product
-const Material = require("../models/material.model"); // Đảm bảo đã import model Material
-const ProductVariation = require("../models/product_variations.model"); // Đảm bảo đã import model ProductVariation
-// const path = require("path"); // Không cần thiết ở đây, nếu không có logic xử lý file
 
 // Hàm đệ quy xây dựng breadcrumb từ categoryId
 const buildCategoryBreadcrumb = async (categoryId) => {
@@ -25,10 +19,10 @@ const buildCategoryBreadcrumb = async (categoryId) => {
   return ["Home", ...breadcrumb];
 };
 
-// GET tất cả danh mục
+// GET tất cả danh mục (chỉ lấy các danh mục chưa bị xóa)
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find().populate("parentId", "name");
+    const categories = await Category.find({ isDeleted: false }).populate("parentId", "name");
     res.json(categories);
   } catch (err) {
     console.error("Lỗi khi lấy danh sách danh mục:", err);
@@ -36,10 +30,21 @@ const getAllCategories = async (req, res) => {
   }
 };
 
+// GET danh mục đã xóa mềm
+const getDeletedCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isDeleted: true }).populate("parentId", "name");
+    res.json(categories);
+  } catch (err) {
+    console.error("Lỗi khi lấy danh sách danh mục đã xóa:", err);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách danh mục đã xóa" });
+  }
+};
+
 // GET danh mục theo ID
 const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id).populate(
+    const category = await Category.findOne({ _id: req.params.id, isDeleted: false }).populate(
       "parentId",
       "name"
     );
@@ -59,16 +64,27 @@ const createCategory = async (req, res) => {
   const { name, description, parentId } = req.body;
   const slug = slugify(name);
 
-  const exists = await Category.findOne({ slug });
-  if (exists)
-    return res.status(400).json({ message: "Tên danh mục đã tồn tại" });
-
-  const newCategory = new Category({ name, description, parentId, slug });
   try {
+    // Kiểm tra trùng slug với danh mục đang hoạt động
+    const activeExists = await Category.findOne({ slug, isDeleted: false });
+    if (activeExists) {
+      return res.status(400).json({ message: "Tên danh mục đã tồn tại" });
+    }
+
+    // Kiểm tra trùng slug với danh mục đã xóa mềm
+    const deletedExists = await Category.findOne({ slug, isDeleted: true });
+    if (deletedExists) {
+      return res.status(400).json({ message: "Đã tồn tại danh mục đã xóa mềm với tên này" });
+    }
+
+    const newCategory = new Category({ name, description, parentId, slug, isDeleted: false });
     const saved = await newCategory.save();
     res.status(201).json(saved);
   } catch (err) {
     console.error("Lỗi khi tạo danh mục:", err);
+    if (err.code === 11000 && err.keyPattern.slug) {
+      return res.status(400).json({ message: "Slug danh mục đã tồn tại trong cơ sở dữ liệu" });
+    }
     res.status(500).json({ message: "Lỗi khi tạo danh mục" });
   }
 };
@@ -81,12 +97,12 @@ const updateCategory = async (req, res) => {
   const { name, parentId } = req.body;
 
   try {
-    const category = await Category.findById(req.params.id);
+    const category = await Category.findOne({ _id: req.params.id, isDeleted: false });
     if (!category)
       return res.status(404).json({ message: "Không tìm thấy danh mục" });
 
     if (name && name !== category.name) {
-      const exists = await Category.findOne({ name });
+      const exists = await Category.findOne({ name, isDeleted: false });
       if (exists)
         return res.status(400).json({ message: "Tên danh mục đã tồn tại" });
     }
@@ -97,13 +113,15 @@ const updateCategory = async (req, res) => {
         .json({ message: "parentId không được là chính danh mục" });
     }
 
-    if (parentId && !(await Category.findById(parentId))) {
+    if (parentId && !(await Category.findOne({ _id: parentId, isDeleted: false }))) {
       return res.status(400).json({ message: "parentId không tồn tại" });
     }
 
-    const updated = await Category.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const updated = await Category.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, slug: name ? slugify(name) : category.slug },
+      { new: true }
+    );
     res.json(updated);
   } catch (err) {
     console.error("Lỗi khi cập nhật danh mục:", err);
@@ -111,36 +129,117 @@ const updateCategory = async (req, res) => {
   }
 };
 
-// DELETE danh mục
-const deleteCategory = async (req, res) => {
+// DELETE: Xóa mềm danh mục
+const softDeleteCategory = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const category = await Category.findOne({ _id: req.params.id, isDeleted: false });
     if (!category)
       return res.status(404).json({ message: "Không tìm thấy danh mục" });
 
+    // Kiểm tra danh mục con
+    const hasChildren = await Category.findOne({ parentId: category._id, isDeleted: false });
+    if (hasChildren) {
+      return res
+        .status(400)
+        .json({ message: "Không thể xóa danh mục có danh mục con" });
+    }
+
+    // Kiểm tra sản phẩm liên quan
+    const hasProducts = await Product.findOne({ 
+      categoryId: category._id, 
+      isDeleted: false 
+    });
+    if (hasProducts) {
+      return res
+        .status(400)
+        .json({ message: "Không thể xóa danh mục vì còn sản phẩm liên quan đang hoạt động" });
+    }
+
+    // Đánh dấu xóa mềm
+    category.isDeleted = true;
+    await category.save();
+
+    res.json({ message: "Xóa mềm danh mục thành công" });
+  } catch (err) {
+    console.error("Lỗi khi xóa mềm danh mục:", err);
+    res.status(500).json({ message: "Xóa mềm danh mục thất bại" });
+  }
+};
+
+// POST: Khôi phục danh mục
+const restoreCategory = async (req, res) => {
+  try {
+    const category = await Category.findOne({ _id: req.params.id, isDeleted: true });
+    if (!category)
+      return res.status(404).json({ message: "Không tìm thấy danh mục đã xóa" });
+
+    // Kiểm tra trùng tên hoặc slug
+    const exists = await Category.findOne({
+      $or: [{ name: category.name }, { slug: category.slug }],
+      isDeleted: false,
+    });
+    if (exists) {
+      return res.status(400).json({
+        message: "Không thể khôi phục vì tên hoặc slug đã tồn tại trong danh mục đang hoạt động",
+      });
+    }
+
+    // Kiểm tra parentId (nếu có) có hợp lệ không
+    if (category.parentId && !(await Category.findOne({ _id: category.parentId, isDeleted: false }))) {
+      return res.status(400).json({ message: "Danh mục cha không tồn tại hoặc đã bị xóa" });
+    }
+
+    // Khôi phục danh mục
+    category.isDeleted = false;
+    await category.save();
+
+    res.json({ message: "Khôi phục danh mục thành công", category });
+  } catch (err) {
+    console.error("Lỗi khi khôi phục danh mục:", err);
+    res.status(500).json({ message: "Khôi phục danh mục thất bại" });
+  }
+};
+
+// DELETE: Xóa vĩnh viễn danh mục
+const hardDeleteCategory = async (req, res) => {
+  try {
+    const category = await Category.findOne({ _id: req.params.id, isDeleted: true });
+    if (!category)
+      return res.status(404).json({ message: "Không tìm thấy danh mục đã xóa" });
+
+    // Kiểm tra danh mục con (kể cả đã xóa mềm)
     const hasChildren = await Category.findOne({ parentId: category._id });
     if (hasChildren) {
       return res
         .status(400)
-        .json({ message: "Không thể xoá danh mục có danh mục con" });
+        .json({ message: "Không thể xóa vĩnh viễn danh mục có danh mục con" });
     }
 
+    // Kiểm tra sản phẩm liên quan (kể cả đã xóa mềm)
+    const hasProducts = await Product.findOne({ categoryId: category._id });
+    if (hasProducts) {
+      return res
+        .status(400)
+        .json({ message: "Không thể xóa vĩnh viễn danh mục có sản phẩm liên quan" });
+    }
+
+    // Xóa vĩnh viễn
     await Category.findByIdAndDelete(req.params.id);
-    res.json({ message: "Xoá danh mục thành công" });
+    res.json({ message: "Xóa vĩnh viễn danh mục thành công" });
   } catch (err) {
-    console.error("Lỗi khi xóa danh mục:", err);
-    res.status(500).json({ message: "Xoá danh mục thất bại" });
+    console.error("Lỗi khi xóa vĩnh viễn danh mục:", err);
+    res.status(500).json({ message: "Xóa vĩnh viễn danh mục thất bại" });
   }
 };
 
-// Lấy danh mục kèm danh mục con
+// Lấy danh mục kèm danh mục con (chỉ lấy các danh mục chưa bị xóa)
 const getCategoriesWithChildren = async (req, res) => {
   try {
-    const parents = await Category.find({ parentId: null });
+    const parents = await Category.find({ parentId: null, isDeleted: false });
 
     const result = await Promise.all(
       parents.map(async (parent) => {
-        const children = await Category.find({ parentId: parent._id });
+        const children = await Category.find({ parentId: parent._id, isDeleted: false });
 
         return {
           _id: parent._id,
@@ -170,7 +269,7 @@ const getCategoriesWithChildren = async (req, res) => {
 const getCategoryIdBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const category = await Category.findOne({ slug }).select("_id name slug");
+    const category = await Category.findOne({ slug, isDeleted: false }).select("_id name slug");
 
     if (!category) {
       return res
@@ -187,16 +286,14 @@ const getCategoryIdBySlug = async (req, res) => {
   }
 };
 
-// =========================================================================
-// HÀM MỚI ĐỂ LẤY SẢN PHẨM CÓ LỌC BIẾN THỂ CHO TRANG DANH MỤC
-// =========================================================================
+// Hàm lấy sản phẩm cho trang danh mục (giữ nguyên)
 const getProductsForCategoryPage = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
       sort = "created_at",
-      category, // category ID
+      category,
       color,
       size,
       material,
@@ -215,14 +312,13 @@ const getProductsForCategoryPage = async (req, res) => {
     let productIdsFromVariations = null;
     const variationFilters = {};
 
-    // 1. Lọc theo giá (từ ProductVariation)
     if (minPrice || maxPrice) {
       const priceConditions = [];
       if (minPrice) {
         priceConditions.push({
           $or: [
-            { salePrice: { $ne: null, $gte: parseFloat(minPrice) } }, // Ưu tiên salePrice của biến thể nếu có
-            { salePrice: null, finalPrice: { $gte: parseFloat(minPrice) } }, // Nếu salePrice null, dùng finalPrice
+            { salePrice: { $ne: null, $gte: parseFloat(minPrice) } },
+            { salePrice: null, finalPrice: { $gte: parseFloat(minPrice) } },
           ],
         });
       }
@@ -241,15 +337,11 @@ const getProductsForCategoryPage = async (req, res) => {
       }
     }
 
-    // 2. Lọc theo màu sắc (colorName từ ProductVariation)
     if (color) {
       variationFilters.colorName = { $regex: new RegExp(color, "i") };
     }
 
-    // 3. Lọc theo kích thước (dimensions từ ProductVariation)
     if (size) {
-      // Đây là ví dụ, bạn cần điều chỉnh regex phù hợp với định dạng 'dimensions' của bạn
-      // và các giá trị 'size' từ frontend ('nhỏ', 'vừa', 'lớn' hoặc kích thước cụ thể)
       if (size === "nhỏ") {
         variationFilters.dimensions = {
           $regex: /^((\d{1,2}|1\d{1,2}|200)x){2,2}\d{1,2} cm/i,
@@ -268,7 +360,6 @@ const getProductsForCategoryPage = async (req, res) => {
       }
     }
 
-    // 4. Lọc theo chất liệu (material ObjectId từ ProductVariation)
     if (material) {
       if (mongoose.Types.ObjectId.isValid(material)) {
         variationFilters.material = material;
@@ -279,7 +370,6 @@ const getProductsForCategoryPage = async (req, res) => {
         if (materialDoc) {
           variationFilters.material = materialDoc._id;
         } else {
-          // Nếu không tìm thấy chất liệu, trả về mảng rỗng để tránh lỗi và báo hiệu không có sản phẩm
           return res.json({
             success: true,
             data: [],
@@ -318,9 +408,7 @@ const getProductsForCategoryPage = async (req, res) => {
       }
       query._id = { $in: Array.from(productIdsFromVariations) };
     }
-    // --- KẾT THÚC LOGIC LỌC THEO BIẾN THỂ VÀ GIÁ CỦA BIẾN THỂ ---
 
-    // ✅ Lọc Flash Sale nếu cần
     if (flashSaleOnly === "true") {
       const now = new Date();
       query.flashSale_discountedPrice = { $gt: 0 };
@@ -328,7 +416,6 @@ const getProductsForCategoryPage = async (req, res) => {
       query.flashSale_end = { $gte: now };
     }
 
-    // ✅ Ưu tiên filter trước nếu có
     const sortOption = {};
     if (filter === "hot") {
       sortOption.totalPurchased = -1;
@@ -337,7 +424,7 @@ const getProductsForCategoryPage = async (req, res) => {
     } else {
       switch (sort) {
         case "price_asc":
-          sortOption.salePrice = 1; // Giả định Product có salePrice đại diện để sắp xếp
+          sortOption.salePrice = 1;
           break;
         case "price_desc":
           sortOption.salePrice = -1;
@@ -387,14 +474,16 @@ const getProductsForCategoryPage = async (req, res) => {
   }
 };
 
-// Cập nhật module.exports để bao gồm hàm mới
 module.exports = {
   getAllCategories,
+  getDeletedCategories, // Thêm hàm lấy danh mục đã xóa
   getCategoryById,
   createCategory,
   updateCategory,
-  deleteCategory,
+  softDeleteCategory, // Thay deleteCategory bằng softDeleteCategory
+  restoreCategory, // Thêm hàm khôi phục
+  hardDeleteCategory, // Thêm hàm xóa vĩnh viễn
   getCategoriesWithChildren,
   getCategoryIdBySlug,
-  getProductsForCategoryPage, // EXPORT HÀM MỚI NÀY
+  getProductsForCategoryPage,
 };

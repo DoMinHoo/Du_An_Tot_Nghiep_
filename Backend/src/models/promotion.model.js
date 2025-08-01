@@ -37,8 +37,19 @@ const promotionSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false, // Mặc định là chưa bị xóa
+    },
+    deletedAt: {
+      type: Date,
+      default: null, // Thời gian xóa mềm, mặc định là null
+    },
   },
   { timestamps: true }
 );
+
+// Index để tối ưu tìm kiếm
+promotionSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model("Promotion", promotionSchema);

@@ -1,25 +1,38 @@
-// src/routes/category.routes.js
 const express = require("express");
 const router = express.Router();
-const categoryController = require("../controllers/category.controller"); // Sửa tên biến này cho đúng
+const categoryController = require("../controllers/category.controller");
 
-// Route để lấy tất cả danh mục (có thể dùng ở admin hoặc menu)
+// Route để lấy tất cả danh mục (chưa bị xóa)
 router.get("/", categoryController.getAllCategories);
 
-// Route để lấy danh mục con (có thể dùng ở menu)
+// Route để lấy danh mục đã xóa mềm
+router.get("/deleted", categoryController.getDeletedCategories);
+
+// Route để lấy danh mục con
 router.get("/all/with-children", categoryController.getCategoriesWithChildren);
 
-// Route để lấy category ID theo slug (cho trang danh mục)
+// Route để lấy category ID theo slug
 router.get("/slug/:slug", categoryController.getCategoryIdBySlug);
 
-// ROUTE MỚI ĐỂ LẤY SẢN PHẨM CÓ BỘ LỌC CHO TRANG DANH MỤC
-// Ví dụ: GET /api/categories/products?category=abc&minPrice=...
+// Route để lấy sản phẩm cho trang danh mục
 router.get("/products", categoryController.getProductsForCategoryPage);
 
-// Các routes CRUD cho danh mục (giữ nguyên)
+// Route để lấy danh mục theo ID
 router.get("/:id", categoryController.getCategoryById);
+
+// Route để tạo danh mục mới
 router.post("/", categoryController.createCategory);
+
+// Route để cập nhật danh mục
 router.put("/:id", categoryController.updateCategory);
-router.delete("/:id", categoryController.deleteCategory);
+
+// Route để xóa mềm danh mục
+router.delete("/:id", categoryController.softDeleteCategory);
+
+// Route để khôi phục danh mục
+router.post("/restore/:id", categoryController.restoreCategory);
+
+// Route để xóa vĩnh viễn danh mục
+router.delete("/permanent/:id", categoryController.hardDeleteCategory);
 
 module.exports = router;

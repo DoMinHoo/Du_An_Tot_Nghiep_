@@ -1,15 +1,11 @@
-import React from "react";
+import React from 'react';
+import { Button, Layout, Popconfirm, Space, Table, message } from 'antd';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Layout,
-  Popconfirm,
-  Space,
-  Table,
-  message,
-} from "antd";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteCategory, getCategories } from "../../Services/categories.service";
-import { Link, useNavigate } from "react-router-dom";
+  deleteCategory,
+  getCategories,
+} from '../../Services/categories.service';
+import { Link, useNavigate } from 'react-router-dom';
 
 const { Content } = Layout;
 
@@ -17,25 +13,27 @@ const CategoryManager: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Lấy danh sách danh mục
+  // Lấy danh sách danh mục (chưa xóa mềm)
   const { data = [], isLoading } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: getCategories,
   });
 
-  // Mutation xoá danh mục
+  // Mutation xóa mềm danh mục
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
     onSuccess: () => {
-      message.success("Xoá danh mục thành công");
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      message.success('Xóa mềm danh mục thành công');
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
     onError: (error: any) => {
-      message.error(error?.response?.data?.message || "Xoá danh mục thất bại");
+      message.error(
+        error?.response?.data?.message || 'Xóa mềm danh mục thất bại'
+      );
     },
   });
 
-  // Xác nhận xoá
+  // Xác nhận xóa mềm
   const confirmDelete = (id: string) => {
     deleteMutation.mutate(id);
   };
@@ -43,37 +41,40 @@ const CategoryManager: React.FC = () => {
   // Cấu hình cột
   const columns = [
     {
-      title: "Tên danh mục",
-      dataIndex: "name",
-      key: "name",
+      title: 'Tên danh mục',
+      dataIndex: 'name',
+      key: 'name',
     },
     {
-      title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
+      title: 'Mô tả',
+      dataIndex: 'description',
+      key: 'description',
     },
     {
-      title: "Danh mục cha",
-      dataIndex: "parentId",
-      key: "parentId",
-      render: (parent: any) => (parent && typeof parent === "object" ? parent.name : "-"),
+      title: 'Danh mục cha',
+      dataIndex: 'parentId',
+      key: 'parentId',
+      render: (parent: any) =>
+        parent && typeof parent === 'object' ? parent.name : '-',
     },
     {
-      title: "Hành động",
-      key: "actions",
+      title: 'Hành động',
+      key: 'actions',
       render: (_: any, record: any) => (
         <Space>
-          <Button onClick={() => navigate(`/admin/categories/edit/${record._id}`)}>
+          <Button
+            onClick={() => navigate(`/admin/categories/edit/${record._id}`)}
+          >
             Sửa
           </Button>
           <Popconfirm
-            title="Bạn có chắc chắn muốn xoá danh mục này?"
+            title="Bạn có chắc chắn muốn xóa mềm danh mục này?"
             onConfirm={() => confirmDelete(record._id)}
-            okText="Xoá"
-            cancelText="Huỷ"
+            okText="Xóa"
+            cancelText="Hủy"
           >
-            <Button danger loading={deleteMutation.isLoading}>
-              Xoá
+            <Button danger loading={deleteMutation.isPending}>
+              Xóa
             </Button>
           </Popconfirm>
         </Space>
@@ -82,11 +83,16 @@ const CategoryManager: React.FC = () => {
   ];
 
   return (
-    <Content style={{ padding: 24, background: "#fff" }}>
+    <Content style={{ padding: 24, background: '#fff' }}>
       <div style={{ marginBottom: 16 }}>
-        <Link to="/admin/categories/create">
-          <Button type="primary">Thêm danh mục</Button>
-        </Link>
+        <Space>
+          <Link to="/admin/categories/create">
+            <Button type="primary">Thêm danh mục</Button>
+          </Link>
+          <Link to="/admin/categories/deleted">
+            <Button>Xem danh mục đã xóa</Button>
+          </Link>
+        </Space>
       </div>
 
       <Table

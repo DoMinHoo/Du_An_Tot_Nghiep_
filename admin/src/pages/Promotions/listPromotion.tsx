@@ -1,10 +1,7 @@
-import React from 'react';
+// src/components/ListPromotion.tsx
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table,
   Tag,
@@ -15,36 +12,46 @@ import {
   message,
   Card,
   Tooltip,
+  Input,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   fetchPromotions,
-  deletePromotion,
+  softDeletePromotion,
 } from '../../Services/promotion.service';
 
 const { Title } = Typography;
+const { Search } = Input;
 
 const ListPromotion: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchText, setSearchText] = useState('');
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['promotions'],
-    queryFn: fetchPromotions,
+    queryKey: ['promotions', searchText],
+    queryFn: () => fetchPromotions(), // Có thể thêm query params để tìm kiếm nếu backend hỗ trợ
+    select: (data) =>
+      searchText
+        ? data.filter((promo) =>
+            promo.code.toLowerCase().includes(searchText.toLowerCase())
+          )
+        : data,
   });
 
   const mutation = useMutation({
-    mutationFn: deletePromotion,
+    mutationFn: softDeletePromotion,
     onSuccess: () => {
-      message.success('Xoá mã thành công');
+      message.success('Xóa mềm mã thành công');
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
     },
     onError: () => {
-      message.error('Xoá mã thất bại');
+      message.error('Xóa mềm mã thất bại');
     },
   });
 
@@ -90,8 +97,7 @@ const ListPromotion: React.FC = () => {
       title: 'Giới hạn',
       dataIndex: 'usageLimit',
       key: 'usageLimit',
-      render: (limit: number) =>
-        limit === 0 ? 'Không giới hạn' : limit,
+      render: (limit: number) => (limit === 0 ? 'Không giới hạn' : limit),
     },
     {
       title: 'Đã dùng',
@@ -148,17 +154,15 @@ const ListPromotion: React.FC = () => {
             <Button
               type="text"
               icon={<EditOutlined />}
-              onClick={() =>
-                navigate(`/admin/promotions/edit/${record._id}`)
-              }
+              onClick={() => navigate(`/admin/promotions/edit/${record._id}`)}
             />
           </Tooltip>
-          <Tooltip title="Xoá">
+          <Tooltip title="Xóa mềm">
             <Popconfirm
-              title="Bạn chắc chắn muốn xoá mã này?"
+              title="Bạn chắc chắn muốn xóa mềm mã này?"
               onConfirm={() => handleDelete(record._id)}
-              okText="Xoá"
-              cancelText="Huỷ"
+              okText="Xóa"
+              cancelText="Hủy"
             >
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
@@ -176,16 +180,27 @@ const ListPromotion: React.FC = () => {
       <Card
         title={<Title level={4}>🎁 Danh sách Mã Khuyến Mãi</Title>}
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/admin/promotions/create')}
-          >
-            Thêm mới
-          </Button>
+          <Space>
+            <Search
+              placeholder="Tìm kiếm mã khuyến mãi"
+              allowClear
+              onSearch={(value) => setSearchText(value)}
+              style={{ width: 200 }}
+            />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/admin/promotions/create')}
+            >
+              Thêm mới
+            </Button>
+            <Button onClick={() => navigate('/admin/promotions/deleted')}>
+              Xem mã đã xóa
+            </Button>
+          </Space>
         }
         bordered
-        style={{ borderRadius: 12 }}
+        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
       >
         <Table
           columns={columns}
