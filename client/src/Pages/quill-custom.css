@@ -1,0 +1,59 @@
+.ql-editor img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.ql-align-center {
+    text-align: center;
+}
+
+/* Căn chỉnh dropdown size và heading */
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-header .ql-picker-label::before {
+    line-height: 1.4;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+    content: attr(data-value);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="small"]::before {
+    font-size: 0.75em;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="large"]::before {
+    font-size: 1.5em;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="huge"]::before {
+    font-size: 2.5em;
+}
+
+/* Căn giữa ảnh trong nội dung */
+.ql-editor img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Căn chỉnh alignment */
+.ql-align-center {
+    text-align: center;
+}
+
+.ql-align-right {
+    text-align: right;
+}
+
+.ql-align-justify {
+    text-align: justify;
+}
+
+.ql-editor img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+}

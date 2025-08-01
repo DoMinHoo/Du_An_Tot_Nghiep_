@@ -297,11 +297,10 @@ const CategoryPage: React.FC = () => {
             onChange={(e) => setFilters(prev => ({ ...prev, color: e.target.value }))}
           >
             <option value="">TẤT CẢ MÀU</option>
-            <option value="đen">Đen</option>
+            <option value="màu tự nhiên">Màu tự nhiên</option>
             <option value="trắng">Trắng</option>
             <option value="xám">Xám</option>
-            <option value="xanh">Xanh</option>
-            <option value="đỏ">Đỏ</option>
+            <option value="nâu">Nâu</option>
             {/* Thêm các màu khác nếu cần */}
           </select>
             {/* You can add size filter similarly if needed */}
