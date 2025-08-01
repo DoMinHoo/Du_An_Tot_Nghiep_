@@ -13,9 +13,19 @@ const getAuthHeader = () => {
 };
 
 // ✅ Lấy tất cả đơn hàng (admin)
-export const getOrders = () =>
-  axios.get(API_URL, getAuthHeader()).then((res) => res.data.data);
-
+export const getOrders = (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  userId?: string;
+}) =>
+  axios
+    .get(API_URL, {
+      ...getAuthHeader(),
+      params, // truyền các query cho backend
+    })
+    .then((res) => res.data);
 // ✅ Lấy đơn hàng theo ID
 export const getOrderById = (id: string) =>
   axios.get(`${API_URL}/${id}`, getAuthHeader()).then((res) => res.data.data);

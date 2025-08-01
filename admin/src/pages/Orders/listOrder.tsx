@@ -71,13 +71,24 @@ const statusColor: Record<string, string> = {
 const OrderManager: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State cho phân trang
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page, limit, searchTerm]);
 
   useEffect(() => {
     if (location.state?.shouldRefresh) {
@@ -88,12 +99,15 @@ const OrderManager: React.FC = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const data = await getOrders();
-      const ordersWithKeys = data.map((order: Order, index: number) => ({
-        ...order,
-        key: index + 1,
-      }));
-      setOrders(ordersWithKeys);
+      const params = {
+        page,
+        limit,
+        search: searchTerm,
+      };
+
+      const res = await getOrders(params); // getOrders hỗ trợ query {page, limit, search}
+      setOrders(res.data || []);
+      setPagination(res.pagination || { total: 0, page: 1, limit, totalPages: 1 });
     } catch (error) {
       message.error("Lỗi khi tải danh sách đơn hàng");
     } finally {
@@ -109,7 +123,7 @@ const OrderManager: React.FC = () => {
 
     try {
       await deleteOrder(id);
-      setOrders((prev) => prev.filter((o) => o._id !== id));
+      fetchOrders(); // Refresh lại trang hiện tại
       message.success("Đã xóa đơn hàng");
     } catch (error: any) {
       const errorMsg = error?.response?.data?.message || "Lỗi khi xóa đơn hàng";
@@ -121,17 +135,11 @@ const OrderManager: React.FC = () => {
     navigate(`/admin/orders/${orderId}`);
   };
 
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shippingAddress.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const columns = [
     {
       title: "STT",
-      dataIndex: "key",
-      key: "key",
+      render: (_: any, __: Order, index: number) =>
+        (page - 1) * limit + index + 1,
     },
     {
       title: "Mã đơn hàng",
@@ -253,7 +261,10 @@ const OrderManager: React.FC = () => {
       <Input
         placeholder="Tìm kiếm đơn hàng..."
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setPage(1); // reset về trang 1 khi search
+        }}
         style={{ width: 300, marginBottom: 16 }}
       />
       <div>
@@ -263,10 +274,20 @@ const OrderManager: React.FC = () => {
           </div>
         ) : (
           <Table
-            dataSource={filteredOrders}
+            dataSource={orders}
             columns={columns}
             rowKey={(record) => record._id}
-            pagination={{ pageSize: 5, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }}
+            pagination={{
+              current: page,
+              pageSize: limit,
+              total: pagination.total,
+              showSizeChanger: true,
+              pageSizeOptions: ["5", "10", "20", "50"],
+              onChange: (newPage, newSize) => {
+                setPage(newPage);
+                setLimit(newSize || 10);
+              },
+            }}
           />
         )}
       </div>
