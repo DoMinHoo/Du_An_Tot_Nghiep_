@@ -66,13 +66,13 @@ const AddCategory: React.FC = () => {
           <Input.TextArea rows={3} />
         </Form.Item>
 
-        <Form.Item name="parentId" label="Danh mục cha">
+        {/* <Form.Item name="parentId" label="Danh mục cha">
           <Select
             allowClear
             placeholder="Chọn danh mục cha (nếu có)"
             options={parentOptions}
           />
-        </Form.Item>
+        </Form.Item> */}
 
         <Form.Item>
           <Space>
