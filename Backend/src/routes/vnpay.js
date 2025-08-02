@@ -95,7 +95,7 @@ router.get('/return-vnpay', async (req, res) => {
 
   if (secureHash !== signed) {
     return res.redirect(
-      `http://localhost:5174/vnpay/result?status=failed&message=Invalid secure hash`
+      `http://localhost:5173/vnpay/result?status=failed&message=Invalid secure hash`
     );
   }
 
@@ -137,7 +137,7 @@ router.get('/return-vnpay', async (req, res) => {
     responseCode: vnp_ResponseCode,
   }).toString();
 
-  const frontendUrl = `http://localhost:5174/vnpay/result?${queryString}`;
+  const frontendUrl = `http://localhost:5173/vnpay/result?${queryString}`;
   return res.redirect(frontendUrl);
 });
 
