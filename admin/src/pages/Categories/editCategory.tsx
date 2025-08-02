@@ -30,14 +30,14 @@ const EditCategory: React.FC = () => {
     isError: errorCategory,
   } = useQuery({
     queryKey: ["category", id],
-  queryFn: async () => {
-  if (!id) throw new Error("Missing ID");
-  const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/${id}`);
-  if (!res.data || !res.data._id) {
-    throw new Error("Không tìm thấy danh mục");
-  }
-  return res.data; // ✅ TRẢ TRỰC TIẾP res.data nếu nó là object danh mục
-}
+    queryFn: async () => {
+      if (!id) throw new Error("Missing ID");
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/${id}`);
+      if (!res.data || !res.data._id) {
+        throw new Error("Không tìm thấy danh mục");
+      }
+      return res.data; // ✅ TRẢ TRỰC TIẾP res.data nếu nó là object danh mục
+    }
 
     // enabled: !!id,
   });
@@ -127,14 +127,14 @@ const EditCategory: React.FC = () => {
           <Input.TextArea rows={3} />
         </Form.Item>
 
-        <Form.Item name="parentId" label="Danh mục cha">
+        {/* <Form.Item name="parentId" label="Danh mục cha">
           <Select
             allowClear
             placeholder="Chọn danh mục cha (nếu có)"
             options={parentOptions}
             loading={loadingAllCategories}
           />
-        </Form.Item>
+        </Form.Item> */}
 
         <Form.Item>
           <Space>

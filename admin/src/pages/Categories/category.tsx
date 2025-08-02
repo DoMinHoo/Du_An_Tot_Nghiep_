@@ -50,13 +50,13 @@ const CategoryManager: React.FC = () => {
       dataIndex: 'description',
       key: 'description',
     },
-    {
-      title: 'Danh mục cha',
-      dataIndex: 'parentId',
-      key: 'parentId',
-      render: (parent: any) =>
-        parent && typeof parent === 'object' ? parent.name : '-',
-    },
+    // {
+    //   title: 'Danh mục cha',
+    //   dataIndex: 'parentId',
+    //   key: 'parentId',
+    //   render: (parent: any) =>
+    //     parent && typeof parent === 'object' ? parent.name : '-',
+    // },
     {
       title: 'Hành động',
       key: 'actions',
