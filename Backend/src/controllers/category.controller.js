@@ -293,7 +293,7 @@ const getProductsForCategoryPage = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 12, // Đã sửa từ 10 thành 12
       sort = "created_at",
       category,
       color,
@@ -441,11 +441,14 @@ const getProductsForCategoryPage = async (req, res) => {
       }
     }
 
-    const safeLimit = Math.min(parseInt(limit), 100);
+    const safePage = parseInt(page) || 1;
+    const safeLimit = parseInt(limit) || 12;
+    const skipCount = (safePage - 1) * safeLimit;
+
     const products = await Product.find(query)
       .populate("categoryId")
       .sort(sortOption)
-      .skip((page - 1) * safeLimit)
+      .skip(skipCount)
       .limit(safeLimit);
 
     const total = await Product.countDocuments(query);
@@ -464,7 +467,7 @@ const getProductsForCategoryPage = async (req, res) => {
       data: products,
       breadcrumb,
       pagination: {
-        page: parseInt(page),
+        page: safePage,
         limit: safeLimit,
         total,
         totalPages: Math.ceil(total / safeLimit),
