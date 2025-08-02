@@ -6,18 +6,12 @@ import { toast } from "react-toastify"
 import { createOrder } from "../services/orderService"
 import Header from "../Components/Common/Header"
 import Footer from "../Components/Common/Footer"
-import { Card, Button, Result, Descriptions, Badge, Spin, Typography, Space, Row, Col, Alert, Table } from "antd"
 import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  HomeOutlined,
-  CreditCardOutlined,
-  BankOutlined,
-  ClockCircleOutlined,
-  NumberOutlined,
-  DollarOutlined,
-  FileTextOutlined,
-  ShoppingOutlined,
+  Card, Button, Result, Descriptions, Badge, Spin, Typography, Space, Row, Col, Alert, Table,
+} from "antd"
+import {
+  CheckCircleOutlined, CloseCircleOutlined, HomeOutlined, CreditCardOutlined, BankOutlined,
+  ClockCircleOutlined, NumberOutlined, DollarOutlined, FileTextOutlined, ShoppingOutlined,
 } from "@ant-design/icons"
 
 const { Title, Text } = Typography
@@ -48,10 +42,13 @@ const ReturnVnpayPage = () => {
         : {}
       const cartId = sessionStorage.getItem("cartId") || ""
 
-      // Lấy thông tin đơn hàng đã lưu khi tạo đơn (nếu có)
+      // Kiểm tra xem đã có đơn chưa
       const pendingOrder = sessionStorage.getItem("pendingOrder")
       if (pendingOrder) {
         setOrderDetail(JSON.parse(pendingOrder))
+        setOrderCreated(true)
+        setLoading(false)
+        return
       }
 
       const orderData = {
@@ -63,9 +60,13 @@ const ReturnVnpayPage = () => {
       }
 
       createOrder(orderData, token, guestId)
-        .then(() => {
+        .then((res) => {
           toast.success("Thanh toán thành công, đơn hàng đã được tạo")
+          setOrderDetail(res.data)
           setOrderCreated(true)
+          sessionStorage.setItem("pendingOrder", JSON.stringify(res.data))
+          sessionStorage.removeItem("cartId")
+          sessionStorage.removeItem("shippingAddress")
           setLoading(false)
         })
         .catch(() => {
@@ -77,30 +78,21 @@ const ReturnVnpayPage = () => {
       setLoading(false)
       setTimeout(() => navigate("/checkout"), 1500)
     }
-    // eslint-disable-next-line
   }, [])
 
   if (loading) {
     return (
       <div>
         <Header />
-        <div
-          style={{
-            minHeight: "60vh",
-            background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
+        <div style={{
+          minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+          background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)",
+        }}>
           <Card style={{ width: "100%", maxWidth: 400, textAlign: "center" }}>
             <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <Spin size="large" />
               <div>
-                <Title level={4} style={{ margin: 0, color: "#1890ff" }}>
-                  Đang xử lý kết quả thanh toán
-                </Title>
+                <Title level={4} style={{ margin: 0, color: "#1890ff" }}>Đang xử lý kết quả thanh toán</Title>
                 <Text type="secondary">Vui lòng chờ trong giây lát...</Text>
               </div>
             </Space>
@@ -115,16 +107,10 @@ const ReturnVnpayPage = () => {
     return (
       <div>
         <Header />
-        <div
-          style={{
-            minHeight: "60vh",
-            background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
+        <div style={{
+          minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+          background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)",
+        }}>
           <Card style={{ width: "100%", maxWidth: 500 }}>
             <Result
               status="error"
@@ -132,12 +118,8 @@ const ReturnVnpayPage = () => {
               subTitle="Giao dịch không thể hoàn tất. Bạn sẽ được chuyển về trang thanh toán."
               icon={<CloseCircleOutlined style={{ color: "#ff4d4f" }} />}
               extra={[
-                <Button type="primary" key="retry" onClick={() => navigate("/checkout")}>
-                  Thử lại
-                </Button>,
-                <Button key="home" onClick={() => navigate("/")}>
-                  Về trang chủ
-                </Button>,
+                <Button type="primary" key="retry" onClick={() => navigate("/checkout")}>Thử lại</Button>,
+                <Button key="home" onClick={() => navigate("/")}>Về trang chủ</Button>,
               ]}
             />
           </Card>
@@ -147,7 +129,6 @@ const ReturnVnpayPage = () => {
     )
   }
 
-  // Cột hiển thị sản phẩm
   const columns = [
     {
       title: "Sản phẩm",
@@ -179,53 +160,31 @@ const ReturnVnpayPage = () => {
   return (
     <div>
       <Header />
-
       {/* VNPay Header */}
-      <div
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #f0f0f0",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        }}
-      >
+      <div style={{
+        background: "#fff", borderBottom: "1px solid #f0f0f0",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+      }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px" }}>
           <Space align="center">
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                background: "#1890ff",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <div style={{
+              width: 40, height: 40, background: "#1890ff", borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
               <CreditCardOutlined style={{ color: "#fff", fontSize: 20 }} />
             </div>
             <div>
-              <Title level={4} style={{ margin: 0, color: "#1890ff" }}>
-                VNPay
-              </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Cổng thanh toán điện tử
-              </Text>
+              <Title level={4} style={{ margin: 0, color: "#1890ff" }}>VNPay</Title>
+              <Text type="secondary" style={{ fontSize: 12 }}>Cổng thanh toán điện tử</Text>
             </div>
           </Space>
         </div>
       </div>
 
       {/* Main Content */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)",
-          minHeight: "60vh",
-          padding: "24px",
-        }}
-      >
+      <div style={{ background: "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)", minHeight: "60vh", padding: "24px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            {/* Success Result */}
             <Card>
               <Result
                 status="success"
@@ -235,86 +194,31 @@ const ReturnVnpayPage = () => {
               />
             </Card>
 
-            {/* Transaction Details */}
-            <Card
-              title={
-                <Space>
-                  <FileTextOutlined style={{ color: "#1890ff" }} />
-                  <span>Thông tin giao dịch</span>
-                </Space>
-              }
-            >
+            {/* Giao dịch */}
+            <Card title={<Space><FileTextOutlined style={{ color: "#1890ff" }} /><span>Thông tin giao dịch</span></Space>}>
               <Row gutter={[24, 16]}>
                 <Col xs={24} md={12}>
                   <Descriptions column={1} size="middle">
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <NumberOutlined />
-                          <span>Mã giao dịch VNPay</span>
-                        </Space>
-                      }
-                    >
-                      <Text strong copyable style={{ color: "#1890ff" }}>
-                        {transactionNo}
-                      </Text>
+                    <Descriptions.Item label={<Space><NumberOutlined /> Mã giao dịch VNPay</Space>}>
+                      <Text strong copyable style={{ color: "#1890ff" }}>{transactionNo}</Text>
                     </Descriptions.Item>
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <NumberOutlined />
-                          <span>Mã đơn hàng</span>
-                        </Space>
-                      }
-                    >
-                      <Text strong copyable style={{ color: "#1890ff" }}>
-                        {txnRef}
-                      </Text>
+                    <Descriptions.Item label={<Space><NumberOutlined /> Mã đơn hàng</Space>}>
+                      <Text strong copyable style={{ color: "#1890ff" }}>{txnRef}</Text>
                     </Descriptions.Item>
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <DollarOutlined />
-                          <span>Số tiền thanh toán</span>
-                        </Space>
-                      }
-                    >
-                      <Text strong style={{ color: "#52c41a", fontSize: 18 }}>
-                        {Number(amount).toLocaleString()}₫
-                      </Text>
+                    <Descriptions.Item label={<Space><DollarOutlined /> Số tiền thanh toán</Space>}>
+                      <Text strong style={{ color: "#52c41a", fontSize: 18 }}>{Number(amount).toLocaleString()}₫</Text>
                     </Descriptions.Item>
                   </Descriptions>
                 </Col>
                 <Col xs={24} md={12}>
                   <Descriptions column={1} size="middle">
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <BankOutlined />
-                          <span>Ngân hàng</span>
-                        </Space>
-                      }
-                    >
+                    <Descriptions.Item label={<Space><BankOutlined /> Ngân hàng</Space>}>
                       <Badge color="blue" text={bankCode} style={{ fontWeight: 500, fontSize: 14 }} />
                     </Descriptions.Item>
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <ClockCircleOutlined />
-                          <span>Thời gian thanh toán</span>
-                        </Space>
-                      }
-                    >
+                    <Descriptions.Item label={<Space><ClockCircleOutlined /> Thời gian thanh toán</Space>}>
                       <Text strong>{new Date(paymentTime || "").toLocaleString("vi-VN")}</Text>
                     </Descriptions.Item>
-                    <Descriptions.Item
-                      label={
-                        <Space>
-                          <FileTextOutlined />
-                          <span>Thông tin đơn hàng</span>
-                        </Space>
-                      }
-                    >
+                    <Descriptions.Item label={<Space><FileTextOutlined /> Thông tin đơn hàng</Space>}>
                       <Text strong>{orderInfo}</Text>
                     </Descriptions.Item>
                   </Descriptions>
@@ -322,22 +226,11 @@ const ReturnVnpayPage = () => {
               </Row>
             </Card>
 
-            {/* Order Detail */}
-            {orderDetail && orderDetail.items && orderDetail.items.length > 0 && (
-              <Card
-                title={
-                  <Space>
-                    <ShoppingOutlined style={{ color: "#1890ff" }} />
-                    <span>Chi tiết đơn hàng</span>
-                  </Space>
-                }
-                style={{ marginTop: 24 }}
-              >
+            {/* Chi tiết đơn hàng */}
+            {orderDetail?.items?.length > 0 && (
+              <Card title={<Space><ShoppingOutlined style={{ color: "#1890ff" }} /><span>Chi tiết đơn hàng</span></Space>}>
                 <Table
-                  dataSource={orderDetail.items.map((item: any, idx: number) => ({
-                    ...item,
-                    key: idx,
-                  }))}
+                  dataSource={orderDetail.items.map((item: any, idx: number) => ({ ...item, key: idx }))}
                   columns={columns}
                   pagination={false}
                   bordered
@@ -345,12 +238,8 @@ const ReturnVnpayPage = () => {
                     const total = pageData.reduce((sum, row) => sum + row.price * row.quantity, 0)
                     return (
                       <Table.Summary.Row>
-                        <Table.Summary.Cell index={0} colSpan={3} align="right">
-                          <b>Tổng cộng</b>
-                        </Table.Summary.Cell>
-                        <Table.Summary.Cell index={1} align="right">
-                          <b>{total.toLocaleString()}₫</b>
-                        </Table.Summary.Cell>
+                        <Table.Summary.Cell colSpan={3} align="right"><b>Tổng cộng</b></Table.Summary.Cell>
+                        <Table.Summary.Cell align="right"><b>{total.toLocaleString()}₫</b></Table.Summary.Cell>
                       </Table.Summary.Row>
                     )
                   }}
@@ -358,7 +247,6 @@ const ReturnVnpayPage = () => {
               </Card>
             )}
 
-            {/* Order Status */}
             {orderCreated && (
               <Alert
                 message="Đơn hàng đã được tạo thành công"
@@ -370,27 +258,11 @@ const ReturnVnpayPage = () => {
               />
             )}
 
-            {/* Action Buttons */}
             <Card>
               <div style={{ textAlign: "center" }}>
                 <Space size="middle" wrap>
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<HomeOutlined />}
-                    onClick={() => navigate("/")}
-                    style={{ minWidth: 140, height: 45 }}
-                  >
-                    Về trang chủ
-                  </Button>
-                  <Button
-                    size="large"
-                    icon={<ShoppingOutlined />}
-                    onClick={() => navigate("/order-history")}
-                    style={{ minWidth: 140, height: 45 }}
-                  >
-                    Xem đơn hàng
-                  </Button>
+                  <Button type="primary" size="large" icon={<HomeOutlined />} onClick={() => navigate("/")} style={{ minWidth: 140, height: 45 }}>Về trang chủ</Button>
+                  <Button size="large" icon={<ShoppingOutlined />} onClick={() => navigate("/order-history")} style={{ minWidth: 140, height: 45 }}>Xem đơn hàng</Button>
                 </Space>
               </div>
             </Card>
@@ -398,25 +270,13 @@ const ReturnVnpayPage = () => {
         </div>
       </div>
 
-      {/* VNPay Footer */}
-      <div
-        style={{
-          background: "#fff",
-          borderTop: "1px solid #f0f0f0",
-          padding: "24px 0",
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center" }}>
-            <Text type="secondary">© 2024 VNPay. Cổng thanh toán điện tử hàng đầu Việt Nam</Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Hotline: 1900 555 577 | Email: support@vnpay.vn
-            </Text>
-          </div>
+      {/* Footer */}
+      <div style={{ background: "#fff", borderTop: "1px solid #f0f0f0", padding: "24px 0" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
+          <Text type="secondary">© 2024 VNPay. Cổng thanh toán điện tử hàng đầu Việt Nam</Text><br />
+          <Text type="secondary" style={{ fontSize: 12 }}>Hotline: 1900 555 577 | Email: support@vnpay.vn</Text>
         </div>
       </div>
-
       <Footer />
     </div>
   )
