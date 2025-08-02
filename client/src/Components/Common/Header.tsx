@@ -173,7 +173,7 @@ const Header: React.FC = () => {
               <IoIosArrowDown className="text-xs mt-[2px]" />
             </div>
             <div
-              className={`absolute top-full left-0 mt-2 w-48 bg-white border shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+              className={`absolute top-full left-0 mt-2 w-48 bg-white shadow-md z-10 transition-all duration-300 transform origin-top ${openDropdown ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
                 }`}
             >
               {categories.map((cat) => (

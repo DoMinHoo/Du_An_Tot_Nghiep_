@@ -1,5 +1,7 @@
 const Category = require("../models/category.model");
 const Product = require("../models/products.model");
+const ProductVariation = require("../models/product_variations.model"); 
+const Material = require("../models/material.model");
 const {
   createCategorySchema,
   updateCategorySchema,
