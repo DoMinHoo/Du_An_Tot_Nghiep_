@@ -147,18 +147,33 @@ const OrderDetail: React.FC = () => {
         column={1}
         style={{ marginBottom: 24, marginTop: 16 }}
       >
-        <Descriptions.Item label="Tên khách hàng">
+        {/* THÔNG TIN NGƯỜI ĐẶT */}
+        <Descriptions.Item label="Tên người đặt">
+          {order.customerName || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Email người đặt">
+          {order.customerEmail || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại người đặt">
+          {order.customerPhone || 'N/A'}
+        </Descriptions.Item>
+        {/* KẾT THÚC THÔNG TIN NGƯỜI ĐẶT */}
+
+        {/* THÔNG TIN NGƯỜI NHẬN */}
+        <Descriptions.Item label="Tên người nhận">
           {shipping.fullName || 'N/A'}
         </Descriptions.Item>
-        <Descriptions.Item label="Email">
+        <Descriptions.Item label="Email người nhận">
           {shipping.email || 'N/A'}
         </Descriptions.Item>
-        <Descriptions.Item label="Số điện thoại">
+        <Descriptions.Item label="Số điện thoại người nhận">
           {shipping.phone || 'N/A'}
         </Descriptions.Item>
+
         <Descriptions.Item label="Địa chỉ giao hàng">
-          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${shipping.ward || ''
-            }, ${shipping.district || ''}, ${shipping.province || ''}`}
+          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${
+            shipping.ward || ''
+          }, ${shipping.district || ''}, ${shipping.province || ''}`}
         </Descriptions.Item>
         {/* Thêm phí vận chuyển */}
         <Descriptions.Item label="Phí vận chuyển">
