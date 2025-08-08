@@ -109,9 +109,10 @@ const orderSchema = new mongoose.Schema(
     },
     app_trans_id: { type: String, unique: true },
     paymentTransactionId: { type: String },
+
     paymentStatus: {
       type: String,
-      enum: ["pending", "completed", "failed"],
+      enum: ["pending", "completed", "failed",'refunded', 'expired'],
       default: "pending",
     },
     promotion: {

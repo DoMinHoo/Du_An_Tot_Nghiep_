@@ -183,3 +183,7 @@
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 1a2078b0-439a-4386-8b85-c4fdf456ebc8 hoặc giỏ hàng rỗng","timestamp":"2025-08-06 17:08:40"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 683c46da-5156-4a6e-a319-a0329992d954 hoặc giỏ hàng rỗng","timestamp":"2025-08-06 17:11:20"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 6dcccc5e-e924-425f-a343-feeac23500d2 hoặc giỏ hàng rỗng","timestamp":"2025-08-06 21:30:05"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 68480739b6d432cc252f3c0a đã chứa sản phẩm, xóa guestCart: b701eceb-78ba-4272-ac8f-d469e053ed06","timestamp":"2025-08-07 16:22:06"}
+{"level":"info","message":"Không tìm thấy guestCart với guestId: f457a761-006e-44de-bfee-78318a96f605 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 21:42:04"}
+{"level":"info","message":"Không tìm thấy guestCart với guestId: cd78a797-9163-48b9-a685-26d842d7ba01 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 22:09:51"}
+{"level":"info","message":"Không tìm thấy guestCart với guestId: 9b6e1a8a-13c0-43d2-9772-1e44bddb0417 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 22:36:24"}

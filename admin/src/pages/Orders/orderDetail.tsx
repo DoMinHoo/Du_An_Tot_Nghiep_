@@ -33,6 +33,13 @@ const statusColor: Record<string, string> = {
   completed: 'green',
   canceled: 'red',
 };
+const paymentStatusText: Record<string, string> = {
+  pending: 'Chưa thanh toán',
+  completed: 'Đã thanh toán',
+  failed: 'Thanh toán thất bại',
+  refunded: 'Đã hoàn tiền',
+};
+
 
 const getNextAvailableStatuses = (currentStatus: string): string[] => {
   const transitions: Record<string, string[]> = {
@@ -184,6 +191,18 @@ const OrderDetail: React.FC = () => {
             {statusText[order.status] || order.status}
           </Tag>
         </Descriptions.Item>
+        <Descriptions.Item label="Phương thức thanh toán">
+  {order.paymentMethod === 'cod'
+    ? 'Thanh toán khi nhận hàng'
+    : order.paymentMethod === 'online_payment'
+    ? 'Thanh toán qua ZaloPay'
+    : 'Chuyển khoản ngân hàng'}
+</Descriptions.Item>
+
+<Descriptions.Item label="Trạng thái thanh toán">
+  {paymentStatusText[order.paymentStatus] || order.paymentStatus}
+</Descriptions.Item>
+
         {order.status === 'canceled' && note && (
           <Descriptions.Item label="Lý do huỷ đơn hàng">
             <Text type="danger">{note}</Text>
@@ -257,7 +276,7 @@ const OrderDetail: React.FC = () => {
               : '/default-image.png';
           return (
             <List.Item style={{ padding: 16 }}>
-              <div
+                <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -276,15 +295,36 @@ const OrderDetail: React.FC = () => {
                       backgroundColor: '#f5f5f5',
                     }}
                   />
-                  <div>
-                    <div>
-                      <strong>{item.name}</strong>
-                    </div>
-                    <div>Số lượng: {item.quantity}</div>
-                    <div>
-                      Đơn giá: {item.salePrice?.toLocaleString('vi-VN')}₫
-                    </div>
-                  </div>
+                <div>
+  <div>
+    <strong>{item.name}</strong>
+  </div>
+  <div>SKU: {item.sku || 'Không có'}</div>
+  <div>Kích thước: {item.dimensions || 'Không xác định'}</div>
+  <div>Chất liệu: {item.material || 'Không xác định'}</div>
+  <div>
+    Màu sắc: {item.colorName || 'Không xác định'}{' '}
+    {item.colorImageUrl && (
+      <img
+        src={`http://localhost:5000${item.colorImageUrl}`}
+        alt={item.colorName}
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: '50%',
+          marginLeft: 8,
+          verticalAlign: 'middle',
+          border: '1px solid #ddd',
+        }}
+      />
+    )}
+  </div>
+  <div>Số lượng: {item.quantity}</div>
+  <div>
+    Đơn giá: {item.salePrice?.toLocaleString('vi-VN')}₫
+  </div>
+</div>
+
                 </div>
               </div>
             </List.Item>

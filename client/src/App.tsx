@@ -27,6 +27,7 @@ import NewsPage from './Pages/NewsPage';
 import SearchPage from './Pages/SearchPage';
 import ProductsPage from './Pages/ProductPage';
 import FavoriteProductsPage from './Pages/FavoriteProductsPage';
+import OrderDetailPage from './Pages/OrderDetailPage';
 
 
 
@@ -70,6 +71,7 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
 
         <Route path="/order-history" element={<OrderHistoryPage />} />
+          <Route path="/order-detail/:id" element={<OrderDetailPage />} />
         <Route path="/check-payment" element={<CheckPayment />} />
         <Route path="/search" element={<SearchPage />} />
 
