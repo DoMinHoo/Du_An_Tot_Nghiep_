@@ -58,8 +58,10 @@ exports.applyPromotion = async (req, res) => {
       originalPrice,
       finalPrice,
       discountAmount,
+      maxDiscountPrice: promotion.maxDiscountPrice || 0, // ✅ thêm dòng này
       promotionApplied: promotion.code,
     });
+
   } catch (error) {
     res.status(500).json({ message: "Lỗi máy chủ.", error: error.message });
   }
