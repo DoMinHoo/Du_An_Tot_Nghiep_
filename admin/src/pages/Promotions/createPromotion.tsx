@@ -53,7 +53,7 @@ const CreatePromotion: React.FC = () => {
 
   return (
     <div style={{ padding: "24px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <div style={{margin: "0 auto" }}>
+      <div style={{ margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Space align="center">
@@ -155,7 +155,6 @@ const CreatePromotion: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
-
               <Col xs={24} md={12}>
                 <Form.Item label={<Text strong>Giá trị đơn tối thiểu</Text>} name="minOrderValue">
                   <InputNumber
@@ -168,6 +167,24 @@ const CreatePromotion: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
+              
+              {/* Giá tối đa được giảm */}
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={<Text strong>Giá tối đa được giảm</Text>}
+                  name="maxDiscountPrice"
+                >
+                  <InputNumber
+                    min={0}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "6px" }}
+                    placeholder="0 nếu không giới hạn"
+                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    parser={(value: any) => value.replace(/,/g, "")}
+                  />
+                </Form.Item>
+              </Col>
+
             </Row>
           </Card>
 
