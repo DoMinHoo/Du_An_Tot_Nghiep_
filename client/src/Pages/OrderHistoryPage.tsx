@@ -20,6 +20,24 @@ const statusText: Record<string, string> = {
   completed: 'Đã giao hàng',
   canceled: 'Đã hủy đơn',
 };
+const getPaymentStatusText = (order: any): string => {
+  switch (order.paymentStatus) {
+    case 'pending':
+      return 'Chưa thanh toán';
+    case 'completed':
+      return 'Đã thanh toán';
+    case 'failed':
+      return 'Thanh toán thất bại';
+    case 'refunded':
+      return 'Đã hoàn tiền';
+    case 'expired':
+      return 'Thanh toán hết hạn';
+    default:
+      return 'Không xác định';
+  }
+};
+
+
 
 const OrderHistoryPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -237,9 +255,11 @@ const OrderHistoryPage: React.FC = () => {
                   <p><strong>Email:</strong> {order.shippingAddress.email}</p>
                   <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
                   <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</p>
+                  <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order)}</p>
+
                 </div>
 
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   {order.items.map((group: any) => (
                     <div key={group.productId} className="border rounded-md p-3 bg-gray-50">
                       {group.variations.map((v: any) => {
@@ -267,7 +287,7 @@ const OrderHistoryPage: React.FC = () => {
                       })}
                     </div>
                   ))}
-                </div>
+                </div> */}
 
                 <div className="text-right mt-4 text-lg font-semibold">
                   {/* Hiển thị tổng tiền hàng */}
@@ -355,6 +375,14 @@ const OrderHistoryPage: React.FC = () => {
                     </button>
                   </div>
                 )}
+                 <div className="text-right mt-4">
+  <button
+    onClick={() => window.location.href = `/order-detail/${order._id}`}
+    className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
+  >
+    Xem chi tiết
+  </button>
+</div>
               </div>
             );
           })}

@@ -488,11 +488,17 @@ exports.getOrderById = async (req, res) => {
             .populate({
                 path: 'items.variationId',
                 select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
-                populate: {
-                    path: 'productId',
-                    select: 'name brand descriptionShort image',
-                    match: { isDeleted: false, status: 'active' },
-                },
+                populate: [
+    {
+      path: 'productId',
+      select: 'name brand descriptionShort image',
+      match: { isDeleted: false, status: 'active' },
+    },
+    {
+      path: 'material',
+      select: 'name',
+    }
+  ]
             });
 
         if (!order) {
@@ -506,7 +512,11 @@ exports.getOrderById = async (req, res) => {
                     variationId: item.variationId._id,
                     quantity: item.quantity,
                     salePrice: item.salePrice,
-                    name: item.variationId.productId.name,
+                    name: item.variationId.name,
+                      sku: item.variationId.sku,
+                     dimensions: item.variationId.dimensions,
+                      material:
+                    item.variationId.material?.name || item.variationId.material || 'Không xác định',
                     image: item.variationId.productId.image,
                     subtotal: item.salePrice * item.quantity,
                     colorName: item.variationId.colorName,
@@ -585,10 +595,27 @@ exports.updateOrder = async (req, res) => {
         }
 
         // Cập nhật trạng thái và ghi log
-        const updateData = {
-            status,
-            ...(status === 'canceled' && note ? { cancellationReason: note } : {})
-        };
+       // Cập nhật trạng thái và ghi log
+const updateData = {
+  status,
+  ...(status === 'canceled' && note ? { cancellationReason: note } : {}),
+};
+
+// Nếu đơn hàng được xác nhận hoàn thành → cập nhật paymentStatus nếu còn pending
+if (status === 'completed' && order.paymentStatus === 'pending') {
+  updateData.paymentStatus = 'completed';
+}
+
+// ✅ Nếu đơn hàng bị huỷ và đã thanh toán online → chuyển trạng thái thanh toán sang đã hoàn tiền
+if (
+  status === 'canceled' &&
+  order.paymentMethod === 'online_payment' &&
+  order.paymentStatus === 'completed'
+) {
+  updateData.paymentStatus = 'refunded';
+}
+
+
 
         await Order.findByIdAndUpdate(id, {
             $set: updateData,
@@ -813,4 +840,4 @@ exports.getOrderStatus = async (req, res) => {
         console.error("Error fetching order status:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
-}
+};
