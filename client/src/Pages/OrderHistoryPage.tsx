@@ -326,9 +326,9 @@ const OrderHistoryPage: React.FC = () => {
 
                 </div>
 
-                {order.status === 'pending' && order.paymentStatus === 'pending' && (
+                {order.status === 'pending' && (
                   <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                    {order.paymentMethod === 'online_payment' && (
+                    {order.paymentMethod === 'online_payment' && order.paymentStatus === 'pending' && (
                       <button
                         onClick={() => handleRetryPayment(order.orderCode)}
                         className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -365,6 +365,7 @@ const OrderHistoryPage: React.FC = () => {
                   </div>
                 )}
 
+
                 {order.status === 'shipping' && (
                   <div className="text-right mt-4">
                     <button
@@ -375,14 +376,14 @@ const OrderHistoryPage: React.FC = () => {
                     </button>
                   </div>
                 )}
-                 <div className="text-right mt-4">
-  <button
-    onClick={() => window.location.href = `/order-detail/${order._id}`}
-    className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
-  >
-    Xem chi tiết
-  </button>
-</div>
+                <div className="text-right mt-4">
+                  <button
+                    onClick={() => window.location.href = `/order-detail/${order._id}`}
+                    className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
+                  >
+                    Xem chi tiết
+                  </button>
+                </div>
               </div>
             );
           })}
