@@ -19,7 +19,7 @@ const socket = io('http://localhost:5000');
 if (userId) {
   socket.emit('join-room', userId); // Tham gia room socket riêng
 }
-
+ 
 // Gắn socket vào window để dùng toàn cục
 window.socket = socket;
 createRoot(document.getElementById('root')!).render(
