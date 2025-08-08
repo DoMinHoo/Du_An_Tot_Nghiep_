@@ -15,6 +15,13 @@ const promotionSchema = new mongoose.Schema(
       enum: ["percentage", "fixed"],
       required: [true, "Loại giảm giá là bắt buộc"],
     },
+    
+    maxDiscountPrice: { // Thêm mới
+      type: Number,
+      default: 0, // 0 nghĩa là không giới hạn
+      min: [0, "Giá tối đa được giảm không hợp lệ"],
+    },
+
     discountValue: {
       type: Number,
       required: [true, "Giá trị giảm giá là bắt buộc"],

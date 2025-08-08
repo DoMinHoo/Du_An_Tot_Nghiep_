@@ -186,6 +186,23 @@ const UpdatePromotion: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
+              
+              {/* Giá tối đa được giảm */}
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={<Text strong>Giá tối đa được giảm</Text>}
+                  name="maxDiscountPrice"
+                >
+                  <InputNumber
+                    min={0}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "6px" }}
+                    placeholder="0 nếu không giới hạn"
+                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    parser={(value: any) => value.replace(/,/g, "")}
+                  />
+                </Form.Item>
+              </Col>
             </Row>
           </Card>
 
