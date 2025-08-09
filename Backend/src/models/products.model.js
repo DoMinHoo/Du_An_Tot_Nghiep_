@@ -17,5 +17,7 @@ const productSchema = new mongoose.Schema({
     timestamps: true,
     versionKey: false
 });
-
+productSchema.index({ categoryId: 1 });
+productSchema.index({ status: 1 });
+productSchema.index({ isDeleted: 1 });
 module.exports = mongoose.model('Product', productSchema);

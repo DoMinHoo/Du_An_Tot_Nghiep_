@@ -1,607 +1,485 @@
-const Order = require('../models/order.model');
-const User = require('../models/user.model');
-const Product = require('../models/products.model');
-const ProductVariation = require('../models/product_variations.model');
-const Category = require('../models/category.model');
-const moment = require('moment');
-const { validationResult } = require('express-validator');
+    const moment = require('moment');
+    const mongoose = require('mongoose');
+    const Order = require('../models/order.model');
+    const Product = require('../models/products.model');
+    const ProductVariation = require('../models/product_variations.model');
+    const User = require('../models/user.model');
+    const Category = require('../models/category.model');
+    const { getDateRange } = require('../untils/date');
 
-/// Hàm validate chung cho các tham số query
-const validateQuery = (req) => {
-    console.log('Received query params:', req.query); // Log để debug
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return { isValid: false, errors: errors.array() };
-    }
+    class StatisticsController {
+    // Thống kê doanh thu
+static async getRevenueStats(req, res) {
+    try {
+        const { period = 'day', startDate, endDate, chartType = 'line' } = req.query;
 
-    let { startDate, endDate, groupBy = 'day' } = req.query;
-    let dateFilter = {};
-
-    // Kiểm tra định dạng ngày
-    if (startDate && endDate) {
-        if (!moment(startDate, 'YYYY-MM-DD', true).isValid() || !moment(endDate, 'YYYY-MM-DD', true).isValid()) {
-            return { isValid: false, errors: [{ msg: 'Định dạng ngày không hợp lệ (YYYY-MM-DD)' }] };
+        // Validation
+        if (!['day', 'month', 'year'].includes(period) && !(startDate && endDate)) {
+            return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ. Chỉ chấp nhận: day, month, year hoặc startDate/endDate.' });
         }
-        // Điều chỉnh startDate và endDate khi groupBy = month
-        if (groupBy === 'month') {
-            startDate = moment(startDate).startOf('month').format('YYYY-MM-DD');
-            endDate = moment(endDate).endOf('month').format('YYYY-MM-DD');
+        if (startDate && endDate && (!moment(startDate).isValid() || !moment(endDate).isValid())) {
+            return res.status(400).json({ message: 'startDate hoặc endDate không hợp lệ.' });
         }
-        dateFilter = {
-            createdAt: {
-                $gte: moment(startDate).startOf('day').toDate(),
-                $lte: moment(endDate).endOf('day').toDate(),
+        if (!['line', 'bar'].includes(chartType)) {
+            return res.status(400).json({ message: 'Loại biểu đồ không hợp lệ. Chỉ chấp nhận: line, bar.' });
+        }
+
+        const { startDate: start, endDate: end, previousStartDate, previousEndDate } = getDateRange(period, startDate, endDate);
+
+        // Doanh thu hiện tại
+        const currentRevenue = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed', totalAmount: { $exists: true } } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).catch(err => [{ total: 0 }]);
+
+        // Doanh thu kỳ trước
+        const previousRevenue = await Order.aggregate([
+            { $match: { createdAt: { $gte: previousStartDate, $lte: previousEndDate }, status: 'completed', totalAmount: { $exists: true } } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).catch(err => [{ total: 0 }]);
+
+        const currentTotal = currentRevenue[0]?.total || 0;
+        const previousTotal = previousRevenue[0]?.total || 0;
+        const growthRate = previousTotal ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(2) : 0;
+
+        // Tổng số đơn hàng theo trạng thái
+        const orderStats = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: { $exists: true } } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]).catch(err => []);
+        const orderStatus = { pending: 0, confirmed: 0, shipping: 0, completed: 0, canceled: 0 };
+        orderStats.forEach(stat => { if (stat._id) orderStatus[stat._id] = stat.count || 0; });
+
+        // Doanh thu trung bình
+        const completedOrders = await Order.countDocuments({ createdAt: { $gte: start, $lte: end }, status: 'completed' }).catch(err => 0);
+        const avgRevenuePerOrder = completedOrders ? (currentTotal / completedOrders).toFixed(2) : 0;
+
+        // Dữ liệu biểu đồ
+        let groupBy, labelFormat, maxIntervals;
+        if (period === 'day' || (startDate && endDate && moment(end).diff(moment(start), 'days') <= 1)) {
+            groupBy = { $hour: '$createdAt' };
+            labelFormat = i => `${i}h`;
+            maxIntervals = 24;
+        } else if (period === 'month' || (startDate && endDate && moment(end).diff(moment(start), 'months') <= 1)) {
+            groupBy = { $dayOfMonth: '$createdAt' };
+            labelFormat = i => `Ngày ${i}`;
+            maxIntervals = moment(end).daysInMonth();
+        } else {
+            groupBy = { $month: '$createdAt' };
+            labelFormat = i => `Tháng ${i}`;
+            maxIntervals = 12;
+        }
+
+        const chartData = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed', totalAmount: { $exists: true } } },
+            { $group: { _id: groupBy, total: { $sum: '$totalAmount' } } },
+            { $sort: { '_id': 1 } }
+        ]).catch(err => []);
+
+        const labels = [];
+        const data = [];
+        for (let i = 0; i < maxIntervals; i++) {
+            const found = chartData.find(d => d._id === (i + 1));
+            labels.push(labelFormat(i + 1));
+            data.push(found ? found.total || 0 : 0);
+        }
+
+        const chart = {
+            type: chartType,
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data,
+                    borderColor: chartType === 'line' ? '#4A90E2' : '#000000',
+                    backgroundColor: chartType === 'line' ? 'rgba(74, 144, 226, 0.2)' : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                    fill: chartType === 'line',
+                    borderWidth: chartType === 'bar' ? 1 : undefined
+                }]
             },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
         };
-    }
 
-    // Kiểm tra groupBy
-    const validGroupBy = ['day', 'month'];
-    if (!validGroupBy.includes(groupBy)) {
-        return { isValid: false, errors: [{ msg: 'groupBy phải là day hoặc month' }] };
-    }
+        const result = {
+            currentRevenue: currentTotal,
+            previousRevenue: previousTotal,
+            growthRate: parseFloat(growthRate),
+            orderStatus,
+            avgRevenuePerOrder: parseFloat(avgRevenuePerOrder),
+            chart
+        };
 
-    const dateFormat = groupBy === 'day' ? '%Y-%m-%d' : '%Y-%m';
-
-    return { isValid: true, dateFilter, dateFormat, adjustedDates: { startDate, endDate } };
-};
-
-// 1. Thống kê tổng quát
-const getOverviewStats = async (req, res) => {
-    try {
-        const validation = validateQuery(req);
-        if (!validation.isValid) {
-            return res.status(400).json({ success: false, message: 'Dữ liệu đầu vào không hợp lệ', errors: validation.errors });
-        }
-        const { dateFilter, dateFormat } = validation;
-
-        // Tổng số đơn hàng
-        const totalOrders = await Order.countDocuments(dateFilter);
-
-        // Tổng doanh thu (chỉ tính đơn completed)
-        const totalRevenue = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
-            { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-        ]);
-
-        // Tổng số khách hàng
-        const totalUsers = await User.countDocuments();
-
-        // Tổng số sản phẩm đã bán
-        const totalProductsSold = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
-            { $unwind: '$items' },
-            { $group: { _id: null, total: { $sum: '$items.quantity' } } },
-        ]);
-
-        // Doanh thu theo thời gian
-        const revenueByTime = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
-            {
-                $group: {
-                    _id: { $dateToString: { format: dateFormat, date: '$createdAt' } },
-                    total: { $sum: '$totalAmount' },
-                },
-            },
-            { $sort: { _id: 1 } },
-            { $project: { time: '$_id', total: 1, _id: 0 } },
-        ]);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                totalOrders,
-                totalRevenue: totalRevenue[0]?.total || 0,
-                totalUsers,
-                totalProductsSold: totalProductsSold[0]?.total || 0,
-                revenueByTime,
-            },
-        });
+        return res.json(result);
     } catch (error) {
-        console.error('Lỗi thống kê tổng quát:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: process.env.NODE_ENV === 'production' ? 'Lỗi nội bộ' : error.message,
-        });
+        console.error('Lỗi khi lấy thống kê doanh thu:', error);
+        return res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
-};
+}
 
-// 2. Thống kê đơn hàng
-const getOrderStats = async (req, res) => {
+    // Thống kê sản phẩm
+static async getProductStats(req, res) {
     try {
-        const validation = validateQuery(req);
-        if (!validation.isValid) {
-            return res.status(400).json({ success: false, message: 'Dữ liệu đầu vào không hợp lệ', errors: validation.errors });
+        const { chartType = 'bar', period = 'month', startDate, endDate } = req.query;
+
+        // Validation
+        if (!['bar', 'pie'].includes(chartType)) {
+            return res.status(400).json({ message: 'Loại biểu đồ không hợp lệ. Chỉ chấp nhận: bar, pie.' });
         }
-        const { dateFilter, dateFormat } = validation;
-
-        // Tổng đơn hàng theo trạng thái
-        const ordersByStatus = await Order.aggregate([
-            { $match: dateFilter },
-            { $group: { _id: '$status', count: { $sum: 1 } } },
-            { $project: { status: '$_id', count: 1, _id: 0 } },
-        ]);
-
-        // Đơn hàng theo thời gian
-        const ordersByTime = await Order.aggregate([
-            { $match: dateFilter },
-            {
-                $group: {
-                    _id: { $dateToString: { format: dateFormat, date: '$createdAt' } },
-                    count: { $sum: 1 },
-                },
-            },
-            { $sort: { _id: 1 } },
-            { $project: { time: '$_id', count: 1, _id: 0 } },
-        ]);
-
-        // Sản phẩm phổ biến trong đơn hàng
-        const popularProducts = await Order.aggregate([
-            { $match: dateFilter },
-            { $unwind: '$items' },
-            {
-                $group: {
-                    _id: '$items.variationId',
-                    totalQuantity: { $sum: '$items.quantity' },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'productvariations',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'variation',
-                },
-            },
-            { $unwind: '$variation' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'variation.productId',
-                    foreignField: '_id',
-                    as: 'product',
-                },
-            },
-            { $unwind: '$product' },
-            { $sort: { totalQuantity: -1 } },
-            { $limit: 10 },
-            {
-                $project: {
-                    productName: '$product.name',
-                    variationName: '$variation.name',
-                    totalQuantity: 1,
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Giá trị đơn hàng trung bình
-        const avgOrderValue = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
-            { $group: { _id: null, avg: { $avg: '$totalAmount' } } },
-        ]);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                ordersByStatus,
-                ordersByTime,
-                popularProducts,
-                avgOrderValue: avgOrderValue[0]?.avg || 0,
-            },
-        });
-    } catch (error) {
-        console.error('Lỗi thống kê đơn hàng:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: process.env.NODE_ENV === 'production' ? 'Lỗi nội bộ' : error.message,
-        });
-    }
-};
-
-// 3. Thống kê sản phẩm
-const getProductStats = async (req, res) => {
-    try {
-        const validation = validateQuery(req);
-        if (!validation.isValid) {
-            return res.status(400).json({ success: false, message: 'Dữ liệu đầu vào không hợp lệ', errors: validation.errors });
+        if (!['day', 'month', 'year'].includes(period) && !(startDate && endDate)) {
+            return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ. Chỉ chấp nhận: day, month, year hoặc startDate/endDate.' });
         }
-        const { dateFilter, dateFormat } = validation;
-
-        // Sản phẩm bán chạy nhất
-        const bestSellingProducts = await Order.aggregate([
-            { $match: dateFilter },
-            { $unwind: '$items' },
-            {
-                $group: {
-                    _id: '$items.variationId',
-                    totalQuantity: { $sum: '$items.quantity' },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'productvariations',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'variation',
-                },
-            },
-            { $unwind: '$variation' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'variation.productId',
-                    foreignField: '_id',
-                    as: 'product',
-                },
-            },
-            { $unwind: '$product' },
-            { $sort: { totalQuantity: -1 } },
-            { $limit: 10 },
-            {
-                $project: {
-                    productName: '$product.name',
-                    variationName: '$variation.name',
-                    totalQuantity: 1,
-                    colorImageUrl: '$variation.colorImageUrl',
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Sản phẩm tồn kho thấp
-        const lowStockProducts = await ProductVariation.find({
-            stockQuantity: { $lte: 10 },
-        })
-            .populate('productId', 'name')
-            .select('name productId stockQuantity colorImageUrl')
-            .lean();
-
-        // Sản phẩm bị hoàn trả nhiều (giả sử hủy là hoàn trả)
-        const highReturnProducts = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'canceled' } },
-            { $unwind: '$items' },
-            {
-                $group: {
-                    _id: '$items.variationId',
-                    totalReturns: { $sum: '$items.quantity' },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'productvariations',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'variation',
-                },
-            },
-            { $unwind: '$variation' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'variation.productId',
-                    foreignField: '_id',
-                    as: 'product',
-                },
-            },
-            { $unwind: '$product' },
-            { $sort: { totalReturns: -1 } },
-            { $limit: 10 },
-            {
-                $project: {
-                    productName: '$product.name',
-                    variationName: '$variation.name',
-                    totalReturns: 1,
-                    colorImageUrl: '$variation.colorImageUrl',
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Sản phẩm không bán được
-        const unsoldProducts = await ProductVariation.aggregate([
-            {
-                $lookup: {
-                    from: 'orders',
-                    let: { variationId: '$_id' },
-                    pipeline: [
-                        { $match: dateFilter },
-                        { $unwind: '$items' },
-                        { $match: { 'items.variationId': { $eq: '$$variationId' } } },
-                    ],
-                    as: 'orders',
-                },
-            },
-            { $match: { orders: { $size: 0 } } },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'productId',
-                    foreignField: '_id',
-                    as: 'product',
-                },
-            },
-            { $unwind: '$product' },
-            { $limit: 10 },
-            {
-                $project: {
-                    productName: '$product.name',
-                    variationName: '$name',
-                    stockQuantity: 1,
-                    colorImageUrl: 1,
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Số lượng sản phẩm đã bán theo thời gian
-        const productsSoldByTime = await Order.aggregate([
-            { $match: dateFilter },
-            { $unwind: '$items' },
-            {
-                $group: {
-                    _id: {
-                        time: { $dateToString: { format: dateFormat, date: '$createdAt' } },
-                        variationId: '$items.variationId',
-                    },
-                    totalQuantity: { $sum: '$items.quantity' },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'productvariations',
-                    localField: '_id.variationId',
-                    foreignField: '_id',
-                    as: 'variation',
-                },
-            },
-            { $unwind: '$variation' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'variation.productId',
-                    foreignField: '_id',
-                    as: 'product',
-                },
-            },
-            { $unwind: '$product' },
-            { $sort: { '_id.time': 1 } },
-            {
-                $project: {
-                    time: '$_id.time',
-                    productName: '$product.name',
-                    variationName: '$variation.name',
-                    totalQuantity: 1,
-                    colorImageUrl: '$variation.colorImageUrl',
-                    _id: 0,
-                },
-            },
-        ]);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                bestSellingProducts,
-                lowStockProducts,
-                highReturnProducts,
-                unsoldProducts,
-                productsSoldByTime,
-            },
-        });
-    } catch (error) {
-        console.error('Lỗi thống kê sản phẩm:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: process.env.NODE_ENV === 'production' ? 'Lỗi nội bộ' : error.message,
-        });
-    }
-};
-
-// 4. Thống kê người dùng / khách hàng
-const getUserStats = async (req, res) => {
-    try {
-        const validation = validateQuery(req);
-        if (!validation.isValid) {
-            return res.status(400).json({ success: false, message: 'Dữ liệu đầu vào không hợp lệ', errors: validation.errors });
+        if (startDate && endDate && (!moment(startDate).isValid() || !moment(endDate).isValid())) {
+            return res.status(400).json({ message: 'startDate hoặc endDate không hợp lệ.' });
         }
-        const { dateFilter } = validation;
 
-        // Số lượng khách hàng mới
-        const newUsers = await User.countDocuments(dateFilter);
-
-        // Khách hàng hoạt động tích cực nhất
-        const activeUsers = await Order.aggregate([
-            { $match: dateFilter },
-            {
-                $group: {
-                    _id: '$userId',
-                    totalOrders: { $sum: 1 },
-                    totalSpent: { $sum: '$totalAmount' },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'user',
-                },
-            },
-            { $unwind: '$user' },
-            { $sort: { totalOrders: -1 } },
-            { $limit: 10 },
-            {
-                $project: {
-                    name: '$user.name',
-                    email: '$user.email',
-                    totalOrders: 1,
-                    totalSpent: 1,
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Lịch sử mua hàng của khách
-        const userPurchaseHistory = await Order.aggregate([
-            { $match: dateFilter },
-            {
-                $group: {
-                    _id: '$userId',
-                    orders: { $push: { orderCode: '$orderCode', totalAmount: '$totalAmount', createdAt: '$createdAt' } },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'user',
-                },
-            },
-            { $unwind: '$user' },
-            {
-                $project: {
-                    name: '$user.name',
-                    email: '$user.email',
-                    orders: 1,
-                    _id: 0,
-                },
-            },
-        ]);
-
-        // Khu vực khách hàng tập trung
-        const userByRegion = await User.aggregate([
-            { $match: dateFilter },
-            {
-                $group: {
-                    _id: '$address',
-                    count: { $sum: 1 },
-                },
-            },
-            { $sort: { count: -1 } },
-            { $limit: 10 },
-            { $project: { region: '$_id', count: 1, _id: 0 } },
-        ]);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                newUsers,
-                activeUsers,
-                userPurchaseHistory,
-                userByRegion,
-            },
-        });
-    } catch (error) {
-        console.error('Lỗi thống kê người dùng:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: process.env.NODE_ENV === 'production' ? 'Lỗi nội bộ' : error.message,
-        });
-    }
-};
-
-// 5. Thống kê doanh thu
-const getRevenueStats = async (req, res) => {
-    try {
-        const validation = validateQuery(req);
-        if (!validation.isValid) {
-            return res.status(400).json({ success: false, message: 'Dữ liệu đầu vào không hợp lệ', errors: validation.errors });
+        let dateRange;
+        try {
+            dateRange = getDateRange(period, startDate, endDate);
+        } catch (error) {
+            return res.status(400).json({ message: error.message });
         }
-        const { dateFilter, dateFormat } = validation;
+        const { startDate: start, endDate: end } = dateRange;
 
-        // Doanh thu theo thời gian
-        const revenueByTime = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
-            {
-                $group: {
-                    _id: { $dateToString: { format: dateFormat, date: '$createdAt' } },
-                    total: { $sum: '$totalAmount' },
-                },
-            },
-            { $sort: { _id: 1 } },
-            { $project: { time: '$_id', total: 1, _id: 0 } },
+        // Đếm sản phẩm
+        const [activeProducts, inactiveProducts, flashSaleProducts] = await Promise.all([
+            Product.countDocuments({ status: 'active', isDeleted: false }).catch(() => 0),
+            Product.countDocuments({ status: { $in: ['hidden', 'sold_out'] }, isDeleted: false }).catch(() => 0),
+            ProductVariation.countDocuments({
+                flashSaleStart: { $lte: new Date() },
+                flashSaleEnd: { $gte: new Date() },
+                isDeleted: false
+            }).catch(() => 0),
         ]);
 
-        // Doanh thu theo danh mục sản phẩm
-        const revenueByCategory = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
+        // Top sản phẩm bán chạy với thông tin hình ảnh từ biến thể
+        const topProducts = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed' } },
             { $unwind: '$items' },
             {
                 $lookup: {
                     from: 'productvariations',
                     localField: 'items.variationId',
                     foreignField: '_id',
-                    as: 'variation',
-                },
+                    as: 'variation'
+                }
             },
-            { $unwind: '$variation' },
+            { $unwind: { path: '$variation', preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: 'products',
                     localField: 'variation.productId',
                     foreignField: '_id',
-                    as: 'product',
-                },
+                    as: 'product'
+                }
             },
-            { $unwind: '$product' },
-            {
-                $lookup: {
-                    from: 'categories',
-                    localField: 'product.categoryId',
-                    foreignField: '_id',
-                    as: 'category',
-                },
-            },
-            { $unwind: '$category' },
+            { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
             {
                 $group: {
-                    _id: '$category.name',
-                    total: { $sum: { $multiply: ['$items.quantity', '$items.salePrice'] } },
-                },
+                    _id: { productId: '$variation.productId', productName: '$product.name' },
+                    totalSold: { $sum: '$items.quantity' },
+                    totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.salePrice'] } },
+                    variationDetails: { $first: '$variation' } // Lấy thông tin biến thể, bao gồm colorImageUrl
+                }
             },
-            { $sort: { total: -1 } },
-            { $project: { category: '$_id', total: 1, _id: 0 } },
-        ]);
+            { $sort: { totalSold: -1 } },
+            { $limit: 5 }
+        ]).catch(() => []);
 
-        // Doanh thu theo hình thức thanh toán
-        const revenueByPaymentMethod = await Order.aggregate([
-            { $match: { ...dateFilter, status: 'completed' } },
+        // Sản phẩm tồn kho thấp
+        const lowStockProducts = await ProductVariation.find({
+            stockQuantity: { $lt: 10 },
+            isDeleted: false
+        })
+            .populate('productId', 'name image') // Lấy hình ảnh từ Product cho tham khảo
+            .select('name stockQuantity productId colorImageUrl')
+            .lean()
+            .catch(() => []);
+
+        // Danh mục phổ biến
+        const popularCategories = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed' } },
+            { $unwind: '$items' },
+            { $lookup: { from: 'productvariations', localField: 'items.variationId', foreignField: '_id', as: 'variation' } },
+            { $unwind: { path: '$variation', preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: 'products', localField: 'variation.productId', foreignField: '_id', as: 'product' } },
+            { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: 'categories', localField: 'product.categoryId', foreignField: '_id', as: 'category' } },
+            { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
             {
                 $group: {
-                    _id: '$paymentMethod',
-                    total: { $sum: '$totalAmount' },
-                },
+                    _id: { categoryId: '$category._id', categoryName: '$category.name' },
+                    totalSold: { $sum: '$items.quantity' }
+                }
             },
-            { $project: { paymentMethod: '$_id', total: 1, _id: 0 } },
-        ]);
+            { $sort: { totalSold: -1 } },
+            { $limit: 5 }
+        ]).catch(() => []);
 
-        res.status(200).json({
-            success: true,
-            data: {
-                revenueByTime,
-                revenueByCategory,
-                revenueByPaymentMethod,
+        // Tổng sản phẩm và tỷ lệ bán
+        const [totalProducts, soldProducts] = await Promise.all([
+            Product.countDocuments({ isDeleted: false }).catch(() => 0),
+            Product.countDocuments({ totalPurchased: { $gt: 0 }, isDeleted: false }).catch(() => 0)
+        ]);
+        const unsoldProducts = totalProducts - soldProducts;
+        const soldRatio = totalProducts ? (soldProducts / totalProducts * 100).toFixed(2) : 0;
+
+        // Tỷ lệ tồn kho
+        const totalStock = await ProductVariation.aggregate([
+            { $match: { isDeleted: false } },
+            { $group: { _id: null, totalStock: { $sum: '$stockQuantity' } } }
+        ]).catch(() => [{ totalStock: 0 }]);
+        const totalStockQuantity = totalStock[0]?.totalStock || 0;
+
+        // Biểu đồ
+        let chart = null;
+        if (topProducts.length > 0) {
+            chart = {
+                type: chartType,
+                data: {
+                    labels: topProducts.map(p => p._id.productName || 'Không xác định'),
+                    datasets: [{
+                        label: 'Số lượng bán',
+                        data: topProducts.map(p => p.totalSold || 0),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                        borderColor: chartType === 'bar' ? '#000000' : undefined,
+                        borderWidth: chartType === 'bar' ? 1 : undefined
+                    }]
+                },
+                options: { responsive: true, scales: chartType === 'bar' ? { y: { beginAtZero: true } } : {} }
+            };
+        } else {
+            chart = null; // Không tạo biểu đồ nếu không có dữ liệu
+        }
+
+        const message = topProducts.length === 0 && lowStockProducts.length === 0 && popularCategories.length === 0
+            ? 'Không có dữ liệu đơn hàng trong khoảng thời gian này.'
+            : undefined;
+
+        const result = {
+            message,
+            productStats: {
+                active: activeProducts,
+                inactive: inactiveProducts,
+                flashSale: flashSaleProducts,
+                totalStock: totalStockQuantity
             },
-        });
+            topProducts: topProducts.map(p => ({
+                productId: p._id.productId,
+                productName: p._id.productName || 'Không xác định',
+                totalSold: p.totalSold || 0,
+                totalRevenue: p.totalRevenue || 0,
+                colorImageUrl: p.variationDetails?.colorImageUrl || null, // Lấy hình ảnh từ biến thể
+                dimensions: p.variationDetails?.dimensions || 'Không xác định', // Kích thước
+                salePrice: p.variationDetails?.salePrice || p.variationDetails?.finalPrice || 0,// Giá khuyến mãi hoặc giá cuối 
+                dimensions: p.variationDetails?.dimensions || 'Không xác định',
+                colorName: p.variationDetails?.colorName || 'Không xác định',
+            })),
+            lowStockProducts: lowStockProducts.map(p => ({
+                ...p,
+                productImage: p.productId?.image?.[0] || null, // Hình ảnh từ Product
+            })),
+            popularCategories,
+            soldRatio: parseFloat(soldRatio),
+            unsoldProducts,
+            chart
+        };
+
+        return res.json(result);
     } catch (error) {
-        console.error('Lỗi thống kê doanh thu:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi server',
-            error: process.env.NODE_ENV === 'production' ? 'Lỗi nội bộ' : error.message,
-        });
+        console.error('Lỗi khi lấy thống kê sản phẩm:', error);
+        return res.status(500).json({ message: 'Lỗi server khi lấy thống kê sản phẩm.', error: error.message });
     }
-};
+}
 
-module.exports = {
-    getOverviewStats,
-    getOrderStats,
-    getProductStats,
-    getUserStats,
-    getRevenueStats,
-};
+    // Thống kê khách hàng
+    static async getCustomerStats(req, res) {
+        try {
+        const { period = 'month', chartType = 'pie' } = req.query;
+        if (!['day', 'month', 'year'].includes(period)) {
+            return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ. Chỉ chấp nhận: day, month, year.' });
+        }
+        if (!['pie', 'bar'].includes(chartType)) {
+            return res.status(400).json({ message: 'Loại biểu đồ không hợp lệ. Chỉ chấp nhận: pie, bar.' });
+        }
+
+        const { startDate } = getDateRange(period);
+
+        // Tổng số khách hàng
+        const totalUsers = await User.countDocuments({ status: 'active' });
+
+        // Khách hàng mới và quay lại
+        const ordersByUser = await Order.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            { $group: { _id: '$userId', orderCount: { $sum: 1 } } }
+        ]);
+        const returningCustomers = ordersByUser.filter(o => o.orderCount > 1).length;
+        const newCustomers = ordersByUser.length - returningCustomers;
+
+        // Khách hàng mới trong tháng
+        const newCustomersThisMonth = await User.countDocuments({ createdAt: { $gte: startDate }, status: 'active' });
+
+        // Top 5 địa điểm
+        const topLocations = await Order.aggregate([
+            { $group: { _id: '$shippingAddress.province', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 }
+        ]);
+
+        // Trạng thái đơn hàng
+        const orderStatus = await Order.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
+        const statusStats = { pending: 0, confirmed: 0, shipping: 0, completed: 0, canceled: 0 };
+        orderStatus.forEach(stat => { statusStats[stat._id] = stat.count; });
+
+        const chart = {
+            type: chartType,
+            data: {
+            labels: Object.keys(statusStats),
+            datasets: [{
+                label: 'Số lượng đơn hàng',
+                data: Object.values(statusStats),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                borderColor: chartType === 'bar' ? '#000000' : undefined,
+                borderWidth: chartType === 'bar' ? 1 : undefined
+            }]
+            },
+            options: {
+            responsive: true,
+            scales: chartType === 'bar' ? { y: { beginAtZero: true } } : {}
+            }
+        };
+
+        const result = {
+            customerStats: { total: totalUsers, new: newCustomers, returning: returningCustomers },
+            newCustomersThisMonth,
+            topLocations,
+            orderStatus: statusStats,
+            chart
+        };
+
+        return res.json(result);
+        } catch (error) {
+        console.error('Lỗi khi lấy thống kê khách hàng:', error);
+        return res.status(500).json({ message: 'Lỗi server', error: error.message });
+        }
+    }
+
+    // Thống kê chi tiết sản phẩm
+    static async getProductDetailStats(req, res) {
+        try {
+        const { productId } = req.params;
+        const { period = 'month', startDate, endDate } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ message: 'ID sản phẩm không hợp lệ.' });
+        }
+        if (!['day', 'month', 'year'].includes(period) && !(startDate && endDate)) {
+            return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ.' });
+        }
+        if (startDate && endDate && (!moment(startDate).isValid() || !moment(endDate).isValid())) {
+            return res.status(400).json({ message: 'startDate hoặc endDate không hợp lệ.' });
+        }
+
+        const { startDate: start, endDate: end } = getDateRange(period, startDate, endDate);
+
+        const stats = await Order.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed' } },
+            { $unwind: '$items' },
+            {
+            $lookup: {
+                from: 'productvariations',
+                localField: 'items.variationId',
+                foreignField: '_id',
+                as: 'variation'
+            }
+            },
+            { $unwind: '$variation' },
+            { $match: { 'variation.productId': new mongoose.Types.ObjectId(productId) } },
+            {
+            $group: {
+                _id: null,
+                totalQuantity: { $sum: '$items.quantity' },
+                totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.salePrice'] } }
+            }
+            }
+        ]);
+
+        const product = await Product.findById(productId).select('name').lean();
+        if (!product) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại.' });
+        }
+
+        const result = {
+            productName: product.name,
+            totalQuantity: stats[0]?.totalQuantity || 0,
+            totalRevenue: stats[0]?.totalRevenue || 0
+        };
+
+        return res.json(result);
+        } catch (error) {
+        console.error('Lỗi khi lấy thống kê chi tiết sản phẩm:', error);
+        return res.status(500).json({ message: 'Lỗi server', error: error.message });
+        }
+    }
+
+    // Thống kê chi tiết khách hàng
+    static async getCustomerDetailStats(req, res) {
+        try {
+        const { userId } = req.params;
+        const { period = 'month', startDate, endDate } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'ID khách hàng không hợp lệ.' });
+        }
+        if (!['day', 'month', 'year'].includes(period) && !(startDate && endDate)) {
+            return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ.' });
+        }
+        if (startDate && endDate && (!moment(startDate).isValid() || !moment(endDate).isValid())) {
+            return res.status(400).json({ message: 'startDate hoặc endDate không hợp lệ.' });
+        }
+
+        const { startDate: start, endDate: end } = getDateRange(period, startDate, endDate);
+
+        const stats = await Order.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(userId), createdAt: { $gte: start, $lte: end } } },
+            {
+            $group: {
+                _id: '$status',
+                count: { $sum: 1 },
+                totalAmount: { $sum: '$totalAmount' }
+            }
+            }
+        ]);
+
+        const user = await User.findById(userId).select('name').lean();
+        if (!user) {
+            return res.status(404).json({ message: 'Khách hàng không tồn tại.' });
+        }
+
+        const statusStats = {
+            pending: { count: 0, totalAmount: 0 },
+            confirmed: { count: 0, totalAmount: 0 },
+            shipping: { count: 0, totalAmount: 0 },
+            completed: { count: 0, totalAmount: 0 },
+            canceled: { count: 0, totalAmount: 0 }
+        };
+        stats.forEach(stat => {
+            statusStats[stat._id] = { count: stat.count, totalAmount: stat.totalAmount };
+        });
+
+        const result = {
+            customerName: user.name,
+            statusStats
+        };
+
+        return res.json(result);
+        } catch (error) {
+        console.error('Lỗi khi lấy thống kê chi tiết khách hàng:', error);
+        return res.status(500).json({ message: 'Lỗi server', error: error.message });
+        }
+    }
+    }
+
+    module.exports = StatisticsController;
