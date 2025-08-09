@@ -38,9 +38,9 @@ static async getRevenueStats(req, res) {
             { $group: { _id: null, total: { $sum: '$totalAmount' } } }
         ]).catch(err => [{ total: 0 }]);
 
-        const currentTotal = currentRevenue[0]?.total || 0;
-        const previousTotal = previousRevenue[0]?.total || 0;
-        const growthRate = previousTotal ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(2) : 0;
+        const currentTotal = currentRevenue[0]?.total || 0; // Tổng doanh thu hiện tại
+        const previousTotal = previousRevenue[0]?.total || 0; // Tổng doanh thu kỳ trước
+        const growthRate = previousTotal ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(2) : 0; // tinh kieu gi:   
 
         // Tổng số đơn hàng theo trạng thái
         const orderStats = await Order.aggregate([

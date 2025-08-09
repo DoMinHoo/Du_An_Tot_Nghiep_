@@ -297,18 +297,12 @@ const ProductDetail: React.FC = () => {
       const imageUrl = getImageUrl(selectedVariation.colorImageUrl);
       const checkedItem = {
         variationId: {
-          _id: selectedVariation._id,
-          salePrice: selectedVariation.salePrice ?? 0,
-          finalPrice: selectedVariation.finalPrice ?? 0,
-          colorImageUrl: imageUrl,
-          name: selectedVariation.name,
+          ...selectedVariation,
           material:
             typeof selectedVariation.material === 'object'
               ? selectedVariation.material.name
               : selectedVariation.material,
-          colorName: selectedVariation.colorName || 'Không xác định',
-          stockQuantity: selectedVariation.stockQuantity || 0,
-          productId: selectedVariation._id,
+          colorImageUrl: imageUrl,
         },
         quantity: parsedQty,
       };

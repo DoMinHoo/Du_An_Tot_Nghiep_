@@ -90,9 +90,22 @@ const CustomerStats: React.FC = () => {
           <ul>
             {stats?.orderStatus &&
               Object.entries(stats.orderStatus).map(([status, count]) => (
-                <li key={status} style={{ textTransform: 'capitalize' }}>
-                  {status}: {count} đơn
-                </li>
+              <li key={status} style={{ textTransform: 'capitalize' }}>
+                {(() => {
+                switch (status) {
+                  case 'pending':
+                  return 'Chờ xử lý';
+                  case 'processing':
+                  return 'Đang xử lý';
+                  case 'completed':
+                  return 'Hoàn thành';
+                  case 'cancelled':
+                  return 'Đã hủy';
+                  default:
+                  return status;
+                }
+                })()}: {count} đơn
+              </li>
               ))}
           </ul>
           <h3>Top 5 địa điểm</h3>

@@ -157,7 +157,21 @@ const RevenueStats: React.FC = () => {
             {stats?.orderStatus &&
               Object.entries(stats.orderStatus).map(([status, count]) => (
                 <li key={status} className="capitalize">
-                  {status}: {count} đơn
+                  {(() => {
+                    switch (status) {
+                      case 'pending':
+                        return 'Chờ xử lý';
+                      case 'processing':
+                        return 'Đang xử lý';
+                      case 'completed':
+                        return 'Hoàn thành';
+                      case 'cancelled':
+                        return 'Đã hủy';
+                      default:
+                        return status;
+                    }
+                  })()}
+                  : {count} đơn
                 </li>
               ))}
           </ul>

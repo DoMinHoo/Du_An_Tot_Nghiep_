@@ -14,6 +14,7 @@ export interface Variation {
   colorHexCode: string;
   colorImageUrl: string;
   material?: string | { _id: string; name: string };
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
