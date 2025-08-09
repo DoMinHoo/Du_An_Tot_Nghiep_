@@ -43,6 +43,8 @@ import RestoreProduct from '../pages/Products/RestoreProduct';
 import DeletedCategoryManager from '../pages/Categories/DeletedCategoryManager';
 import DeletedPromotions from '../pages/Promotions/DeletedPromotions';
 import Authenticated from '../components/Layout/authenticate';
+import CustomerStats from '../components/dashboard/CustomerStats';
+import ProductStats from '../components/dashboard/ProductStats';
 
 const routes: RouteObject[] = [
   {
@@ -61,7 +63,20 @@ const routes: RouteObject[] = [
       },
       {
         path: 'dashboard',
-        element: <Dashboard />,
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: 'customers',
+            element: <CustomerStats />, // Assuming CustomerStats is a valid component
+          },
+          {
+            path: 'products',
+            element: <ProductStats />, // Assuming ProductStats is a valid component
+          },
+        ],
       },
       {
         path: 'products',

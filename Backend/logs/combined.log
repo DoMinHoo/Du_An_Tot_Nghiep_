@@ -187,3 +187,5 @@
 {"level":"info","message":"Không tìm thấy guestCart với guestId: f457a761-006e-44de-bfee-78318a96f605 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 21:42:04"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: cd78a797-9163-48b9-a685-26d842d7ba01 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 22:09:51"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 9b6e1a8a-13c0-43d2-9772-1e44bddb0417 hoặc giỏ hàng rỗng","timestamp":"2025-08-07 22:36:24"}
+{"level":"info","message":"Giỏ hàng người dùng với userId: 6848e6354b689f0a38a8ede7 đã chứa sản phẩm, xóa guestCart: 325e1c72-cd3a-4780-aa4a-a5880820ab33","timestamp":"2025-08-08 22:57:43"}
+{"level":"error","message":"Lỗi hợp nhất giỏ hàng: Cannot read properties of null (reading 'salePrice')","timestamp":"2025-08-08 22:57:43"}

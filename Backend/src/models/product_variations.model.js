@@ -42,6 +42,8 @@ const productVariationSchema = new mongoose.Schema({
     timestamps: true,
     versionKey: false
 });
-
+productVariationSchema.index({ productId: 1 });
+productVariationSchema.index({ sku: 1 });
+productVariationSchema.index({ stockQuantity: 1 });
 const ProductVariation = mongoose.model('ProductVariation', productVariationSchema);
 module.exports = ProductVariation;

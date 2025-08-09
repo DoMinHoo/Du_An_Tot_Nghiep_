@@ -138,5 +138,8 @@ orderSchema.index({ orderCode: 1 });
 orderSchema.index({ userId: 1 });
 orderSchema.index({ "items.variationId": 1 });
 orderSchema.index({ cartId: 1 });
+orderSchema.index({ createdAt: 1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ 'shippingAddress.province': 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

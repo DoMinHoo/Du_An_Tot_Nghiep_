@@ -1,34 +1,294 @@
-    /* Định nghĩa kiểu dáng cho container chính */
-    .dashboard-container {
-        min-height: 100vh;
-        background-color: #f3f4f6;
-    }
-    
-    /* Định nghĩa kiểu dáng cho header */
-    .dashboard-header {
-        background-color: #2563eb;
-        color: white;
-        padding: 1rem;
-    }
-    
-    /* Định nghĩa kiểu dáng cho tiêu đề */
-    .dashboard-title {
-        font-size: 1.875rem; /* 30px */
-        font-weight: bold;
-        margin: 0;
-    }
-    
-    /* Định nghĩa kiểu dáng cho main content */
-    .dashboard-main {
-        padding: 1rem;
-    }
-    
-    /* Đảm bảo các thành phần con (Stats components) có khoảng cách */
-    .dashboard-main > * {
-        margin-bottom: 1rem; /* Khoảng cách 16px giữa các thành phần */
-    }
-    
-    /* (Tùy chọn) Xóa margin-bottom cho thành phần cuối cùng */
-    .dashboard-main > *:last-child {
-        margin-bottom: 0;
-    }
+/* product-stats.css - traditional CSS for ProductStats component
+   - Drop this file into your project (e.g. src/styles/product-stats.css)
+   - Your component already imports '../../index.css' — either merge or import this file instead.
+*/
+:root {
+  --bg: #f5f7fb;
+  --card-bg: #ffffff;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --primary: #2563eb; /* blue */
+  --accent: #06b6d4; /* cyan */
+  --danger: #ef4444;
+  --success: #10b981;
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+  --gap: 16px;
+}
+
+/* Page / container */
+.product-stats {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 18px;
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial;
+  font-size: 14px;
+  line-height: 1.45;
+  background: transparent;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+/* Controls (title + filters) */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.controls h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.filter-item label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.filter-item select,
+.filter-item input[type='date'] {
+  padding: 8px 10px;
+  border: 1px solid #e6e9ef;
+  border-radius: 8px;
+  background: transparent;
+  outline: none;
+  transition: box-shadow 120ms ease, border-color 120ms ease;
+  font-size: 14px;
+}
+
+.filter-item select:focus,
+.filter-item input[type='date']:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.06);
+}
+
+.date-error {
+  color: var(--danger);
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.no-data-message {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.04), transparent);
+  border-left: 4px solid rgba(37, 99, 235, 0.12);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+/* Layout: stats + chart */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 430px;
+  gap: 20px;
+  align-items: start;
+}
+
+.stats-content {
+  padding-right: 6px;
+}
+
+.stats-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: var(--text);
+  border-bottom: 1px solid #f0f2f6;
+  padding-bottom: 8px;
+}
+
+.stats-content p {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.stats-content strong {
+  color: var(--text);
+  font-weight: 700;
+  background: #fbfdff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* Lists */
+.stats-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+
+.stats-content li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  transition: background 140ms ease;
+}
+
+.stats-content li:hover {
+  background: #fbfdff;
+}
+
+.stats-content li img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.stats-meta {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat-pill {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Chart */
+.chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 520px;
+}
+
+/* Loading & spinner */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  padding: 40px 0;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 4px solid #e6edf6;
+  border-top-color: var(--primary);
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error block */
+.error {
+  padding: 20px;
+  text-align: center;
+  color: var(--danger);
+}
+
+.retry-btn {
+  margin-top: 10px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 90ms ease, box-shadow 90ms ease;
+}
+
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.12);
+}
+
+.retry-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.12);
+  outline-offset: 2px;
+}
+
+/* Responsiveness */
+@media (max-width: 900px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .controls {
+    align-items: flex-start;
+  }
+  .filter-item {
+    min-width: 140px;
+  }
+  .chart-container {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-item {
+    width: 100%;
+    min-width: unset;
+  }
+  .controls h2 {
+    font-size: 16px;
+  }
+  .product-stats {
+    padding: 12px;
+  }
+  .chart-container {
+    min-height: 220px;
+  }
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
