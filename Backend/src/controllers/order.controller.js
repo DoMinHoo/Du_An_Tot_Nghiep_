@@ -61,8 +61,8 @@ exports.getOrders = async (req, res) => {
                 select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
                 populate: {
                     path: 'productId',
-                    select: 'name brand descriptionShort image',
-                    match: { isDeleted: false, status: 'active' }
+                    select: 'name brand descriptionShort image'
+                    // Bỏ match để lấy cả sản phẩm đã xóa mềm
                 }
             });
 
@@ -489,16 +489,16 @@ exports.getOrderById = async (req, res) => {
                 path: 'items.variationId',
                 select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
                 populate: [
-    {
-      path: 'productId',
-      select: 'name brand descriptionShort image',
-      match: { isDeleted: false, status: 'active' },
-    },
-    {
-      path: 'material',
-      select: 'name',
-    }
-  ]
+                    {
+                        path: 'productId',
+                        select: 'name brand descriptionShort image'
+                        // Bỏ match để lấy cả sản phẩm đã xóa mềm
+                    },
+                    {
+                        path: 'material',
+                        select: 'name',
+                    }
+                ]
             });
 
         if (!order) {
@@ -513,10 +513,9 @@ exports.getOrderById = async (req, res) => {
                     quantity: item.quantity,
                     salePrice: item.salePrice,
                     name: item.variationId.name,
-                      sku: item.variationId.sku,
-                     dimensions: item.variationId.dimensions,
-                      material:
-                    item.variationId.material?.name || item.variationId.material || 'Không xác định',
+                    sku: item.variationId.sku,
+                    dimensions: item.variationId.dimensions,
+                    material: item.variationId.material?.name || item.variationId.material || 'Không xác định',
                     image: item.variationId.productId.image,
                     subtotal: item.salePrice * item.quantity,
                     colorName: item.variationId.colorName,
@@ -715,8 +714,8 @@ exports.getOrdersByUser = async (req, res) => {
                     select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
                     populate: {
                         path: 'productId',
-                        select: 'name brand descriptionShort image',
-                        match: { isDeleted: false, status: 'active' }
+                        select: 'name brand descriptionShort image'
+                        // Bỏ match để lấy cả sản phẩm đã xóa mềm
                     }
                 }),
             Order.countDocuments({ userId })

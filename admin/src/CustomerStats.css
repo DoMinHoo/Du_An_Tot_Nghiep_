@@ -1,97 +1,98 @@
-    .card {
-    background: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    margin-top: 20px;
-    font-family: Arial, sans-serif;
-    }
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
+  font-family: Arial, sans-serif;
+}
 
-    .controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    }
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
 
-    .controls h2 {
-    font-size: 20px;
-    font-weight: bold;
-    color: #333;
-    }
+.controls h2 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
 
-    .controls select {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-left: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    }
+.controls select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-left: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    .card-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    }
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
 
-    .card-grid p {
-    font-size: 15px;
-    color: #444;
-    margin: 6px 0;
-    }
+.card-grid p {
+  font-size: 15px;
+  color: #444;
+  margin: 6px 0;
+}
 
-    .card-grid strong {
-    color: #222;
-    }
+.card-grid strong {
+  color: #222;
+}
 
-    .card-grid h3 {
-    margin-top: 15px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #555;
-    border-left: 4px solid #3b82f6;
-    padding-left: 8px;
-    }
+.card-grid h3 {
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #555;
+  border-left: 4px solid #3b82f6;
+  padding-left: 8px;
+}
 
-    .card-grid ul {
-    padding-left: 20px;
-    margin-top: 8px;
-    }
+.card-grid ul {
+  padding-left: 20px;
+  margin-top: 8px;
+}
 
-    .card-grid ul li {
-    margin: 4px 0;
-    font-size: 14px;
-    color: #555;
-    }
+.card-grid ul li {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #555;
+}
 
-    .loading, .error {
-    text-align: center;
-    font-size: 15px;
-    padding: 15px;
-    }
+.loading,
+.error {
+  text-align: center;
+  font-size: 15px;
+  padding: 15px;
+}
 
-    .error button {
-    margin-top: 10px;
-    padding: 6px 12px;
-    border: none;
-    background: #ef4444;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    }
+.error button {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: none;
+  background: #ef4444;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
-    .error button:hover {
-    background: #dc2626;
-    }
+.error button:hover {
+  background: #dc2626;
+}
 
-    @media (max-width: 768px) {
-    .card-grid {
-        grid-template-columns: 1fr;
-    }
-    .controls {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    }
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
