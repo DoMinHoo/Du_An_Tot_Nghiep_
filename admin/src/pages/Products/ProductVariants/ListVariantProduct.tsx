@@ -79,9 +79,9 @@ const ProductVariationList = () => {
     variations?.reduce((sum, item) => sum + item.stockQuantity, 0) || 0;
   const averagePrice = variations?.length
     ? Math.round(
-        variations.reduce((sum, item) => sum + item.finalPrice, 0) /
-          variations.length
-      )
+      variations.reduce((sum, item) => sum + item.finalPrice, 0) /
+      variations.length
+    )
     : 0;
   const lowStockCount =
     variations?.filter((item) => item.stockQuantity < 10).length || 0;
@@ -217,11 +217,6 @@ const ProductVariationList = () => {
               style={{ fontSize: '11px', marginLeft: '4px' }}
             >
               (Bán)
-            </Text>
-          </div>
-          <div style={{ marginBottom: '2px' }}>
-            <Text style={{ fontSize: '12px', color: '#666' }}>
-              Nhập: {record.importPrice.toLocaleString()} ₫
             </Text>
           </div>
           {record.salePrice && record.salePrice > 0 && (

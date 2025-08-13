@@ -587,7 +587,7 @@ exports.getOrdersByUser = async (req, res) => {
                 })
                 .populate({
                     path: 'items.variationId',
-                    select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl materialVariation',
+                    select: 'name sku dimensions finalPrice salePrice stockQuantity colorName colorHexCode colorImageUrl material',
                     populate: {
                         path: 'productId',
                         select: 'name brand descriptionShort image',
@@ -629,7 +629,7 @@ exports.getOrdersByUser = async (req, res) => {
                     colorName: item.variationId.colorName,
                     colorHexCode: item.variationId.colorHexCode,
                     colorImageUrl: item.variationId.colorImageUrl,
-                    materialVariation: item.variationId.materialVariation,
+                    material: item.variationId.material,
                     quantity: item.quantity,
                     subtotal: item.salePrice * item.quantity
                 });

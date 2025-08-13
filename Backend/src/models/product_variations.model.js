@@ -7,7 +7,7 @@ const productVariationSchema = new mongoose.Schema({
         ref: 'Product',
         required: true
     },
-    name: { type: String, required: true  }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
+    name: { type: String, required: true }, // Tên biến thể, ví dụ: "Sofa 180x85x69 cm", "Sofa góc 140x60x69 cm"
     sku: {
         type: String,
         required: true,
@@ -17,12 +17,8 @@ const productVariationSchema = new mongoose.Schema({
     basePrice: { type: Number, required: true }, // Giá cơ bản theo kích thước, ví dụ: 4,799,000 VND
     priceAdjustment: { type: Number, default: 0 }, // Điều chỉnh giá (nếu kích thước thay đổi), ví dụ: +500,000 VND
     finalPrice: { type: Number, required: true }, // Giá cuối cùng, tính bằng basePrice + priceAdjustment
-    importPrice: { type: Number, required: true }, // Giá nhập theo biến thể
     salePrice: { type: Number, default: null }, // Giá khuyến mãi (nếu có)
 
-    // 🆕 Ngày bắt đầu và kết thúc khuyến mãi
-    flashSaleStart: { type: Date, default: null },
-    flashSaleEnd: { type: Date, default: null },
     // Số lượng tồn kho
     stockQuantity: {
         type: Number,

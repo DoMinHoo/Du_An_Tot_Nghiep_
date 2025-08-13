@@ -73,7 +73,6 @@ const UpdateProductVariationPage = () => {
         name: variation.name,
         sku: variation.sku,
         basePrice: variation.basePrice,
-        importPrice: variation.importPrice,
         salePrice: variation.salePrice,
         flashSaleStart: variation.flashSaleStart ? dayjs(variation.flashSaleStart) : null,
         flashSaleEnd: variation.flashSaleEnd ? dayjs(variation.flashSaleEnd) : null,
@@ -127,7 +126,6 @@ const UpdateProductVariationPage = () => {
     formData.append("dimensions", `${values.length}x${values.width}x${values.height}`)
     formData.append("basePrice", values.basePrice)
     formData.append("priceAdjustment", values.priceAdjustment ?? 0)
-    formData.append("importPrice", values.importPrice)
     formData.append("salePrice", values.salePrice ?? 0)
     if (values.flashSaleStart) {
       formData.append("flashSaleStart", values.flashSaleStart.toISOString())
@@ -250,54 +248,14 @@ const UpdateProductVariationPage = () => {
           <Col span={24}>
             <Card title={<span>💰 Thông tin giá & khuyến mãi</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={8}><Form.Item label="Giá gốc (VNĐ)" name="basePrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={8}><Form.Item label="Giá nhập (VNĐ)" name="importPrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={8}><Form.Item label="Tồn kho" name="stockQuantity" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={8}><Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={8}><Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Thời gian bắt đầu khuyến mãi"
-                    name="flashSaleStart"
-                    rules={[{ required: false }]}
-                  >
-                    <DatePicker
-                      showTime
-                      format="YYYY-MM-DD HH:mm:ss"
-                      style={{ width: "100%" }}
-                      size="large"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Thời gian kết thúc khuyến mãi"
-                    name="flashSaleEnd"
-                    rules={[
-                      ({ getFieldValue }) => ({
-                        validator(_, value) {
-                          const start = getFieldValue("flashSaleStart");
-                          if (!value || !start) return Promise.resolve();
-                          if (value.isAfter(start)) {
-                            return Promise.resolve();
-                          }
-                          return Promise.reject(new Error("Ngày kết thúc phải sau ngày bắt đầu"));
-                        }
-                      })
-                    ]}
-                  >
-                    <DatePicker
-                      showTime
-                      format="YYYY-MM-DD HH:mm:ss"
-                      style={{ width: "100%" }}
-                      size="large"
-                    />
-                  </Form.Item>
-                </Col>
+                <Col xs={24} md={12}><Form.Item label="Giá gốc (VNĐ)" name="basePrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}><Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}><Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}><Form.Item label="Tồn kho" name="stockQuantity" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
               </Row>
             </Card>
           </Col>
-          
+
 
 
           <Col span={24}>
