@@ -14,6 +14,14 @@ const generateToken = (email) => {
     const timestamp = new Date().getTime();
     return Buffer.from(`${email}:${timestamp}`).toString('base64');
 };
+// Định nghĩa ánh xạ trạng thái sang tiếng Việt
+const statusTranslations = {
+  pending: 'Đang chờ xử lý',
+  confirmed: 'Đã xác nhận',
+  shipping: 'Đang giao hàng',
+  completed: 'Hoàn tất',
+  canceled: 'Đã hủy',
+};
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -74,7 +82,7 @@ const sendPaymentSuccessEmail = async (orderId) => {
                     <ul style="list-style: none; padding-left: 0; margin-bottom: 20px;">
                         <li style="margin-bottom: 10px;"><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                         <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán trực tuyến' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
-                        <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${newStatus}</li>
+                        <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${statusTranslations[newStatus] || newStatus}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong>  ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chị nhận hàng:</strong>${order.shippingAddress.addressLine},</li>
                         <li style="margin-bottom: 10px;"><strong>Số điện thoại:</strong> ${order.shippingAddress.phone}</li>
@@ -203,7 +211,7 @@ const sendOrderStatusUpdateEmail = async (orderId, newStatus, note = '') => {
                     <ul style="list-style: none; padding-left: 0; margin-bottom: 20px;">
                         <li style="margin-bottom: 10px;"><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                         <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán trực tuyến' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
-                        <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${newStatus}</li>
+                        <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${statusTranslations[newStatus] || newStatus}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chị nhận hàng:</strong>${order.shippingAddress.addressLine},</li>
                         <li style="margin-bottom: 10px;"><strong>Số điện thoại:</strong> ${order.shippingAddress.phone}</li>
