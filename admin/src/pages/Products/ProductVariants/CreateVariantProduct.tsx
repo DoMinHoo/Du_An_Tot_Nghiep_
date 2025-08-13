@@ -78,7 +78,6 @@ const CreateProductVariationPage: React.FC = () => {
     formData.append("dimensions", dimensions)
     formData.append("basePrice", values.basePrice.toString())
     formData.append("priceAdjustment", (values.priceAdjustment ?? 0).toString())
-    formData.append("importPrice", values.importPrice.toString())
     formData.append("salePrice", (values.salePrice ?? 0).toString())
     formData.append("stockQuantity", values.stockQuantity.toString())
     formData.append("colorName", values.colorName)
@@ -243,7 +242,7 @@ const CreateProductVariationPage: React.FC = () => {
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
             >
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Giá gốc (VNĐ)"
                     name="basePrice"
@@ -259,35 +258,7 @@ const CreateProductVariationPage: React.FC = () => {
                     />
                   </Form.Item>
                 </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    label="Giá nhập (VNĐ)"
-                    name="importPrice"
-                    rules={[{ required: true, message: "Vui lòng nhập giá nhập" }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      style={{ width: "100%" }}
-                      size="large"
-                      formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
-                      placeholder="0"
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    label="Tồn kho"
-                    name="stockQuantity"
-                    rules={[{ required: true, message: "Vui lòng nhập số lượng tồn kho" }]}
-                  >
-                    <InputNumber min={0} style={{ width: "100%" }} size="large" placeholder="0" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment">
                     <InputNumber
                       min={0}
@@ -300,7 +271,7 @@ const CreateProductVariationPage: React.FC = () => {
                   </Form.Item>
                 </Col>
 
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice" rules={[]}>
                     <InputNumber
                       min={0}
@@ -313,39 +284,15 @@ const CreateProductVariationPage: React.FC = () => {
                   </Form.Item>
                 </Col>
 
-                <Form.Item
-                  label="Ngày bắt đầu khuyến mãi"
-                  name="flashSaleStart"
-                  rules={[]}>
-                  <DatePicker
-                    showTime
-                    format="YYYY-MM-DD HH:mm:ss"
-                    placeholder="Chọn ngày giờ bắt đầu"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="Ngày kết thúc khuyến mãi"
-                  name="flashSaleEnd"
-                  rules={[
-                    ({ getFieldValue }) => ({
-                      validator(_, value) {
-                        const start = getFieldValue("flashSaleStart");
-                        if (!value || !start) return Promise.resolve();
-                        if (value.isAfter(start)) {
-                          return Promise.resolve();
-                        }
-                        return Promise.reject(new Error("Ngày kết thúc phải sau ngày bắt đầu"));
-                      }
-                    })
-                  ]}>
-                  <DatePicker
-                    showTime
-                    format="YYYY-MM-DD HH:mm:ss"
-                    placeholder="Chọn ngày giờ kết thúc"
-                  />
-                </Form.Item>
-
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Tồn kho"
+                    name="stockQuantity"
+                    rules={[{ required: true, message: "Vui lòng nhập số lượng tồn kho" }]}
+                  >
+                    <InputNumber min={0} style={{ width: "100%" }} size="large" placeholder="0" />
+                  </Form.Item>
+                </Col>
               </Row>
             </Card>
           </Col>

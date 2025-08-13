@@ -78,8 +78,7 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Cập nhật sản phẩm thất bại: ${
-          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Cập nhật sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -95,8 +94,7 @@ const UpdateProductPage: React.FC = () => {
     },
     onError: (error: any) => {
       message.error(
-        `Xóa sản phẩm thất bại: ${
-          error.response?.data?.message || error.message || 'Lỗi không xác định'
+        `Xóa sản phẩm thất bại: ${error.response?.data?.message || error.message || 'Lỗi không xác định'
         }`
       );
     },
@@ -366,7 +364,7 @@ const UpdateProductPage: React.FC = () => {
                       beforeUpload={() => false}
                       accept="image/*"
                       multiple
-                      maxCount={5}
+                      maxCount={20}
                     >
                       <Button icon={<UploadOutlined />}>Tải ảnh</Button>
                     </Upload>

@@ -351,14 +351,14 @@ exports.getSaleProducts = async (req, res) => {
         }
       ]
     })
-    .populate({
-      path: 'productId',
-      select: 'name thumbnail',
-      match: { isDeleted: false } // nếu có soft delete
-    })
-    .populate('material', 'name')
-    .sort({ flashSaleStart: -1 }) // Ưu tiên sản phẩm sắp hết hạn sale
-    .lean();
+      .populate({
+        path: 'productId',
+        select: 'name thumbnail',
+        match: { isDeleted: false } // nếu có soft delete
+      })
+      .populate('material', 'name')
+      .sort({ flashSaleStart: -1 }) // Ưu tiên sản phẩm sắp hết hạn sale
+      .lean();
 
     // Lọc những biến thể có productId đã được populate thành công
     const filteredVariations = variations.filter(v => v.productId);

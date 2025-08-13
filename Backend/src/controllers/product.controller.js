@@ -6,6 +6,9 @@ const ProductVariation = require("../models/product_variations.model");
 const Review = require("../models/review.model"); // Thêm dòng này để import Review model
 const path = require("path");
 
+function escapeRegex(string = "") {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 // Hàm đệ quy xây dựng breadcrumb từ categoryId
 const buildCategoryBreadcrumb = async (categoryId) => {
   const breadcrumb = [];
@@ -200,74 +203,240 @@ exports.getProductById = async (req, res) => {
 };
 
 // Tạo sản phẩm
+// controllers/productController.js (createProduct)
 exports.createProduct = async (req, res) => {
   try {
-    const uploadedImages = Array.isArray(req.files)
+    const body = req.body || {};
+
+    // parse variations if present (sent as JSON string via form-data)
+    const variationsPayload = body.variations ? JSON.parse(body.variations) : [];
+
+    // --- product name handling & validation
+    const productName = (body.name || '').trim();
+    if (!productName) {
+      return res.status(400).json({ success: false, message: 'Tên sản phẩm là bắt buộc.' });
+    }
+
+    // check product name duplicate (case-insensitive exact match)
+    const nameRegex = new RegExp(`^${escapeRegex(productName)}$`, 'i');
+    const existingProductByName = await Product.findOne({ name: nameRegex, isDeleted: false }).lean();
+    if (existingProductByName) {
+      return res.status(400).json({
+        success: false,
+        field: 'name',
+        message: `Sản phẩm "${productName}" đã tồn tại. Vui lòng đổi tên khác.`
+      });
+    }
+
+    // --- validations inside variations payload
+    // a) duplicate SKUs inside payload
+    const skusInPayload = variationsPayload.map(v => (v.sku || '').trim()).filter(Boolean);
+    const duplicateSkusInPayload = skusInPayload.filter((s, i) => skusInPayload.indexOf(s) !== i);
+    if (duplicateSkusInPayload.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Các SKU bị trùng trong request: ${[...new Set(duplicateSkusInPayload)].join(', ')}`
+      });
+    }
+
+    // b) duplicate variation names inside payload (case-insensitive)
+    const varNames = variationsPayload.map(v => (v.name || '').trim().toLowerCase()).filter(Boolean);
+    const duplicateVarNames = varNames.filter((n, i) => varNames.indexOf(n) !== i);
+    if (duplicateVarNames.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Tên biến thể bị trùng trong request: ${[...new Set(duplicateVarNames)].join(', ')}`
+      });
+    }
+
+    // c) duplicate color names inside payload (case-insensitive)
+    const colorNames = variationsPayload.map(v => (v.colorName || '').trim().toLowerCase()).filter(Boolean);
+    const duplicateColorNames = colorNames.filter((c, i) => colorNames.indexOf(c) !== i);
+    if (duplicateColorNames.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Tên màu bị trùng trong các biến thể: ${[...new Set(duplicateColorNames)].join(', ')}`
+      });
+    }
+
+    // d) check SKUs already exist in DB (global unique). If you want sku unique per product,
+    // change query or schema index accordingly.
+    if (skusInPayload.length > 0) {
+      const existing = await ProductVariation.find({ sku: { $in: skusInPayload } }).lean();
+      if (existing.length > 0) {
+        const existSkus = [...new Set(existing.map(e => e.sku))];
+        return res.status(400).json({
+          success: false,
+          field: 'sku',
+          message: `Các SKU sau đã tồn tại trong hệ thống: ${existSkus.join(', ')}`
+        });
+      }
+    }
+
+    // --- handle product images coming via multer (req.files)
+    const uploadImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
 
-    const body = req.body || {};
-    const bodyImages = Array.isArray(body.image)
-      ? body.image
-      : body.image
-      ? [body.image]
-      : [];
+    // --- create product
+    const product = new Product({
+      name: productName,
+      descriptionShort: body.descriptionShort || '',
+      descriptionLong: body.descriptionLong || '',
+      categoryId: body.categoryId || null,
+      image: uploadImages,
+      status: body.status || 'active',
+      isDeleted: false
+    });
 
-    const images = [...uploadedImages, ...bodyImages];
-
-    const productData = {
-      ...body,
-      image: images,
-      isDeleted: body.isDeleted === "true" || false,
-      categoryId: body.categoryId,
-    };
-
-    const product = new Product(productData);
     await product.save();
 
-    res.status(201).json(product);
+    // --- prepare and insert variations (if any)
+    let savedVariations = [];
+    if (variationsPayload.length) {
+      // normalize and validate each variation before insert
+      const toInsert = variationsPayload.map(v => {
+        const copy = { ...v, productId: product._id };
+
+        // Validate material id format if present (but do not convert to ObjectId here)
+        if (copy.material && !mongoose.Types.ObjectId.isValid(copy.material)) {
+          throw new Error(`Invalid material id: ${copy.material}`);
+        }
+
+        // numeric casts
+        if (copy.basePrice !== undefined) copy.basePrice = Number(copy.basePrice || 0);
+        if (copy.priceAdjustment !== undefined) copy.priceAdjustment = Number(copy.priceAdjustment || 0);
+        if (copy.finalPrice !== undefined) copy.finalPrice = Number(copy.finalPrice || copy.basePrice + (copy.priceAdjustment || 0));
+        if (copy.stockQuantity !== undefined) copy.stockQuantity = parseInt(copy.stockQuantity, 10) || 0;
+
+        // keep colorImageUrl as provided (should be string). If you upload images earlier, ensure frontend set colorImageUrl
+        // ensure required fields are present (basic check)
+        const required = ['name', 'sku', 'dimensions', 'basePrice', 'stockQuantity', 'colorName', 'colorHexCode', 'material'];
+        for (const f of required) {
+          if (copy[f] === undefined || copy[f] === null || String(copy[f]).trim() === '') {
+            throw new Error(`Trường bắt buộc của biến thể thiếu: ${f}`);
+          }
+        }
+
+        return copy;
+      });
+
+      try {
+        // ordered:true will stop at first error. You can set ordered:false to insert as many as possible.
+        savedVariations = await ProductVariation.insertMany(toInsert, { ordered: true });
+      } catch (insErr) {
+        // rollback created product to avoid orphan
+        console.error('Insert variations failed, rolling back product:', insErr);
+        await Product.deleteOne({ _id: product._id });
+
+        if (insErr && insErr.code === 11000) {
+          const field = Object.keys(insErr.keyValue || {})[0];
+          const value = insErr.keyValue ? insErr.keyValue[field] : undefined;
+          return res.status(400).json({
+            success: false,
+            field: field || 'unknown',
+            message: value ? `${field} "${value}" đã tồn tại.` : 'Duplicate key error khi thêm biến thể'
+          });
+        }
+
+        return res.status(400).json({ success: false, message: insErr.message || 'Lỗi khi thêm biến thể' });
+      }
+    }
+
+    // success
+    return res.status(201).json({
+      success: true,
+      message: 'Thêm sản phẩm thành công',
+      data: { product, variations: savedVariations }
+    });
+
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating product:', error);
+
+    // friendly duplicate handler
+    if (error && error.code === 11000) {
+      const field = Object.keys(error.keyValue || {})[0];
+      const value = error.keyValue ? error.keyValue[field] : undefined;
+      return res.status(400).json({
+        success: false,
+        field: field || 'unknown',
+        message: value ? `${field} "${value}" đã tồn tại.` : 'Duplicate key error'
+      });
+    }
+
+    // validation-like error messages
+    if (error && error.message) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    res.status(500).json({ success: false, message: 'Lỗi server khi tạo sản phẩm' });
   }
 };
 
 // Cập nhật sản phẩm
 exports.updateProduct = async (req, res) => {
   try {
-    const id = req.params.id;
-    const product = await Product.findById(id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    const { id } = req.params;
+    const body = req.body || {};
 
-    const uploadedImages = req.files
+    const uploadImages = Array.isArray(req.files)
       ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
       : [];
-    const body = req.body || {};
-    const bodyImages = Array.isArray(body.image)
-      ? body.image
-      : body.image
-      ? [body.image]
-      : [];
 
-    const finalImages =
-      uploadedImages.length > 0
-        ? uploadedImages
-        : bodyImages.length > 0
-        ? bodyImages
-        : product.image;
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Sản phẩm không tồn tại",
+      });
+    }
+    product.name = body.name || product.name;
+    product.descriptionShort = body.descriptionShort || product.descriptionShort;
+    product.descriptionLong = body.descriptionLong || product.descriptionLong;
+    product.categoryId = body.categoryId || product.categoryId;
+    product.status = body.status || product.status;
+    if (uploadImages.length > 0) {
+      product.image = uploadImages; // Cập nhật ảnh mới
+    }
+    await product.save();
 
-    const productData = {
-      ...body,
-      image: finalImages,
-      isDeleted: body.isDeleted === "true" || false,
-      categoryId: body.categoryId,
-    };
+    let updateVariations = [];
+    if (body.variations) {
+      const variationsData = JSON.parse(body.variations);
 
-    const updated = await Product.findByIdAndUpdate(id, productData, {
-      new: true,
-    });
-    res.json(updated);
+      for (const variation of variationsData) {
+        if (variation._id) {
+          // Cập nhật biến thể đã tồn tại
+          const updated = await ProductVariation.findByIdAndUpdate(
+            variation._id,
+            {
+              ...variation,
+              productId: id,
+            },
+            { new: true }
+          );
+          if (updated) updateVariations.push(updated);
+        }
+        else {
+          const created = await ProductVariation.create({
+            ...variation,
+            productId: id,
+          });
+          updateVariations.push(created)
+        }
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Cap nhat san pham thanh cong",
+      data: {
+        product: product,
+        variations: updateVariations
+      }
+    })
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Error updating product:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -501,10 +670,10 @@ exports.searchProducts = async (req, res) => {
       strict === "true"
         ? { name: keyword.trim(), isDeleted: false, status: "active" } // tìm chính xác
         : {
-            name: { $regex: keyword.trim(), $options: "i" },
-            isDeleted: false,
-            status: "active",
-          }; // tìm tương đối (không phân biệt hoa thường)
+          name: { $regex: keyword.trim(), $options: "i" },
+          isDeleted: false,
+          status: "active",
+        }; // tìm tương đối (không phân biệt hoa thường)
 
     const products = await Product.find(query);
     res.status(200).json(products);

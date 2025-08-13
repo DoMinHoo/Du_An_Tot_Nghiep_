@@ -1,43 +1,48 @@
+// src/Types/productVariant.interface.ts
+
 export interface ProductVariation {
   _id: string;
-  productId: string; // hoặc Product nếu bạn populate
-  name: string; // Tên biến thể (ví dụ: "Sofa 180x85x69 cm")
-  sku: string; // Mã SKU duy nhất
-  dimensions: string; // Kích thước: "180x85x69 cm"
-  basePrice: number; // Giá cơ bản
-  priceAdjustment: number; // Điều chỉnh giá (nếu có)
-  finalPrice: number; // Giá cuối cùng (basePrice + adjustment)
-  importPrice: number; // Giá nhập
-  salePrice: number | null; // Giá khuyến mãi (nếu có)
-
-  stockQuantity: number; // Số lượng tồn kho
-
-  colorName: string; // Ví dụ: "Trắng"
-  colorHexCode: string; // Mã HEX: "#FFFFFF"
-  colorImageUrl: string; // Ảnh minh hoạ màu
-
-  material: {
-    _id: string;
-    name: string;
-  } | null;// Ví dụ: "Gỗ MFC phủ bóng"
-
-  isDeleted: boolean;
-
-  createdAt: string;
-  updatedAt: string;
-}
-export interface ProductVariationFormData {
+  productId: string;
   name: string;
   sku: string;
   dimensions: string;
   basePrice: number;
   priceAdjustment: number;
   finalPrice: number;
-  importPrice: number;
-  salePrice?: number | null; // Có thể không có giá khuyến mãi
+  salePrice: number | null;
   stockQuantity: number;
   colorName: string;
   colorHexCode: string;
-  colorImageUrl: string; // URL của ảnh màu
-  materialVariation: string; // Ví dụ: "Gỗ MFC phủ bóng"
+  colorImageUrl: string;
+  material: {
+    _id: string;
+    name: string;
+  } | null;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductVariationFormData {
+  name: string;
+  sku: string;
+  dimensions: string;
+  basePrice: number;
+  priceAdjustment?: number;
+  finalPrice: number;
+  salePrice?: number | null;
+  stockQuantity: number;
+  colorName: string;
+  colorHexCode: string;
+  colorImageUrl: string;            // URL (may be temporary object URL)
+  materialVariation: string;        // material _id (string)
+  // --- addon: file object (optional) ---
+  colorImageFile?: File;            // <-- optional, parent will upload this
+}
+
+export interface VariationModalProps {
+  visible: boolean;
+  onCancel: () => void;
+  onSave: (variation: ProductVariationFormData) => void;
+  data?: ProductVariationFormData;
 }
