@@ -1,81 +1,12 @@
-    const express = require('express');
-    const router = express.Router();
-    const { query } = require('express-validator');
-    const {
-    getOverviewStats,
-    getOrderStats,
-    getProductStats,
-    getUserStats,
-    getRevenueStats,
-    } = require('../controllers/statsController');
-    const { protect } = require('../middlewares/auth.middleware');
+const express = require('express');
+const router = express.Router();
+const StatisticsController = require('../controllers/statsController');
+const { protect } = require('../middlewares/auth.middleware');
 
-    // Middleware xác thực đầu vào cho các tham số query
-    const validateQueryParams = [
-    query('startDate')
-        .optional()
-        .isDate({ format: 'YYYY-MM-DD' })
-        .withMessage('startDate phải có định dạng YYYY-MM-DD'),
-    query('endDate')
-        .optional()
-        .isDate({ format: 'YYYY-MM-DD' })
-        .withMessage('endDate phải có định dạng YYYY-MM-DD'),
-    query('groupBy')
-        .optional()
-        .isIn(['day', 'week', 'month'])
-        .withMessage('groupBy phải là day, week, hoặc month'),
-    ];
+router.get('/revenue', protect(['admin']), StatisticsController.getRevenueStats); // Lấy thống kê doanh thu
+router.get('/products', protect(['admin']), StatisticsController.getProductStats); // Lấy thống kê sản phẩm
+router.get('/products/:productId', protect(['admin']), StatisticsController.getProductDetailStats); // Lấy thống kê chi tiết sản phẩm
+router.get('/customers', protect(['admin']), StatisticsController.getCustomerStats); // Lấy thống kê khách hàng
+router.get('/customers/:userId', protect(['admin']), StatisticsController.getCustomerDetailStats); // Lấy thống kê chi tiết khách hàng
 
-    // Middleware để thêm header chống cache
-    const noCache = (req, res, next) => {
-    res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-        'Surrogate-Control': 'no-store',
-    });
-    next();
-    };
-
-    // Định nghĩa các route thống kê
-    router.get(
-    '/overview',
-    protect(['admin']),
-    noCache,
-    validateQueryParams,
-    getOverviewStats
-    );
-
-    router.get(
-    '/orders',
-    protect(['admin']),
-    noCache,
-    validateQueryParams,
-    getOrderStats
-    );
-
-    router.get(
-    '/products',
-    protect(['admin']),
-    noCache,
-    validateQueryParams,
-    getProductStats
-    );
-
-    router.get(
-    '/users',
-    protect(['admin']),
-    noCache,
-    validateQueryParams,
-    getUserStats
-    );
-
-    router.get(
-    '/revenue',
-    protect(['admin']),
-    noCache,
-    validateQueryParams,
-    getRevenueStats
-    );
-
-    module.exports = router;
+module.exports = router;

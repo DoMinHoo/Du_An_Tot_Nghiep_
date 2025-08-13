@@ -67,6 +67,14 @@ const statusColor: Record<string, string> = {
   completed: "green",
   canceled: "red",
 };
+const paymentStatusText: Record<string, string> = {
+  pending: "Chưa thanh toán",
+  completed: "Đã thanh toán",
+  failed: "Thanh toán thất bại",
+  refunded: "Đã hoàn tiền",
+  expired: "Thanh toán hết hạn",
+};
+
 
 const OrderManager: React.FC = () => {
   const navigate = useNavigate();
@@ -185,6 +193,23 @@ const OrderManager: React.FC = () => {
         );
       },
     },
+    {
+  title: "TT Thanh toán",
+  dataIndex: "paymentStatus",
+  key: "paymentStatus",
+  render: (paymentStatus: string) => (
+    <Tag color={
+      paymentStatus === "completed" ? "green" :
+      paymentStatus === "refunded" ? "purple" :
+      paymentStatus === "failed" ? "red" :
+      paymentStatus === "expired" ? "orange" :
+      "default"
+    }>
+      {paymentStatusText[paymentStatus] || paymentStatus}
+    </Tag>
+  ),
+},
+
     {
       title: "Địa chỉ giao hàng",
       dataIndex: "shippingAddress",

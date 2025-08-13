@@ -39,8 +39,8 @@ const ListPromotion: React.FC = () => {
     select: (data) =>
       searchText
         ? data.filter((promo) =>
-            promo.code.toLowerCase().includes(searchText.toLowerCase())
-          )
+          promo.code.toLowerCase().includes(searchText.toLowerCase())
+        )
         : data,
   });
 
@@ -87,6 +87,16 @@ const ListPromotion: React.FC = () => {
           ? `${value}%`
           : formatCurrency(value),
     },
+    
+    // Giá tối đa được giảm
+    {
+      title: 'Giá tối đa được giảm',
+      dataIndex: 'maxDiscountPrice',
+      key: 'maxDiscountPrice',
+      render: (value: number) =>
+        value && value > 0 ? formatCurrency(value) : 'Không giới hạn',
+    },
+
     {
       title: 'Tối thiểu',
       dataIndex: 'minOrderValue',

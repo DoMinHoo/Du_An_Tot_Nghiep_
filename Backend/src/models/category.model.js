@@ -24,6 +24,7 @@ const categorySchema = new mongoose.Schema({
     timestamps: true, // Tự động tạo createdAt & updatedAt
     versionKey: false // Tắt __v
 });
-
+categorySchema.index({ name: 1 });
+categorySchema.index({ slug: 1 });
 // Tạo và xuất model Category
 module.exports = mongoose.model('Category', categorySchema);

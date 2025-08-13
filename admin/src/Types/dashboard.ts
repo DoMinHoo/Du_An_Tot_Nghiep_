@@ -1,40 +1,74 @@
-export interface StatsOverview {
-    totalOrders: number;
+    export interface ChartData {
+    type: 'bar' | 'line' | 'pie';
+    data: {
+        labels: string[];
+        datasets: {
+        label: string;
+        data: number[];
+        backgroundColor: string | string[];
+        borderColor?: string;
+        borderWidth?: number;
+        fill?: boolean;
+        }[];
+    };
+    options: {
+        responsive: boolean;
+        scales?: { y?: { beginAtZero: boolean } };
+    };
+    }
+
+    export interface RevenueStats {
+    currentRevenue: number;
+    previousRevenue: number;
+    growthRate: number;
+    orderStatus: {
+        pending: number;
+        confirmed: number;
+        shipping: number;
+        completed: number;
+        canceled: number;
+    };
+    avgRevenuePerOrder: number;
+    chart: ChartData;
+    }
+
+    export interface ProductStats {
+    productStats: {
+        active: number;
+        inactive: number;
+        flashSale: number;
+        totalStock: number;
+    };
+topProducts: {
+    _id: string;
+    productName?: string;
+    totalSold: number;
     totalRevenue: number;
-    totalUsers: number;
-    totalProductsSold: number;
-    revenueByTime: { time: string; total: number }[];
-}
+    colorImageUrl?: string;
+    dimensions?: string;
+    colorName?: string;
+}[];
+    lowStockProducts: { name: string; stockQuantity: number; productId: string }[];
+    popularCategories: { _id: { categoryId: string; categoryName: string }; totalSold: number }[];
+    soldRatio: number;
+    unsoldProducts: number;
+    chart: ChartData;
+    }
 
-export interface StatsOrders {
-    ordersByStatus: { status: string; count: number }[];
-    ordersByTime: { time: string; count: number }[];
-    popularProducts: { productName: string; variationName: string; totalQuantity: number }[];
-    avgOrderValue: number;
-}
-
-export interface StatsProducts {
-    bestSellingProducts: { productName: string; variationName: string; totalQuantity: number; colorImageUrl?: string }[];
-    lowStockProducts: { name: string; productId: { name: string }; stockQuantity: number; colorImageUrl?: string }[];
-    highReturnProducts: { productName: string; variationName: string; totalReturns: number; colorImageUrl?: string }[];
-    unsoldProducts: { productName: string; variationName: string; stockQuantity: number; colorImageUrl?: string }[];
-}
-
-export interface StatsUsers {
-    newUsers: number;
-    activeUsers: { name: string; email: string; totalOrders: number; totalSpent: number }[];
-    userPurchaseHistory: { name: string; email: string; orders: { orderCode: string; totalAmount: number; createdAt: string }[] }[];
-    userByRegion: { region: string; count: number }[];
-}
-
-export interface StatsRevenue {
-    revenueByTime: { time: string; total: number }[];
-    revenueByCategory: { category: string; total: number }[];
-    revenueByPaymentMethod: { paymentMethod: string; total: number }[];
-}
-
-export interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    message?: string;
-}
+    export interface CustomerStats {
+    customerStats: {
+        total: number;
+        new: number;
+        returning: number;
+    };
+    newCustomersThisMonth: number;
+    topLocations: { _id: string; count: number }[];
+    orderStatus: {
+        pending: number;
+        confirmed: number;
+        shipping: number;
+        completed: number;
+        canceled: number;
+    };
+    chart: ChartData;
+    }

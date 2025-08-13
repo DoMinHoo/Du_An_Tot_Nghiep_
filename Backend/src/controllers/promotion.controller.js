@@ -2,6 +2,7 @@
 const Promotion = require("../models/promotion.model");
 
 // Áp dụng mã khuyến mãi
+// Áp dụng mã khuyến mãi
 exports.applyPromotion = async (req, res) => {
   const { code, originalPrice } = req.body;
 
@@ -9,7 +10,7 @@ exports.applyPromotion = async (req, res) => {
     const promotion = await Promotion.findOne({
       code: code.toUpperCase(),
       isActive: true,
-      isDeleted: false, // Chỉ lấy mã chưa bị xóa mềm
+      isDeleted: false,
     });
 
     if (!promotion) {
@@ -30,33 +31,42 @@ exports.applyPromotion = async (req, res) => {
       });
     }
 
-    let finalPrice = originalPrice;
+    let discountAmount = 0;
 
+    // Tính số tiền giảm
     if (promotion.discountType === "percentage") {
-      finalPrice = originalPrice * (1 - promotion.discountValue / 100);
+      discountAmount = originalPrice * (promotion.discountValue / 100);
     } else {
-      finalPrice = originalPrice - promotion.discountValue;
+      discountAmount = promotion.discountValue;
     }
 
-    finalPrice = Math.max(0, finalPrice);
+    // ✅ Giới hạn mức giảm tối đa nếu có
+    if (promotion.maxDiscountPrice > 0) {
+      discountAmount = Math.min(discountAmount, promotion.maxDiscountPrice);
+    }
 
+    const finalPrice = Math.max(0, originalPrice - discountAmount);
+
+    // Cập nhật lượt sử dụng
     if (promotion.usageLimit > 0) {
       promotion.usedCount += 1;
       await promotion.save();
     }
-    const discountAmount = originalPrice - finalPrice;
 
     res.json({
       message: "Áp dụng mã thành công!",
       originalPrice,
       finalPrice,
       discountAmount,
+      maxDiscountPrice: promotion.maxDiscountPrice || 0, // ✅ thêm dòng này
       promotionApplied: promotion.code,
     });
+
   } catch (error) {
     res.status(500).json({ message: "Lỗi máy chủ.", error: error.message });
   }
 };
+
 
 // Tạo mã khuyến mãi
 exports.createPromotion = async (req, res) => {

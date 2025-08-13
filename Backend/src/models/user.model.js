@@ -53,7 +53,9 @@ const userSchema = new mongoose.Schema({
     timestamps: true, // Tự động tạo createdAt & updatedAt
     versionKey: false // Tắt __v                                                   
 });
-
+userSchema.index({ email: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ createdAt: 1 });
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
