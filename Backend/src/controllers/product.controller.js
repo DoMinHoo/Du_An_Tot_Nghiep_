@@ -5,6 +5,7 @@ const Material = require("../models/material.model");
 const ProductVariation = require("../models/product_variations.model");
 const Review = require("../models/review.model"); // Thêm dòng này để import Review model
 const path = require("path");
+const fs = require('fs');
 
 function escapeRegex(string = "") {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -173,28 +174,37 @@ exports.getProducts = async (req, res) => {
 // Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {
   try {
+    // Lấy product chính
     const product = await Product.findOne({
       _id: req.params.id,
       isDeleted: false,
     })
       .populate("categoryId")
-      .lean(); // Thêm .lean()
+      .lean();
 
-    if (!product)
+    if (!product) {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
+    }
 
-    // Lấy thông tin đánh giá cho sản phẩm chi tiết
+    // 🔎 Lấy variations dựa theo productId
+    const variations = await ProductVariation.find({
+      productId: product._id,
+      isDeleted: false,
+    }).lean();
+
+    // 🔎 Lấy ratings
     const ratings = await getProductRatings(product._id);
 
     res.json({
       success: true,
       data: {
-        ...product, // Sử dụng product trực tiếp vì đã có .lean()
-        isAvailable: product.stock_quantity > 0,
-        averageRating: ratings.averageRating, // Thêm averageRating
-        totalReviews: ratings.totalReviews, // Thêm totalReviews
+        ...product,
+        variations, // gắn thủ công
+        isAvailable: variations.some((v) => v.stockQuantity > 0), // true nếu có biến thể còn hàng
+        averageRating: ratings.averageRating,
+        totalReviews: ratings.totalReviews,
       },
     });
   } catch (err) {
@@ -374,69 +384,184 @@ exports.createProduct = async (req, res) => {
 };
 
 // Cập nhật sản phẩm
+// PUT /products/:id
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Parse body fields (FormData => values may be strings)
     const body = req.body || {};
 
-    const uploadImages = Array.isArray(req.files)
-      ? req.files.map((file) => `/uploads/banners/${path.basename(file.path)}`)
-      : [];
+    // product fields
+    const name = body.name;
+    const descriptionShort = body.descriptionShort;
+    const descriptionLong = body.descriptionLong;
+    const categoryId = body.categoryId;
+    const status = body.status;
 
+    // existingImages: frontend may send JSON string
+    let existingImages = [];
+    if (body.existingImages) {
+      try {
+        existingImages = JSON.parse(body.existingImages);
+        if (!Array.isArray(existingImages)) existingImages = [];
+      } catch (e) {
+        // if not JSON, ignore or fallback to empty
+        existingImages = Array.isArray(body.existingImages) ? body.existingImages : [];
+      }
+    }
+
+    // Files uploaded by multer: assume product images sent with fieldname 'images'
+    const productImageFiles = Array.isArray(req.files) ? req.files.filter(f => f.fieldname === 'images') : [];
+    const uploadImages = productImageFiles.map(f => `/uploads/banners/${path.basename(f.path)}`);
+
+    // Find product
     const product = await Product.findById(id);
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Sản phẩm không tồn tại",
-      });
+      return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
     }
-    product.name = body.name || product.name;
-    product.descriptionShort = body.descriptionShort || product.descriptionShort;
-    product.descriptionLong = body.descriptionLong || product.descriptionLong;
-    product.categoryId = body.categoryId || product.categoryId;
-    product.status = body.status || product.status;
-    if (uploadImages.length > 0) {
-      product.image = uploadImages; // Cập nhật ảnh mới
+
+    // Update basic fields (only if provided)
+    if (name !== undefined) product.name = name;
+    if (descriptionShort !== undefined) product.descriptionShort = descriptionShort;
+    if (descriptionLong !== undefined) product.descriptionLong = descriptionLong;
+    if (categoryId !== undefined) product.categoryId = categoryId;
+    if (status !== undefined) product.status = status;
+
+    // Update product images (keep existing + new)
+    product.image = [...existingImages, ...uploadImages];
+
+    // Parse variations from body (could be JSON string or an array)
+    let variationsPayload = [];
+    if (body.variations) {
+      if (typeof body.variations === 'string') {
+        try {
+          const parsed = JSON.parse(body.variations);
+          variationsPayload = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          variationsPayload = [];
+        }
+      } else if (Array.isArray(body.variations)) {
+        variationsPayload = body.variations;
+      } else {
+        variationsPayload = [];
+      }
     }
+
+    // Parse deletedVariations if provided
+    let deletedVariations = [];
+    if (body.deletedVariations) {
+      try {
+        const parsedDel = typeof body.deletedVariations === 'string' ? JSON.parse(body.deletedVariations) : body.deletedVariations;
+        deletedVariations = Array.isArray(parsedDel) ? parsedDel : [];
+      } catch (err) {
+        deletedVariations = [];
+      }
+    }
+
+    // Ensure we have product.variations as array of ids (strings)
+    let currentVariationIds = Array.isArray(product.variations)
+      ? product.variations.map(v => (typeof v === 'object' && v._id ? v._id.toString() : v.toString()))
+      : [];
+
+    // Handle deletions: remove docs and remove from product.variations array
+    if (deletedVariations.length) {
+      for (const delId of deletedVariations) {
+        try {
+          await ProductVariation.findByIdAndDelete(delId);
+        } catch (err) {
+          console.warn('Error deleting variation', delId, err.message);
+        }
+      }
+      currentVariationIds = currentVariationIds.filter(idStr => !deletedVariations.includes(idStr));
+    }
+
+    // Process variationsPayload: update existing or create new
+    const updatedVariationIds = []; // will collect final set of variation ids for product
+
+    for (const varItem of variationsPayload) {
+      // Normalize fields: varItem might come with colorImageUrl full URL or path
+      const variationData = {
+        name: varItem.name ?? '',
+        sku: varItem.sku ?? '',
+        dimensions: varItem.dimensions ?? '',
+        basePrice: varItem.basePrice !== undefined ? Number(varItem.basePrice) : 0,
+        priceAdjustment: varItem.priceAdjustment !== undefined ? Number(varItem.priceAdjustment) : 0,
+        finalPrice: varItem.finalPrice !== undefined ? Number(varItem.finalPrice) : 0,
+        salePrice: varItem.salePrice !== undefined ? (varItem.salePrice === '' ? null : Number(varItem.salePrice)) : null,
+        stockQuantity: varItem.stockQuantity !== undefined ? Number(varItem.stockQuantity) : 0,
+        colorName: varItem.colorName ?? '',
+        colorHexCode: varItem.colorHexCode ?? '',
+        // colorImageUrl may be already a server path like "/uploads/..." or full url with host
+        colorImageUrl: varItem.colorImageUrl ? String(varItem.colorImageUrl) : '',
+        material: varItem.materialVariation || null,
+        productId: product._id,
+      };
+
+      if (varItem._id) {
+        // update existing variation doc
+        const existing = await ProductVariation.findById(varItem._id);
+        if (existing) {
+          // Only overwrite fields that are provided (to avoid wiping material if frontend didn't include)
+          const toUpdate = {};
+          // list fields to update
+          const keys = [
+            'name', 'sku', 'dimensions', 'basePrice', 'priceAdjustment', 'finalPrice',
+            'salePrice', 'stockQuantity', 'colorName', 'colorHexCode', 'colorImageUrl'
+          ];
+          keys.forEach(k => {
+            if (varItem[k] !== undefined) toUpdate[k] = variationData[k];
+          });
+          // material: only update if provided (non-empty)
+          if (varItem.materialVariation !== undefined && varItem.materialVariation !== '') {
+            toUpdate.material = varItem.materialVariation;
+          }
+          // apply update
+          const updated = await ProductVariation.findByIdAndUpdate(varItem._id, toUpdate, { new: true });
+          if (updated) updatedVariationIds.push(updated._id.toString());
+        } else {
+          // If _id provided but not found -> create new instead (fallback)
+          const created = await ProductVariation.create(variationData);
+          updatedVariationIds.push(created._id.toString());
+        }
+      } else {
+        // create new variation
+        const created = await ProductVariation.create(variationData);
+        updatedVariationIds.push(created._id.toString());
+      }
+    }
+
+    // Combine existing (not deleted) + updated/new
+    // Some existing variations that were not included in payload should remain untouched
+    // We'll keep currentVariationIds that were not deleted AND not replaced by updatedVariationIds
+    const existingKept = currentVariationIds.filter(idStr => !deletedVariations.includes(idStr));
+
+    // final set = union of existingKept & updatedVariationIds (avoid duplicates)
+    const finalVariationIdSet = Array.from(new Set([...existingKept, ...updatedVariationIds]));
+
+    product.variations = finalVariationIdSet;
+
+    // Save product
     await product.save();
 
-    let updateVariations = [];
-    if (body.variations) {
-      const variationsData = JSON.parse(body.variations);
+    // Return populated product with variations
+    const populated = await Product.findById(product._id)
+      .populate('categoryId')
+      .populate({
+        path: 'variations',
+        // optionally populate material inside variation
+        populate: { path: 'material', model: 'Material' }
+      })
+      .lean();
 
-      for (const variation of variationsData) {
-        if (variation._id) {
-          // Cập nhật biến thể đã tồn tại
-          const updated = await ProductVariation.findByIdAndUpdate(
-            variation._id,
-            {
-              ...variation,
-              productId: id,
-            },
-            { new: true }
-          );
-          if (updated) updateVariations.push(updated);
-        }
-        else {
-          const created = await ProductVariation.create({
-            ...variation,
-            productId: id,
-          });
-          updateVariations.push(created)
-        }
-      }
-    }
-    return res.status(200).json({
+    return res.json({
       success: true,
-      message: "Cap nhat san pham thanh cong",
-      data: {
-        product: product,
-        variations: updateVariations
-      }
-    })
+      message: 'Cập nhật sản phẩm thành công',
+      data: populated,
+    });
   } catch (error) {
-    console.error("Error updating product:", error);
-    res.status(400).json({ success: false, message: error.message });
+    console.error('Update product error:', error);
+    return res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
