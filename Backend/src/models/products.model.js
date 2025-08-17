@@ -12,10 +12,16 @@ const productSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'hidden', 'sold_out'],
         default: 'active'
-    } // Trạng thái sản phẩm
+    }, // Trạng thái sản phẩm
 }, {
     timestamps: true,
     versionKey: false
+});
+productSchema.virtual('variations', {
+    ref: 'ProductVariation',       // model name (chính xác)
+    localField: '_id',
+    foreignField: 'productId',
+    justOne: false
 });
 productSchema.index({ categoryId: 1 });
 productSchema.index({ status: 1 });
