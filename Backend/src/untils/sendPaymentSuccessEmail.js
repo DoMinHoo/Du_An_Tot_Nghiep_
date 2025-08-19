@@ -238,7 +238,6 @@ const sendOrderStatusUpdateEmail = async (orderId, newStatus, note = '') => {
                                 </tr>
                             `).join('')}
                         </tbody>
-                        
                         <tfoot>
                             <tr style="background-color: #f5f6fa;">
                                 <th style="border: 1px solid #e0e0e0; padding: 12px; text-align: left; font-weight: normal;" colspan="4">Tổng giá sản phẩm</th>
