@@ -51,14 +51,14 @@ const OrderDetailPage: React.FC = () => {
     ) || 0;
   };
 
-  const getDiscountAmount = () => {
-    if (!order?.promotion) return 0;
-    const subtotal = calculateSubtotal();
-    if (order.promotion.discountType === "percentage") {
-      return Math.floor((subtotal * order.promotion.discountValue) / 100);
-    }
-    return order.promotion.discountValue || 0;
-  };
+  // const getDiscountAmount = () => {
+  //   if (!order?.promotion) return 0;
+  //   const subtotal = calculateSubtotal();
+  //   if (order.promotion.discountType === "percentage") {
+  //     return Math.floor((subtotal * order.promotion.discountValue) / 100);
+  //   }
+  //   return order.promotion.discountValue || 0;
+  // };
 
   if (loading) {
     return (
@@ -74,8 +74,11 @@ const OrderDetailPage: React.FC = () => {
     );
   }
 
-  const subtotal = calculateSubtotal();
-  const discountAmount = getDiscountAmount();
+const subtotal = calculateSubtotal();
+// ✅ discountAmount lấy từ backend qua chênh lệch subtotal + phí ship - totalAmount
+const discountAmount =
+  subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -147,7 +150,7 @@ const OrderDetailPage: React.FC = () => {
               : `${order.promotion.discountValue.toLocaleString()}₫`})`
             : "Không áp dụng"}
         </p>
-        <p>Giảm giá: -{discountAmount.toLocaleString()}₫</p>
+        <p>Giảm giá: -{Math.max(discountAmount, 0).toLocaleString()}₫</p>
         <p>Phí vận chuyển: {(order.shippingFee || 0).toLocaleString()}₫</p>
         <hr />
         <p className="text-xl font-bold text-red-600">Tổng cộng: {(order.totalAmount || 0).toLocaleString()}₫</p>
