@@ -541,108 +541,98 @@ exports.getOrderById = async (req, res) => {
 
 
 exports.updateOrder = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status, note } = req.body;
+  try {
+    const { id } = req.params;
+    const { status, note, paymentStatus } = req.body; // 👈 thêm paymentStatus
 
-        if (!mongoose.isValidObjectId(id)) {
-            return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
-        }
-
-        const order = await Order.findById(id).populate('userId');
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
-        }
-
-        // Kiểm tra nếu yêu cầu hủy nhưng trạng thái không cho phép
-        if (status === 'canceled') {
-            if (order.status !== 'pending') {
-                return res.status(400).json({
-                    success: false,
-                    message: `Không thể hủy đơn hàng ở trạng thái "${order.status}".`
-                });
-            }
-        }
-
-        // Kiểm tra nếu trạng thái không đổi hoặc không hợp lệ
-        if (!status || order.status === status) {
-            return res.status(400).json({
-                success: false,
-                message: 'Trạng thái đơn hàng không thay đổi hoặc không hợp lệ'
-            });
-        }
-
-        // Hoàn tồn kho nếu hủy
-        if (status === 'canceled' && order.status !== 'completed') {
-            for (const item of order.items) {
-                await ProductVariation.findByIdAndUpdate(item.variationId, {
-                    $inc: { stockQuantity: item.quantity }
-                });
-            }
-        }
-
-        // Tăng lượt mua nếu hoàn tất
-        if (status === 'completed' && order.status !== 'completed') {
-            for (const item of order.items) {
-                const variation = await ProductVariation.findById(item.variationId);
-                if (variation) {
-                    await Product.findByIdAndUpdate(variation.productId, {
-                        $inc: { totalPurchased: item.quantity }
-                    });
-                }
-            }
-        }
-
-        // Cập nhật trạng thái và ghi log
-       // Cập nhật trạng thái và ghi log
-const updateData = {
-  status,
-  ...(status === 'canceled' && note ? { cancellationReason: note } : {}),
-};
-
-// Nếu đơn hàng được xác nhận hoàn thành → cập nhật paymentStatus nếu còn pending
-if (status === 'completed' && order.paymentStatus === 'pending') {
-  updateData.paymentStatus = 'completed';
-}
-
-// ✅ Nếu đơn hàng bị huỷ và đã thanh toán online → chuyển trạng thái thanh toán sang đã hoàn tiền
-if (
-  status === 'canceled' &&
-  order.paymentMethod === 'online_payment' &&
-  order.paymentStatus === 'completed'
-) {
-  updateData.paymentStatus = 'refunded';
-}
-
-
-
-        await Order.findByIdAndUpdate(id, {
-            $set: updateData,
-            $push: {
-                statusHistory: {
-                    status,
-                    changedAt: new Date(),
-                    note: note || `Cập nhật trạng thái thành ${status}`
-                }
-            }
-        });
-
-        // Gửi email thông báo cập nhật trạng thái bất đồng bộ
-        sendOrderStatusUpdateEmail(id, status, note)
-            .catch((emailError) => {
-                console.error('Lỗi gửi email thông báo trạng thái:', emailError);
-            });
-
-        return res.status(200).json({
-            success: true,
-            message: 'Cập nhật đơn hàng thành công',
-        });
-
-    } catch (err) {
-        console.error('Lỗi updateOrder:', err);
-        res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'ID đơn hàng không hợp lệ' });
     }
+
+    const order = await Order.findById(id).populate('userId');
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+    }
+
+    const updateData = {};
+
+    // Nếu cập nhật trạng thái đơn
+    if (status) {
+      if (status === 'canceled') {
+        // Hoàn kho khi huỷ (trừ khi đã completed)
+        if (order.status !== 'completed') {
+          for (const item of order.items) {
+            await ProductVariation.findByIdAndUpdate(item.variationId, {
+              $inc: { stockQuantity: item.quantity },
+            });
+          }
+        }
+
+        // Nếu là đơn online đã thanh toán → chuyển sang "chờ hoàn tiền"
+        if (order.paymentMethod === 'online_payment' && order.paymentStatus === 'completed') {
+          updateData.paymentStatus = 'refund_pending';
+        }
+
+        if (note) updateData.cancellationReason = note;
+      }
+
+      if (status === 'completed' && order.status !== 'completed') {
+        for (const item of order.items) {
+          const variation = await ProductVariation.findById(item.variationId);
+          if (variation) {
+            await Product.findByIdAndUpdate(variation.productId, {
+              $inc: { totalPurchased: item.quantity },
+            });
+          }
+        }
+
+        // Nếu hoàn tất mà vẫn chưa set thanh toán → đánh dấu đã thanh toán
+        if (order.paymentStatus === 'pending') {
+          updateData.paymentStatus = 'completed';
+        }
+      }
+
+      updateData.status = status;
+    }
+
+    // 👇 Nếu có truyền paymentStatus từ request thì cập nhật trực tiếp
+    if (paymentStatus) {
+      updateData.paymentStatus = paymentStatus;
+    }
+
+    // Lưu thay đổi
+    await Order.findByIdAndUpdate(id, {
+      $set: updateData,
+      ...(status && {
+        $push: {
+          statusHistory: {
+            status,
+            changedAt: new Date(),
+            note: note || `Cập nhật trạng thái thành ${status}`,
+          },
+        },
+      }),
+    });
+
+    // Gửi email async
+    if (status) {
+      sendOrderStatusUpdateEmail(id, status, note).catch((err) => {
+        console.error('Lỗi gửi email cập nhật trạng thái:', err);
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật đơn hàng thành công',
+    });
+  } catch (err) {
+    console.error('Lỗi updateOrder:', err);
+    res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
+  }
 };
+
+
+
 
 
 // Xóa đơn hàng
