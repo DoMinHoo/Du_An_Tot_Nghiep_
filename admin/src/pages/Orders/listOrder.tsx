@@ -71,6 +71,7 @@ const paymentStatusText: Record<string, string> = {
   pending: "Chưa thanh toán",
   completed: "Đã thanh toán",
   failed: "Thanh toán thất bại",
+  refund_pending: "Chờ hoàn tiền",  
   refunded: "Đã hoàn tiền",
   expired: "Thanh toán hết hạn",
 };
@@ -201,6 +202,7 @@ const OrderManager: React.FC = () => {
     <Tag color={
       paymentStatus === "completed" ? "green" :
       paymentStatus === "refunded" ? "purple" :
+       paymentStatus === "refund_pending" ? "orange" : 
       paymentStatus === "failed" ? "red" :
       paymentStatus === "expired" ? "orange" :
       "default"

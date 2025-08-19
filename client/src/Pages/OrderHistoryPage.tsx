@@ -28,6 +28,8 @@ const getPaymentStatusText = (order: any): string => {
       return 'Đã thanh toán';
     case 'failed':
       return 'Thanh toán thất bại';
+       case 'refund_pending':
+      return 'Chờ hoàn tiền';
     case 'refunded':
       return 'Đã hoàn tiền';
     case 'expired':
@@ -226,9 +228,12 @@ const OrderHistoryPage: React.FC = () => {
         <div className="space-y-6">
           {paginatedOrders.map((order) => {
             // Tính subtotal cho mỗi đơn hàng
-            const subtotal = calculateSubtotal(order);
-            // Tính discount amount dựa trên subtotal
-            const discountAmount = getDiscountAmount(order, subtotal);
+      // Tính subtotal (chưa trừ giảm giá, chưa cộng phí ship)
+const subtotal = calculateSubtotal(order);
+
+// ✅ Tính discountAmount dựa trên dữ liệu backend
+const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
             // Tính tổng cộng cuối cùng (nếu backend không cung cấp chính xác hoặc bạn muốn tự tính lại)
             // const finalTotal = subtotal - discountAmount + (order.shippingFee || 0);
 
@@ -304,25 +309,20 @@ const OrderHistoryPage: React.FC = () => {
                   </p>
 
 
-                  <p>
-                    <strong>Giá trị giảm:</strong>{' '}
-                    {discountAmount.toLocaleString()}₫ {/* Sử dụng giá trị giảm đã tính */}
-                  </p>
+             <p>
+  <strong>Giá trị giảm:</strong> {Math.max(discountAmount, 0).toLocaleString()}₫
+</p>
 
-                  {/* Phí vận chuyển lấy từ backend */}
-                  <p>
-                    <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
-                  </p>
+<p>
+  <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
+</p>
 
-                  <hr className="my-2" />
+<hr className="my-2" />
 
-                  {/* Tổng cộng lấy từ backend. Nếu order.totalAmount từ backend đã đúng, dùng nó.
-                      Nếu không, bạn có thể uncomment dòng dưới để tự tính:
-                      `Tổng cộng: ${finalTotal.toLocaleString()}₫`
-                  */}
-                  <p className="text-lg font-semibold text-red-600">
-                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
-                  </p>
+<p className="text-lg font-semibold text-red-600">
+  Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+</p>
+
 
                 </div>
 
