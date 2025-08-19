@@ -1,43 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ProductStats as ProductStatsType } from '../../Types/dashboard';
 import ChartComponent from './ChartComponent';
-import '../../index.css'; // Import CSS
+import '../../ProductStats.css';
 
 const ProductStats: React.FC = () => {
   const [stats, setStats] = useState<ProductStatsType | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isFetching, setIsFetching] = useState<boolean>(false); // Thay loading bằng isFetching
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const [period, setPeriod] = useState<'day' | 'month' | 'year'>('month');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [dateError, setDateError] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const currentDate = new Date().toISOString().split('T')[0]; // Lấy ngày hiện tại (08/08/2025)
+  const currentDate = new Date().toISOString().split('T')[0];
 
-  const validateDates = () => {
+  /** 🔎 Validate ngày */
+  const validateDates = useCallback(() => {
+    if (!startDate || !endDate) return true;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const now = new Date();
 
-    if (startDate && endDate) {
-      if (end < start) {
-        setDateError('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.');
-        return false;
-      }
-      if (end > now || start > now) {
-        setDateError('Ngày không thể lớn hơn ngày hiện tại.');
-        return false;
-      }
+    if (end < start) {
+      setDateError('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.');
+      return false;
+    }
+    if (end > now || start > now) {
+      setDateError('Ngày không thể lớn hơn ngày hiện tại.');
+      return false;
     }
     setDateError(null);
     return true;
-  };
+  }, [startDate, endDate]);
 
-  const fetchData = async () => {
+  /** 📊 Fetch API */
+  const fetchData = useCallback(async () => {
     if (!validateDates()) return;
-    setLoading(true);
+
+    setIsFetching(true); // Chỉ đánh dấu đang fetch, không làm mới toàn bộ UI
     setError(null);
+
     try {
       const query = new URLSearchParams({ chartType, period });
       if (startDate && endDate) {
@@ -58,19 +64,28 @@ const ProductStats: React.FC = () => {
       }
       const data: ProductStatsType = await response.json();
       setStats(data);
+      setCurrentPage(1);
     } catch (err: any) {
       console.error('Lỗi khi lấy dữ liệu sản phẩm:', err);
       setError(
         err.message || 'Không thể tải dữ liệu sản phẩm. Vui lòng thử lại.'
       );
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
-  };
+  }, [chartType, period, startDate, endDate, validateDates]);
+
+  /** ⌨️ ESC để đóng filter */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) =>
+      e.key === 'Escape' && setFilterOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [chartType, period, startDate, endDate]);
+  }, [fetchData]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -83,134 +98,223 @@ const ProductStats: React.FC = () => {
     return new Intl.NumberFormat('vi-VN').format(value);
   };
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        Đang tải dữ liệu...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error">
-        <p>{error}</p>
-        <button className="retry-btn" onClick={fetchData}>
-          Thử lại
-        </button>
-      </div>
-    );
-  }
+  const paginatedProducts = stats?.topProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  const totalPages = Math.ceil((stats?.topProducts.length || 0) / itemsPerPage);
 
   return (
-    <div className="card product-stats">
-      <div className="controls">
-        <h2>Thống kê Sản phẩm</h2>
-        <div className="filter-group">
-          <div className="filter-item">
-            <label>Khoảng thời gian:</label>
-            <select
-              value={period}
-              onChange={(e) =>
-                setPeriod(e.target.value as 'day' | 'month' | 'year')
-              }
+    <div className="stats-panel">
+      <div className="stats-controls">
+        <div className="tit1">
+          <h2>Thống kê Sản phẩm</h2>
+
+          {/* Bộ lọc */}
+          <div
+            className={`filter-group1 ${filterOpen ? '' : 'collapsed'}`}
+            role="complementary"
+          >
+            <button
+              className="filter-close"
+              onClick={() => setFilterOpen(false)}
+              aria-label="Đóng bộ lọc"
             >
-              <option value="day">Ngày</option>
-              <option value="month">Tháng</option>
-              <option value="year">Năm</option>
-            </select>
+              ✕
+            </button>
+            <div className="filter-body">
+              <div className="filter-group">
+                <div className="filter-item1">
+                  <div className="filter-item">
+                    <label>Khoảng thời gian:</label>
+                    <select
+                      value={period}
+                      onChange={(e) =>
+                        setPeriod(e.target.value as 'day' | 'month' | 'year')
+                      }
+                    >
+                      <option value="day">Ngày</option>
+                      <option value="month">Tháng</option>
+                      <option value="year">Năm</option>
+                    </select>
+                  </div>
+
+                  <div className="filter-item">
+                    <label>Loại biểu đồ:</label>
+                    <select
+                      value={chartType}
+                      onChange={(e) =>
+                        setChartType(e.target.value as 'bar' | 'pie')
+                      }
+                    >
+                      <option value="bar">Thanh</option>
+                      <option value="pie">Tròn</option>
+                    </select>
+                  </div>
+
+                  <div className="filter-item">
+                    <label>Từ ngày:</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      max={currentDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="filter-item">
+                    <label>Đến ngày:</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      max={currentDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="filter-actions">
+                    <button onClick={fetchData} className="btn-apply">
+                      Áp dụng
+                    </button>
+                    <button
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                        setPeriod('month');
+                        setChartType('bar');
+                        setDateError(null);
+                      }}
+                      className="btn-reset"
+                    >
+                      Đặt lại
+                    </button>
+                  </div>
+                </div>
+                {dateError && <p className="date-error">{dateError}</p>}
+              </div>
+            </div>
           </div>
-          <div className="filter-item">
-            <label>Loại biểu đồ:</label>
-            <select
-              value={chartType}
-              onChange={(e) => setChartType(e.target.value as 'bar' | 'pie')}
+
+          {!filterOpen && (
+            <button
+              className="filter-toggle"
+              onClick={() => setFilterOpen(true)}
+              aria-label="Mở bộ lọc"
             >
-              <option value="bar">Thanh</option>
-              <option value="pie">Tròn</option>
-            </select>
-          </div>
-          <div className="filter-item">
-            <label>Từ ngày:</label>
-            <input
-              type="date"
-              value={startDate}
-              max={currentDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="filter-item">
-            <label>Đến ngày:</label>
-            <input
-              type="date"
-              value={endDate}
-              max={currentDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
+              ☰
+            </button>
+          )}
         </div>
-        {dateError && <p className="date-error">{dateError}</p>}
       </div>
 
+      {isFetching && (
+        <div className="stats-fetching">
+          <div className="stats-spinner"></div>
+          Đang cập nhật dữ liệu...
+        </div>
+      )}
+
+      {error && (
+        <div className="stats-error">
+          <p>{error}</p>
+          <button className="stats-retry-btn" onClick={fetchData}>
+            Thử lại
+          </button>
+        </div>
+      )}
+
       {stats?.message && (
-        <div className="no-data-message">
+        <div className="stats-no-data">
           <p>{stats.message}</p>
         </div>
       )}
 
-      <div className="card-grid">
+      {chartType === 'pie' && stats?.topProducts.length > 10 && (
+        <p className="stats-chart-warning">
+          Biểu đồ tròn chỉ hiển thị tối đa 10 sản phẩm để đảm bảo tính trực
+          quan.
+        </p>
+      )}
+
+      <div className="stats-grid">
         <div className="stats-content">
           <h3>Thông tin tổng quan</h3>
-          <p>
-            Sản phẩm active:{' '}
-            <strong>{formatNumber(stats?.productStats.active || 0)}</strong>
-          </p>
-          <p>
-            Sản phẩm inactive:{' '}
-            <strong>{formatNumber(stats?.productStats.inactive || 0)}</strong>
-          </p>
-          <p>
-            Sản phẩm đang khuyến mãi:{' '}
-            <strong>{formatNumber(stats?.productStats.flashSale || 0)}</strong>
-          </p>
-          <p>
-            Tổng tồn kho:{' '}
-            <strong>{formatNumber(stats?.productStats.totalStock || 0)}</strong>
-          </p>
-          <p>
-            Tỷ lệ sản phẩm bán:{' '}
-            <strong>{formatNumber(stats?.soldRatio || 0)}%</strong>
-          </p>
-          <p>
-            Sản phẩm chưa bán:{' '}
-            <strong>{formatNumber(stats?.unsoldProducts || 0)}</strong>
-          </p>
+          {stats ? (
+            <div className="stats">
+              <p className="total-revenue">
+                Sản phẩm active:{' '}
+                <strong>{formatNumber(stats.productStats.active || 0)}</strong>
+              </p>
+              <p className="total-revenue">
+                Sản phẩm inactive:{' '}
+                <strong>
+                  {formatNumber(stats.productStats.inactive || 0)}
+                </strong>
+              </p>
+              <p className="total-revenue">
+                Sản phẩm đang khuyến mãi:{' '}
+                <strong>
+                  {formatNumber(stats.productStats.flashSale || 0)}
+                </strong>
+              </p>
+              <p className="total-revenue">
+                Tổng tồn kho:{' '}
+                <strong>
+                  {formatNumber(stats.productStats.totalStock || 0)}
+                </strong>
+              </p>
+              <p className="total-revenue">
+                Tỷ lệ sản phẩm bán:{' '}
+                <strong>{formatNumber(stats.soldRatio || 0)}%</strong>
+              </p>
+              <p className="total-revenue">
+                Sản phẩm chưa bán:{' '}
+                <strong>{formatNumber(stats.unsoldProducts || 0)}</strong>
+              </p>
+            </div>
+          ) : (
+            <p>Không có dữ liệu tổng quan.</p>
+          )}
 
-          <h3>Top 5 sản phẩm bán chạy</h3>
-          {stats?.topProducts.length ? (
-            <ul>
-              {stats.topProducts.map((product, index) => (
-                <li key={index}>
-                  {product.productName || 'Không xác định'}:{' '}
-                  {formatNumber(product.totalSold)} sản phẩm,{' '}
-                  {formatCurrency(product.totalRevenue)}
-                  <img
-                    src={`http://localhost:5000${product.colorImageUrl}`}
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      objectFit: 'cover',
-                      marginRight: '10px',
-                    }}
-                  />
-                  <span>
-                    {product.dimensions || 'Không xác định'} -{' '}
-                    {product.colorName || 'Không xác định'} -{' '}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <h3>Top sản phẩm bán chạy</h3>
+          {paginatedProducts?.length ? (
+            <>
+              <ul>
+                {paginatedProducts.map((product, index) => (
+                  <li key={index}>
+                    <img
+                      src={`http://localhost:5000${product.colorImageUrl}`}
+                      alt={product.productName}
+                      className="stats-product-image"
+                    />
+                    <span>
+                      {product.productName || 'Không xác định'}:{' '}
+                      {formatNumber(product.totalSold)} sản phẩm,{' '}
+                      {formatCurrency(product.totalRevenue)} -{' '}
+                      {product.dimensions || 'Không xác định'} -{' '}
+                      {product.colorName || 'Không xác định'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="stats-pagination">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Trước
+                </button>
+                <span>
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Sau
+                </button>
+              </div>
+            </>
           ) : (
             <p>Không có sản phẩm bán chạy.</p>
           )}
@@ -243,8 +347,13 @@ const ProductStats: React.FC = () => {
           )}
         </div>
 
-        <div className="chart-container">
-          {stats?.chart ? (
+        <div className="stats-chart">
+          {isFetching ? (
+            <div className="chart-loading">
+              <div className="stats-spinner"></div>
+              Đang tải biểu đồ...
+            </div>
+          ) : stats?.chart ? (
             <ChartComponent
               chartData={{
                 ...stats.chart,

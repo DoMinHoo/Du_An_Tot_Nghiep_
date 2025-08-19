@@ -203,3 +203,5 @@
 
 {"level":"info","message":"Không tìm thấy guestCart với guestId: a1381ed1-b5d4-492c-a3b3-d23fe14ae8ce hoặc giỏ hàng rỗng","timestamp":"2025-08-16 17:20:07"}
 {"level":"info","message":"Không tìm thấy guestCart với guestId: 8632cb12-af52-48b5-beba-d13e34acbc19 hoặc giỏ hàng rỗng","timestamp":"2025-08-16 17:22:12"}
+{"level":"info","message":"Không tìm thấy guestCart với guestId: fec6f144-3a6e-44f4-8c8b-5ba0247d2fbc hoặc giỏ hàng rỗng","timestamp":"2025-08-18 13:19:06"}
+{"level":"info","message":"Không tìm thấy guestCart với guestId: 9104edcb-0ab9-44b9-8110-d8dac2739bf9 hoặc giỏ hàng rỗng","timestamp":"2025-08-19 10:41:26"}

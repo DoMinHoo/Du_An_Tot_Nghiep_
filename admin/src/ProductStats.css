@@ -1,0 +1,325 @@
+/* Reset mặc định */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+  color: #2d3748;
+  line-height: 1.6;
+}
+
+/* Container chính */
+.stats-panel {
+  padding: 30px;
+}
+
+/* Bộ lọc */
+.stats-controls {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.stats-controls h2 {
+  font-size: 30px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.stats-filter-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stats-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-filter-item label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: capitalize;
+}
+
+.stats-filter-item select,
+.stats-filter-item input[type='date'] {
+  padding: 10px 15px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.stats-filter-item select:focus,
+.stats-filter-item input[type='date']:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+}
+
+.stats-filter-item select:hover,
+.stats-filter-item input[type='date']:hover {
+  border-color: #2b6cb0;
+  background: #f7fafc;
+}
+
+.stats-date-error {
+  color: #e53e3e;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 6px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Grid layout */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Nội dung thống kê */
+.stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.stats-content p {
+  font-size: 20px;
+  color: #000000;
+  margin-bottom: 20px;
+}
+
+/* Danh sách sản phẩm và danh mục */
+.stats-content ul {
+  list-style: none;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 10px;
+  border: 1px solid #edf2f7;
+}
+
+.stats-content ul li {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.stats-content ul li:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stats-product-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #edf2f7;
+}
+
+.stats-content ul li span {
+  font-size: 14px;
+  color: #4a5568;
+}
+
+/* Thanh cuộn tùy chỉnh */
+.stats-content ul::-webkit-scrollbar {
+  width: 8px;
+}
+
+.stats-content ul::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.stats-content ul::-webkit-scrollbar-track {
+  background: #edf2f7;
+}
+
+/* Phân trang */
+.stats-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.stats-pagination button {
+  padding: 8px 16px;
+  background: #2b6cb0;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.stats-pagination button:hover:not(:disabled) {
+  background: #2c5282;
+  transform: translateY(-1px);
+}
+
+.stats-pagination button:disabled {
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.stats-pagination span {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+
+/* Loading */
+.stats-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #4a5568;
+  height: 100%;
+  background: #edf2f7;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.stats-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #edf2f7;
+  border-top: 3px solid #2b6cb0;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error */
+.stats-error {
+  text-align: center;
+  color: #e53e3e;
+  font-size: 16px;
+  background: #fed7d7;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.stats-retry-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #e53e3e;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.stats-retry-btn:hover {
+  background: #c53030;
+  transform: translateY(-1px);
+}
+
+/* No data message */
+.stats-no-data {
+  text-align: center;
+  color: #4a5568;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 20px;
+  background: #edf2f7;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Animation fadeIn */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-panel {
+    margin: 16px;
+    padding: 20px;
+  }
+
+  .stats-filter-group {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-product-image {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-controls h2 {
+    font-size: 24px;
+  }
+
+  .stats-content h3 {
+    font-size: 18px;
+  }
+
+  .stats-content ul li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .stats-product-image {
+    width: 35px;
+    height: 35px;
+  }
+
+  .stats-pagination button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}

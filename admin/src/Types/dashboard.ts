@@ -19,7 +19,10 @@
 
     export interface RevenueStats {
     currentRevenue: number;
-    previousRevenue: number;
+        previousRevenue: number;
+        paymentMethods: {
+            cod: number;
+            zaloPay: number;}
     growthRate: number;
     orderStatus: {
         pending: number;
