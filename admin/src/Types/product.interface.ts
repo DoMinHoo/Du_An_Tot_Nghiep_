@@ -1,25 +1,25 @@
-// Định nghĩa interface cho sản phẩm
+import type { ProductVariation } from "./productVariant.interface";
+
 export interface Product {
   _id: string;
   name: string;
   descriptionShort: string;
   descriptionLong: string;
-  categoryId: { _id: string; name: string }; // Tham chiếu danh mục
-  image: string[]; // Mảng đường dẫn ảnh
+  categoryId: { _id: string; name: string };
+  image: string[];
   totalPurchased: number;
   isDeleted: boolean;
   status: 'active' | 'hidden' | 'sold_out';
   createdAt: string;
   updatedAt: string;
+  variations: ProductVariation[]; // Add variations field
 }
 
-// Định nghĩa interface cho dữ liệu cập nhật sản phẩm
 export interface UpdateProductDto {
   id: string;
-  formData: FormData; // Sử dụng FormData để gửi dữ liệu multipart
+  formData: FormData;
 }
 
-// Định nghĩa interface cho danh mục
 export interface Category {
   _id: string;
   name: string;

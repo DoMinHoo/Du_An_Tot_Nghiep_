@@ -124,21 +124,6 @@ const OrderManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, status: string) => {
-    if (status !== "pending" && status !== "canceled") {
-      message.warning("Chỉ có thể xóa đơn hàng khi đang chờ xác nhận hoặc đã hủy");
-      return;
-    }
-
-    try {
-      await deleteOrder(id);
-      fetchOrders(); // Refresh lại trang hiện tại
-      message.success("Đã xóa đơn hàng");
-    } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || "Lỗi khi xóa đơn hàng";
-      message.error(errorMsg);
-    }
-  };
 
   const handleViewDetail = (orderId: string) => {
     navigate(`/admin/orders/${orderId}`);
@@ -195,6 +180,7 @@ const OrderManager: React.FC = () => {
       },
     },
     {
+
   title: "TT Thanh toán",
   dataIndex: "paymentStatus",
   key: "paymentStatus",
@@ -211,6 +197,7 @@ const OrderManager: React.FC = () => {
     </Tag>
   ),
 },
+
 
     {
       title: "Địa chỉ giao hàng",
@@ -269,15 +256,6 @@ const OrderManager: React.FC = () => {
           <Button type="primary" onClick={() => handleViewDetail(record._id)}>
             Chi tiết
           </Button>
-          <Popconfirm
-            title="Xóa đơn hàng"
-            description="Bạn có chắc muốn xóa đơn hàng này?"
-            onConfirm={() => handleDelete(record._id, record.status)}
-            okText="Xóa"
-            cancelText="Hủy"
-          >
-            <Button danger>Xóa</Button>
-          </Popconfirm>
         </Space>
       ),
     },

@@ -364,13 +364,22 @@ const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount 
                     </button>
                   </div>
                 )}
-
+                {order.status === 'confirmed' && (
+                  <div className="text-right mt-4">
+                    <p className="text-sm text-gray-600 italic">
+                      Đơn hàng đã được xác nhận, không thể hủy.
+                    </p>
+                  </div>
+                )}
 
                 {order.status === 'shipping' && (
                   <div className="text-right mt-4">
+                    <p className="text-sm text-gray-600 italic">
+                      Đơn hàng đang giao, không thể hủy.
+                    </p>
                     <button
                       onClick={() => handleConfirmReceived(order._id)}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="px-4 py-2 mt-2 bg-green-600 text-white rounded hover:bg-green-700"
                     >
                       Xác nhận đã nhận hàng
                     </button>

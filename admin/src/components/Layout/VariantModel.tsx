@@ -52,10 +52,15 @@ const VariationModal: React.FC<VariationModalProps> = ({
                     }
                 }
 
+                const materialId =
+                    typeof (data as any).material === "object"
+                        ? (data as any).material?._id
+                        : (data as any).material;
+
                 form.setFieldsValue({
                     name: data.name,
                     sku: data.sku,
-                    materialVariation: (data as any).material?._id ?? (data as any).material ?? undefined,
+                    materialVariation: materialId ?? undefined,
                     length,
                     width,
                     height,
@@ -118,11 +123,16 @@ const VariationModal: React.FC<VariationModalProps> = ({
                 : undefined;
 
             // temporary URL for preview (not used on backend)
+            if (!colorImageFile && !data?.colorImageUrl) {
+                message.error("Vui lòng chọn 1 ảnh màu");
+                setLoading(false);
+                return;
+            }
+
             const colorImageUrl =
-                colorImageFile !== undefined
+                colorImageFile
                     ? URL.createObjectURL(colorImageFile)
                     : data?.colorImageUrl || "";
-
             const variation: ProductVariationFormData = {
                 name: values.name,
                 sku: values.sku,
@@ -230,7 +240,23 @@ const VariationModal: React.FC<VariationModalProps> = ({
                     <InputNumber style={{ width: "100%" }} min={0} />
                 </Form.Item>
 
-                <Form.Item name="salePrice" label="Giá khuyến mãi (VNĐ)">
+                <Form.Item
+                    name="salePrice"
+                    label="Giá khuyến mãi (VNĐ)"
+                    rules={[
+                        ({ getFieldValue }) => ({
+                            validator(_, value) {
+                                const base = getFieldValue("basePrice");
+                                if (!value || value <= base) {
+                                    return Promise.resolve();
+                                }
+                                return Promise.reject(
+                                    new Error("Giá khuyến mãi không được lớn hơn giá gốc")
+                                );
+                            },
+                        }),
+                    ]}
+                >
                     <InputNumber
                         style={{ width: "100%" }}
                         min={0}

@@ -1,5 +1,3 @@
-// src/Types/productVariant.interface.ts
-
 export interface ProductVariation {
   _id: string;
   productId: string;
@@ -24,6 +22,7 @@ export interface ProductVariation {
 }
 
 export interface ProductVariationFormData {
+  _id?: string;// Add optional _id for existing variations
   name: string;
   sku: string;
   dimensions: string;
@@ -34,10 +33,9 @@ export interface ProductVariationFormData {
   stockQuantity: number;
   colorName: string;
   colorHexCode: string;
-  colorImageUrl: string;            // URL (may be temporary object URL)
-  materialVariation: string;        // material _id (string)
-  // --- addon: file object (optional) ---
-  colorImageFile?: File;            // <-- optional, parent will upload this
+  colorImageUrl: string;
+  materialVariation: string;
+  colorImageFile?: File;
 }
 
 export interface VariationModalProps {

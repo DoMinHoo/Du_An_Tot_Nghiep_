@@ -324,7 +324,7 @@ const AddProductPage: React.FC = () => {
                   modules={modules}
                   formats={formats}
                   placeholder="Nhập mô tả chi tiết sản phẩm..."
-                  style={{ height: '200px', marginBottom: '66px' }}
+                  style={{ height: '200px', marginBottom: '50px' }}
                 />
               </Form.Item>
             </Col>
@@ -371,12 +371,27 @@ const AddProductPage: React.FC = () => {
                 dataSource={variations}
                 rowKey={(record, index) => (index ?? 0).toString()}
                 columns={[
-
+                  {
+                    title: 'Ảnh',
+                    dataIndex: 'colorImageUrl',
+                    render: (url: string) => (
+                      url ? (
+                        <img
+                          src={`${url}`} // thêm host server
+                          alt="Variant"
+                          style={{ width: '70px', height: '70px', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span>Không có ảnh</span>
+                      )
+                    ),
+                  },
                   { title: 'Tên', dataIndex: 'name' },
-                  { title: 'Chất liệu', dataIndex: 'material.name', render: (text, record) => record.material?.name || 'Không có' },
-                  { title: 'Giá', dataIndex: 'finalPrice' },
+                  { title: 'Kích thước', dataIndex: 'dimensions' },
+                  { title: 'Giá gốc', dataIndex: 'basePrice', render: (value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') },
+                  { title: 'Giá cuối', dataIndex: 'salePrice', render: (value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') },
                   { title: 'Tồn kho', dataIndex: 'stockQuantity' },
-                  { title: 'Ảnh', dataIndex: 'colorImageUrl' },
+
                   {
                     title: 'Hành động',
                     render: (_, record) => (

@@ -15,12 +15,6 @@
   flex-wrap: wrap;
 }
 
-.controls h2 {
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
-}
-
 .controls select {
   padding: 6px 10px;
   border-radius: 6px;
@@ -28,42 +22,6 @@
   margin-left: 8px;
   font-size: 14px;
   cursor: pointer;
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.card-grid p {
-  font-size: 15px;
-  color: #444;
-  margin: 6px 0;
-}
-
-.card-grid strong {
-  color: #222;
-}
-
-.card-grid h3 {
-  margin-top: 15px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #555;
-  border-left: 4px solid #3b82f6;
-  padding-left: 8px;
-}
-
-.card-grid ul {
-  padding-left: 20px;
-  margin-top: 8px;
-}
-
-.card-grid ul li {
-  margin: 4px 0;
-  font-size: 14px;
-  color: #555;
 }
 
 .loading,
@@ -85,14 +43,4 @@
 
 .error button:hover {
   background: #dc2626;
-}
-
-@media (max-width: 768px) {
-  .card-grid {
-    grid-template-columns: 1fr;
-  }
-  .controls {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
