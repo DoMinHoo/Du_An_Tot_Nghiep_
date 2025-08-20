@@ -37,7 +37,9 @@ const paymentStatusText: Record<string, string> = {
   pending: 'Chưa thanh toán',
   completed: 'Đã thanh toán',
   failed: 'Thanh toán thất bại',
+   refund_pending: "Chờ hoàn tiền",
   refunded: 'Đã hoàn tiền',
+    expired: "Thanh toán hết hạn",
 };
 
 
@@ -201,7 +203,25 @@ const OrderDetail: React.FC = () => {
 
 <Descriptions.Item label="Trạng thái thanh toán">
   {paymentStatusText[order.paymentStatus] || order.paymentStatus}
+  {order.paymentStatus === 'refund_pending' && (
+    <Button
+      type="primary"
+      style={{ marginLeft: 12 }}
+      onClick={async () => {
+        try {
+          await updateOrder(id!, { paymentStatus: 'refunded' });
+          message.success('Đã xác nhận hoàn tiền');
+          fetchOrder();
+        } catch {
+          message.error('Xác nhận hoàn tiền thất bại');
+        }
+      }}
+    >
+      Đã hoàn tiền
+    </Button>
+  )}
 </Descriptions.Item>
+
 
         {order.status === 'canceled' && note && (
           <Descriptions.Item label="Lý do huỷ đơn hàng">
