@@ -101,27 +101,40 @@ const OrderDetail: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async () => {
-    if (!status) return;
-    const allowedStatuses = getNextAvailableStatuses(order.status);
-    if (!allowedStatuses.includes(status.value)) {
-      message.warning('Trạng thái không hợp lệ. Không thể cập nhật.');
-      return;
-    }
+ const handleUpdateStatus = async () => {
+  if (!status) return;
 
-    if (status.value === 'canceled' && !note.trim()) {
-      message.warning('Vui lòng nhập lý do huỷ đơn hàng');
-      return;
-    }
+  // ✅ fetch lại đơn hàng để lấy trạng thái mới nhất
+  const latestOrder = await getOrderById(id!);
+  if (!latestOrder) {
+    message.error('Không tìm thấy đơn hàng');
+    return;
+  }
 
-    try {
-      await updateOrder(id!, { status: status.value, note });
-      message.success('Cập nhật trạng thái thành công');
-      navigate('/admin/orders', { state: { shouldRefresh: true } });
-    } catch (error) {
-      message.error('Cập nhật trạng thái thất bại');
-    }
-  };
+  if (latestOrder.status === 'canceled' || latestOrder.status === 'completed') {
+    message.warning('Khách hàng đã hủy đơn, không thể xác nhận');
+    return;
+  }
+
+  const allowedStatuses = getNextAvailableStatuses(latestOrder.status);
+  if (!allowedStatuses.includes(status.value)) {
+    message.warning('Trạng thái không hợp lệ. Không thể cập nhật.');
+    return;
+  }
+
+  if (status.value === 'canceled' && !note.trim()) {
+    message.warning('Vui lòng nhập lý do huỷ đơn hàng');
+    return;
+  }
+
+  try {
+    await updateOrder(id!, { status: status.value, note });
+    message.success('Cập nhật trạng thái thành công');
+    navigate('/admin/orders', { state: { shouldRefresh: true } });
+  } catch (error) {
+    message.error('Cập nhật trạng thái thất bại');
+  }
+};
 
   if (loading || !order) {
     return (
@@ -201,6 +214,7 @@ const OrderDetail: React.FC = () => {
     : 'Chuyển khoản ngân hàng'}
 </Descriptions.Item>
 
+
 <Descriptions.Item label="Trạng thái thanh toán">
   {paymentStatusText[order.paymentStatus] || order.paymentStatus}
   {order.paymentStatus === 'refund_pending' && (
@@ -222,66 +236,67 @@ const OrderDetail: React.FC = () => {
   )}
 </Descriptions.Item>
 
-
         {order.status === 'canceled' && note && (
           <Descriptions.Item label="Lý do huỷ đơn hàng">
             <Text type="danger">{note}</Text>
           </Descriptions.Item>
         )}
-        <Descriptions.Item label="Cập nhật trạng thái">
-          {availableStatuses.length === 0 ? (
-            <Text type="secondary">Không thể cập nhật trạng thái</Text>
-          ) : (
-            <>
-              <Select
-                labelInValue
-                value={status}
-                onChange={handleStatusChange}
-                style={{ width: 250 }}
-                placeholder="Chọn trạng thái mới"
-              >
-                {availableStatuses.map((s) => (
-                  <Option key={s} value={s}>
-                    {statusText[s] || s}
-                  </Option>
-                ))}
-              </Select>
+       <Descriptions.Item label="Cập nhật trạng thái">
+  {order.status === 'canceled' || order.status === 'completed' ? (
+    <Text type="secondary">Đơn hàng đã kết thúc, không thể cập nhật</Text>
+  ) : availableStatuses.length === 0 ? (
+    <Text type="secondary">Không thể cập nhật trạng thái</Text>
+  ) : (
+    <>
+      <Select
+        labelInValue
+        value={status}
+        onChange={handleStatusChange}
+        style={{ width: 250 }}
+        placeholder="Chọn trạng thái mới"
+      >
+        {availableStatuses.map((s) => (
+          <Option key={s} value={s}>
+            {statusText[s] || s}
+          </Option>
+        ))}
+      </Select>
 
-              {status?.value === 'canceled' && (
-                <Select
-                  value={note}
-                  onChange={(value) => setNote(value)}
-                  placeholder="Chọn lý do huỷ đơn hàng"
-                  style={{ marginTop: 8, width: 400 }}
-                >
-                  <Option value="Khách hàng không xác nhận đơn">
-                    Khách hàng không xác nhận đơn
-                  </Option>
-                  <Option value="Thông tin giao hàng không hợp lệ">
-                    Thông tin giao hàng không hợp lệ
-                  </Option>
-                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
-                    Sản phẩm hết hàng hoặc ngừng kinh doanh
-                  </Option>
-                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
-                    Nghi ngờ gian lận hoặc giao dịch bất thường
-                  </Option>
-                  <Option value="Khách hàng yêu cầu huỷ đơn">
-                    Khách hàng yêu cầu huỷ đơn
-                  </Option>
-                </Select>
-              )}
+      {status?.value === 'canceled' && (
+        <Select
+          value={note}
+          onChange={(value) => setNote(value)}
+          placeholder="Chọn lý do huỷ đơn hàng"
+          style={{ marginTop: 8, width: 400 }}
+        >
+          <Option value="Khách hàng không xác nhận đơn">
+            Khách hàng không xác nhận đơn
+          </Option>
+          <Option value="Thông tin giao hàng không hợp lệ">
+            Thông tin giao hàng không hợp lệ
+          </Option>
+          <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
+            Sản phẩm hết hàng hoặc ngừng kinh doanh
+          </Option>
+          <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
+            Nghi ngờ gian lận hoặc giao dịch bất thường
+          </Option>
+          <Option value="Khách hàng yêu cầu huỷ đơn">
+            Khách hàng yêu cầu huỷ đơn
+          </Option>
+        </Select>
+      )}
 
-              <Button
-                type="primary"
-                onClick={handleUpdateStatus}
-                style={{ marginLeft: 12 }}
-              >
-                Cập nhật
-              </Button>
-            </>
-          )}
-        </Descriptions.Item>
+      <Button
+        type="primary"
+        onClick={handleUpdateStatus}
+        style={{ marginLeft: 12 }}
+      >
+        Cập nhật
+      </Button>
+    </>
+  )}
+</Descriptions.Item>
       </Descriptions>
 
       <Divider />
