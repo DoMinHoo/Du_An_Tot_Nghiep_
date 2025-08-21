@@ -83,8 +83,8 @@ const sendPaymentSuccessEmail = async (orderId) => {
                         <li style="margin-bottom: 10px;"><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
                         <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán bằng ZaloPay' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
                         <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${statusTranslations[newStatus] || newStatus}</li>
-                        <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong>  ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}</li>
-                        <li style="margin-bottom: 10px;"><strong>Địa chị nhận hàng:</strong>${order.shippingAddress.addressLine}, ${order.shippingAddress.phone}</li>
+                        <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong>  ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province},${order.shippingAddress.addressLine}</li>
+                        <li style="margin-bottom: 10px;"><strong>Số điện thoại:</strong> ${order.shippingAddress.phone}</li>
                     </ul>
                     <h3 style="color: #1a73e8; margin-bottom: 15px;">Chi tiết sản phẩm:</h3>
                     <table style="width: 100%; max-width: 600px; border-collapse: collapse; margin-bottom: 20px;">
@@ -212,7 +212,7 @@ const sendOrderStatusUpdateEmail = async (orderId, newStatus, note = '') => {
                         <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán bằng ZaloPay' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
                         <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${statusTranslations[newStatus] || newStatus}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}</li>
-                        <li style="margin-bottom: 10px;"><strong>Địa chị nhận hàng:</strong>${order.shippingAddress.addressLine}, ${order.shippingAddress.phone}</li>
+                        <li style="margin-bottom: 10px;"><strong>Số đieện thoại:</strong> ${order.shippingAddress.phone}</li>
                     </ul>
                     <h3 style="color: #1a73e8; margin-bottom: 15px;">Chi tiết sản phẩm:</h3>
                     <table style="width: 100%; max-width: 600px; border-collapse: collapse; margin-bottom: 20px;">
