@@ -221,7 +221,6 @@ const Header: React.FC = () => {
           <Link to="/news" className="hover:font-semibold">Tin tức</Link>
           <Link to="/contact" className="hover:font-semibold">Liên hệ</Link>
           <Link to="/about" className="hover:font-semibold">Giới thiệu</Link>
-          <Link to="/showroom" className="hover:font-semibold">Showroom</Link>
           <Link to="/favorites" className="hover:font-semibold flex items-center gap-1">
             Sản phẩm yêu thích
           </Link>
