@@ -63,36 +63,42 @@ exports.getProducts = async (req, res) => {
       status = "active",
       flashSaleOnly = false,
       filter,
-      isDeleted, // Thêm tham số isDeleted
+      isDeleted,
     } = req.query;
 
-    const query = {}; // Xử lý tham số isDeleted
+    // Ép kiểu an toàn
+    const currentPage = Math.max(parseInt(page) || 1, 1);
+    const safeLimit = Math.min(parseInt(limit) || 10, 100);
+    const skip = (currentPage - 1) * safeLimit;
 
-    // Xử lý tham số isDeleted
+    // Tạo query filter
+    const query = {};
+
+    // isDeleted (soft delete)
     if (isDeleted !== undefined) {
       query.isDeleted = isDeleted === "true";
     } else {
-      query.isDeleted = false; // Mặc định chỉ lấy sản phẩm chưa xóa mềm
+      query.isDeleted = false;
     }
 
-    if (status && !query.isDeleted) query.status = status; // Chỉ áp dụng status nếu không lấy sản phẩm đã xóa
+    if (status && !query.isDeleted) query.status = status;
     if (category) query.categoryId = category;
-    if (color) query.color = color; // Lọc theo salePrice
+    if (color) query.color = color;
 
-    // Lọc theo salePrice
+    // Lọc theo khoảng giá
     if (minPrice || maxPrice) {
       query.salePrice = {};
       if (minPrice) query.salePrice.$gte = parseFloat(minPrice);
       if (maxPrice) query.salePrice.$lte = parseFloat(maxPrice);
-    } // Lọc Flash Sale
+    }
 
-    // Lọc Flash Sale
+    // Lọc flash sale
     if (flashSaleOnly === "true") {
       const now = new Date();
       query.flashSale_discountedPrice = { $gt: 0 };
       query.flashSale_start = { $lte: now };
       query.flashSale_end = { $gte: now };
-    } // Xử lý sắp xếp
+    }
 
     // Xử lý sắp xếp
     const sortOption = {};
@@ -118,17 +124,17 @@ exports.getProducts = async (req, res) => {
       }
     }
 
-    const safeLimit = Math.min(parseInt(limit), 100);
-    let products = await Product.find(query) // Thay đổi thành `let` để có thể gán lại
-      .populate("categoryId")
+    // Lấy danh sách sản phẩm
+    let products = await Product.find(query)
+      .populate("categoryId") // lấy cả danh mục
       .sort(sortOption)
-      .skip((page - 1) * safeLimit)
+      .skip(skip)
       .limit(safeLimit)
-      .lean(); // Thêm .lean() để dễ dàng thêm thuộc tính mới
+      .lean();
 
     const total = await Product.countDocuments(query);
 
-    // Thêm thông tin đánh giá vào từng sản phẩm
+    // Thêm đánh giá vào từng sản phẩm
     products = await Promise.all(
       products.map(async (product) => {
         const ratings = await getProductRatings(product._id);
@@ -138,8 +144,9 @@ exports.getProducts = async (req, res) => {
           totalReviews: ratings.totalReviews,
         };
       })
-    ); // Breadcrumb theo danh mục
+    );
 
+    // Breadcrumb
     let breadcrumb = ["Home"];
     if (category) {
       try {
@@ -154,7 +161,7 @@ exports.getProducts = async (req, res) => {
       data: products,
       breadcrumb,
       pagination: {
-        page: parseInt(page),
+        page: currentPage,
         limit: safeLimit,
         total,
         totalPages: Math.ceil(total / safeLimit),
@@ -162,12 +169,10 @@ exports.getProducts = async (req, res) => {
     });
   } catch (err) {
     console.error("Lỗi khi lấy danh sách sản phẩm:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Lỗi server khi lấy danh sách sản phẩm",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách sản phẩm",
+    });
   }
 };
 
