@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Tag, Space, Button, message, Popconfirm } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 
 interface Role {
   name: string;
@@ -21,63 +22,10 @@ interface User {
   phone: string;
 }
 
-const fakeUsers: User[] = [
-  {
-    key: '1',
-    id: 1,
-    name: 'Nguyễn Văn A',
-    phone: '0901234567',
-    email: 'a.nguyen@example.com',
-    role: 'admin',
-    status: 'active',
-    address: 'Hà Nội',
-  },
-  {
-    key: '2',
-    id: 2,
-    name: 'Trần Thị B',
-    phone: '0912345678',
-    email: 'b.tran@example.com',
-    role: 'custom',
-    status: 'inactive',
-    address: 'TP. Hồ Chí Minh',
-  },
-  {
-    key: '3',
-    id: 3,
-    name: 'Lê Văn C',
-    phone: '0923456789',
-    email: 'c.le@example.com',
-    role: 'custom',
-    status: 'active',
-    address: 'Đà Nẵng',
-  },
-  {
-    key: '4',
-    id: 4,
-    name: 'Phạm Thị D',
-    phone: '0934567890',
-    email: 'd.pham@example.com',
-    role: 'custom',
-    status: 'inactive',
-    address: 'Cần Thơ',
-  },
-  {
-    key: '5',
-    id: 5,
-    name: 'Đỗ Văn E',
-    phone: '0945678901',
-    email: 'e.do@example.com',
-    role: 'admin',
-    status: 'active',
-    address: 'Hải Phòng',
-  },
-];
-
 const ListUser: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate();
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -93,7 +41,7 @@ const ListUser: React.FC = () => {
   const toggleStatus = async (id: string) => {
     try {
       const res = await axios.patch(`http://localhost:5000/api/users/${id}/toggle-status`);
-     
+
       message.success(res.data.message);
       fetchUsers();
     } catch (err: any) {
@@ -175,13 +123,15 @@ const ListUser: React.FC = () => {
       key: 'action',
       render: (_: any, record: User) => (
         <Space>
-        <Popconfirm
-  title={`Bạn có chắc chắn muốn ${record.status === 'active' ? 'khóa' : 'mở khóa'}?`}
-  onConfirm={() => toggleStatus(record._id)}
->
-  <Button>{record.status === 'active' ? 'Khóa' : 'Mở khóa'}</Button>
-</Popconfirm>
-
+          <Popconfirm
+            title={`Bạn có chắc chắn muốn ${record.status === 'active' ? 'khóa' : 'mở khóa'}?`}
+            onConfirm={() => toggleStatus(record._id)}
+          >
+            <Button>{record.status === 'active' ? 'Khóa' : 'Mở khóa'}</Button>
+          </Popconfirm>
+          <Button type="primary" onClick={() => navigate(`/admin/users/${record._id}`)}>
+            Chỉnh sửa
+          </Button>
         </Space>
       ),
     },
