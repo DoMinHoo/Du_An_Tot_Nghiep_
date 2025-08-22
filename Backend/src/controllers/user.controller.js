@@ -1,6 +1,8 @@
 const User = require("../models/user.model");
+const Role = require("../models/roles.model");
 require("../models/roles.model");
 const { updateUserSchema } = require("../validators/user.validators");
+const bcrypt = require("bcryptjs");
 
 // [GET] Danh sách tất cả người dùng
 exports.getAllUsers = async (req, res) => {
@@ -104,5 +106,51 @@ exports.updateProfiles = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: 'Lỗi cập nhật', error: error.message });
   }
-};  
+};
+
+
+exports.updateAdminUser = async (req, res) => {
+  try {
+    // Validate đầu vào
+    const { error, value } = updateUserSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors: error.details.map((err) => err.message),
+      });
+    }
+
+    const userId = req.params.id;
+
+    // Kiểm tra user có tồn tại
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy user" });
+    }
+
+    // Nếu có roleId => kiểm tra role tồn tại
+    if (value.roleId) {
+      const role = await Role.findById(value.roleId);
+      if (!role) {
+        return res.status(400).json({ success: false, message: "Role không tồn tại" });
+      }
+    }
+
+    // Cập nhật
+    const updatedUser = await User.findByIdAndUpdate(userId, value, {
+      new: true, // trả về user sau khi update
+      runValidators: true,
+    }).populate("roleId", "name description"); // populate để xem thông tin role
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật user thành công",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
+  }
+};
 

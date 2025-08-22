@@ -23,6 +23,8 @@ const paymentZaloRoutes = require('./payment.routes');
 const shippingRoutes = require('./shipping.routes');
 const notificationRoutes = require('./notification.routes');
 
+const roleRoutes = require('./role.routes');
+
 router.use('/auth', userRouter);
 router.use('/categories', categoryRouter);
 router.use("/users", userRoutes);
@@ -41,6 +43,7 @@ router.use("/upload", uploadRoute);
 router.use('/vnpay', vnpayRouter);
 router.use('/shipping', shippingRoutes)
 router.use('/notifications', notificationRoutes)
+router.use('/roles', roleRoutes)
 
 
 
