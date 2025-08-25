@@ -48,10 +48,10 @@ exports.applyPromotion = async (req, res) => {
     const finalPrice = Math.max(0, originalPrice - discountAmount);
 
     // Cập nhật lượt sử dụng
-    if (promotion.usageLimit > 0) {
-      promotion.usedCount += 1;
-      await promotion.save();
-    }
+    // if (promotion.usageLimit > 0) {
+    //   promotion.usedCount += 1;
+    //   await promotion.save();
+    // }
 
     res.json({
       message: "Áp dụng mã thành công!",
