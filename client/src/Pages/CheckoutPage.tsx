@@ -88,7 +88,6 @@ const CheckoutPage: React.FC = () => {
     value: 'cod' | 'bank_transfer' | 'online_payment';
   }[] = [
       { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-      { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
       { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
     ];
 
@@ -650,7 +649,6 @@ const CheckoutPage: React.FC = () => {
                     setPaymentMethod(
                       e.target.value as
                       | 'cod'
-                      | 'bank_transfer'
                       | 'online_payment'
                     )
                   }
