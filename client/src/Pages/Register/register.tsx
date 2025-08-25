@@ -46,15 +46,16 @@ const Register: React.FC = () => {
 
       const storedUsers = JSON.parse(localStorage.getItem('userData') || '[]');
       const newId = storedUsers.length > 0 ? storedUsers[storedUsers.length - 1].id + 1 : 1;
+     const { password, ...safePayload } = payload; //
       const newUser = {
-        ...payload,
+       ...safePayload,
         id: newId,
         key: newId.toString(),
         status: 'active',
         role: 'Khách hàng',
       };
       storedUsers.push(newUser);
-      localStorage.setItem('userData', JSON.stringify(storedUsers));
+      sessionStorage.setItem('userData', JSON.stringify(storedUsers));
 
       alert('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => navigate('/login'), 1200);
