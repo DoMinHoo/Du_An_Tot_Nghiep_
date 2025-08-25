@@ -56,23 +56,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('shippingInfo');
-    if (saved) {
-      try {
-        const info = JSON.parse(saved);
-        setFullName(info.fullName || '');
-        setPhone(info.phone || '');
-        setEmail(info.email || '');
-        setProvince(info.province || '');
-        setDistrict(info.district || '');
-        setWard(info.ward || '');
-        setStreet(info.street || '');
-        setDetailAddress(info.detailAddress || '');
-        return; // Nếu đã có thì không cần gọi API nữa
-      } catch (error) {
-        console.warn('Không thể đọc dữ liệu shippingInfo:', error);
-      }
-    }
+
     // Nếu có token, gọi API lấy thông tin user
     if (token) {
       fetchUserProfile(token)

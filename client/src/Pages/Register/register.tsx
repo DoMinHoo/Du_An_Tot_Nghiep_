@@ -106,7 +106,7 @@ const Register: React.FC = () => {
         <button className="back-button" onClick={() => navigate('/')}>← Quay lại trang chủ</button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .register-container {
           display: flex;
           min-height: 100vh;
