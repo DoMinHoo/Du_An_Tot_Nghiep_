@@ -20,7 +20,6 @@ const statusText: Record<string, string> = {
   completed: 'Đã giao hàng',
   canceled: 'Đã hủy đơn',
 };
-
 const getPaymentStatusText = (order: any): string => {
   switch (order.paymentStatus) {
     case 'pending':
@@ -29,7 +28,7 @@ const getPaymentStatusText = (order: any): string => {
       return 'Đã thanh toán';
     case 'failed':
       return 'Thanh toán thất bại';
-    case 'refund_pending':
+       case 'refund_pending':
       return 'Chờ hoàn tiền';
     case 'refunded':
       return 'Đã hoàn tiền';
@@ -40,15 +39,7 @@ const getPaymentStatusText = (order: any): string => {
   }
 };
 
-const getPaymentMethodText = (order: any): string => {
-  if (order.paymentStatus === 'completed' && order.paymentGateway === 'vnpay') {
-    return 'Đã thanh toán lại qua VNPay';
-  }
-  if (order.paymentStatus === 'completed' && order.paymentGateway === 'zalopay') {
-    return 'Đã thanh toán lại qua ZaloPay';
-  }
-  return order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online';
-};
+
 
 const OrderHistoryPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -78,10 +69,7 @@ const OrderHistoryPage: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const orders = res.data.data || [];
-      console.log('Orders data:', orders); // Debug log
-      
-      setOrders(orders);
+      setOrders(res.data.data || []);
       setPagination(res.data.pagination || { total: 0, page: 1, totalPages: 1 });
     } catch (error) {
       console.error('Lỗi khi lấy đơn hàng:', error);
@@ -120,9 +108,7 @@ const OrderHistoryPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const order = res.data.data;
-      const latestStatus = order?.status;
-      
+      const latestStatus = res.data.data?.status;
       if (latestStatus !== 'pending') {
         const readableStatus = statusText[latestStatus] || latestStatus;
         toast.warning(`Đơn hàng đã ${readableStatus.toLowerCase()} và không thể hủy.`);
@@ -130,34 +116,14 @@ const OrderHistoryPage: React.FC = () => {
         return;
       }
 
-      // Kiểm tra xem đơn hàng có thanh toán online thành công không
-      const isOnlinePaymentCompleted = 
-        (order.paymentMethod === 'online_payment' || order.paymentMethod === 'bank_transfer') && 
-        order.paymentStatus === 'completed';
-
-      // Nếu thanh toán online thành công, cập nhật paymentStatus thành refund_pending
-      const updateData = {
-        status: 'canceled',
-        note: reason,
-        ...(isOnlinePaymentCompleted && { paymentStatus: 'refund_pending' })
-      };
-
-      console.log('Updating order with data:', updateData); // Debug log
-
       await axios.put(
         `http://localhost:5000/api/orders/${orderId}`,
-        updateData,
+        { status: 'canceled', note: reason },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (isOnlinePaymentCompleted) {
-        toast.success('Đã hủy đơn hàng thành công. Tiền sẽ được hoàn lại trong 3-5 ngày làm việc.');
-      } else {
-        toast.success('Đã hủy đơn hàng thành công');
-      }
-      
+      toast.success('Đã hủy đơn hàng thành công');
       setCancelReasonsMap((prev) => ({ ...prev, [orderId]: '' }));
       fetchOrders();
     } catch (err) {
@@ -175,24 +141,13 @@ const OrderHistoryPage: React.FC = () => {
     try {
       message.loading({ content: 'Đang tạo lại liên kết thanh toán...', key: 'retry' });
 
-      console.log('Calling ZaloPay API with orderCode:', orderCode); // Debug log
-
-      // Tìm đơn hàng để lấy totalAmount
-      const order = orders.find(o => o.orderCode === orderCode);
-      const amount = order?.totalAmount || 0;
-
-      console.log('Order found:', order); // Debug log
-      console.log('Amount:', amount); // Debug log
-
       const res = await axios.post(
         'http://localhost:5000/api/zalo-payment/create-payment',
-        { orderCode, amount },
+        { orderCode },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      console.log('ZaloPay API response:', res.data); // Debug log
 
       if (res.data.order_url) {
         message.success({ content: 'Chuyển hướng đến ZaloPay...', key: 'retry' });
@@ -201,58 +156,9 @@ const OrderHistoryPage: React.FC = () => {
       } else {
         message.error('Không lấy được liên kết thanh toán.');
       }
-    } catch (err: any) {
-      console.error('ZaloPay payment error:', err);
-      console.error('Error response:', err.response?.data);
-      message.error(`Tạo lại thanh toán ZaloPay thất bại: ${err.response?.data?.message || err.message}`);
-    }
-  };
-
-  const handleRetryVNPayPayment = async (orderCode: string) => {
-    try {
-      message.loading({ content: 'Đang tạo lại liên kết thanh toán VNPay...', key: 'retry-vnpay' });
-
-      console.log('Calling VNPay API with orderCode:', orderCode); // Debug log
-      console.log('Token:', token); // Debug log
-
-      // Tìm đơn hàng để lấy totalAmount
-      const order = orders.find(o => o.orderCode === orderCode);
-      const amount = order?.totalAmount || 0;
-
-      console.log('Order found:', order); // Debug log
-      console.log('Amount:', amount); // Debug log
-
-      const res = await axios.post(
-        'http://localhost:5000/api/vnpay/create-payment',
-        { 
-          orderCode,
-          amount
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      console.log('VNPay API response:', res.data); // Debug log
-
-      // Check nhiều tên field có thể có
-      const vnpUrl = res.data.vnpUrl || res.data.paymentUrl || res.data.url;
-
-      if (vnpUrl) {
-        message.success({ content: 'Chuyển hướng đến VNPay...', key: 'retry-vnpay' });
-        localStorage.setItem('currentOrderCode', orderCode);
-        window.location.href = vnpUrl;
-      } else {
-        message.error('Không lấy được liên kết thanh toán VNPay.');
-        console.log('Missing vnpUrl in response:', res.data);
-      }
-    } catch (err: any) {
-      console.error('VNPay payment error:', err);
-      console.error('Error response:', err.response?.data);
-      message.error(`Tạo lại thanh toán VNPay thất bại: ${err.response?.data?.message || err.message}`);
-    } finally {
-      // Refetch orders to update UI after VNPay retry attempt
-      await fetchOrders();
+    } catch (err) {
+      console.error(err);
+      message.error('Tạo lại thanh toán thất bại.');
     }
   };
 
@@ -272,6 +178,7 @@ const OrderHistoryPage: React.FC = () => {
     }
   };
 
+  // 1. Hàm tính tổng tiền hàng (subtotal)
   const calculateSubtotal = (order: any): number => {
     let subtotal = 0;
     order.items.forEach((group: any) => {
@@ -283,25 +190,16 @@ const OrderHistoryPage: React.FC = () => {
     return subtotal;
   };
 
+
+  // 2. Sửa lại hàm getDiscountAmount để nhận subtotal
   const getDiscountAmount = (order: any, subtotal: number): number => {
     if (!order.promotion) return 0;
     if (order.promotion.discountType === 'percentage') {
+      // Tính phần trăm dựa trên subtotal
       return Math.floor((subtotal * order.promotion.discountValue) / 100);
     }
+    // Nếu là fixed amount, trả về giá trị giảm giá trực tiếp
     return order.promotion.discountValue;
-  };
-
-  const getOriginalPaymentMethod = (order: any): string => {
-    if (order.originalPaymentMethod) {
-      return order.originalPaymentMethod;
-    }
-    if (order.vnpayTransactionId || order.paymentGateway === 'vnpay') {
-      return 'vnpay';
-    }
-    if (order.zaloTransactionId || order.paymentGateway === 'zalopay') {
-      return 'zalopay';
-    }
-    return 'vnpay';
   };
 
   if (loading) return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
@@ -329,9 +227,15 @@ const OrderHistoryPage: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {paginatedOrders.map((order) => {
-            const subtotal = calculateSubtotal(order);
-            const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
-            const originalPaymentMethod = getOriginalPaymentMethod(order);
+            // Tính subtotal cho mỗi đơn hàng
+      // Tính subtotal (chưa trừ giảm giá, chưa cộng phí ship)
+const subtotal = calculateSubtotal(order);
+
+// ✅ Tính discountAmount dựa trên dữ liệu backend
+const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
+            // Tính tổng cộng cuối cùng (nếu backend không cung cấp chính xác hoặc bạn muốn tự tính lại)
+            // const finalTotal = subtotal - discountAmount + (order.shippingFee || 0);
 
             return (
               <div
@@ -355,11 +259,43 @@ const OrderHistoryPage: React.FC = () => {
                   <p><strong>SĐT:</strong> {order.shippingAddress.phone}</p>
                   <p><strong>Email:</strong> {order.shippingAddress.email}</p>
                   <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
-                  <p><strong>Phương thức thanh toán:</strong> {getPaymentMethodText(order)}</p>
+                  <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</p>
                   <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order)}</p>
+
                 </div>
 
+                {/* <div className="space-y-4">
+                  {order.items.map((group: any) => (
+                    <div key={group.productId} className="border rounded-md p-3 bg-gray-50">
+                      {group.variations.map((v: any) => {
+                        const price = getEffectivePrice(v.salePrice, v.finalPrice);
+                        return (
+                          <div key={v.variationId} className="flex gap-4 items-center pt-2 mt-2">
+                            <img
+                              src={getImageUrl(v.colorImageUrl)}
+                              alt={v.name}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium">{v.name}</p>
+                              <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
+                              <p className="text-sm text-gray-500">SKU: {v.sku}</p>
+                            </div>
+                            <div className="text-right">
+                              <p>{price.toLocaleString()}₫ x {v.quantity}</p>
+                              <p className="font-semibold text-red-500">
+                                {(price * v.quantity).toLocaleString()}₫
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div> */}
+
                 <div className="text-right mt-4 text-lg font-semibold">
+                  {/* Hiển thị tổng tiền hàng */}
                   <p>
                     <strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()}₫
                   </p>
@@ -372,39 +308,35 @@ const OrderHistoryPage: React.FC = () => {
                       : 'Không áp dụng'}
                   </p>
 
-                  <p>
-                    <strong>Giá trị giảm:</strong> {Math.max(discountAmount, 0).toLocaleString()}₫
-                  </p>
 
-                  <p>
-                    <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
-                  </p>
+             <p>
+  <strong>Giá trị giảm:</strong> {Math.max(discountAmount, 0).toLocaleString()}₫
+</p>
 
-                  <hr className="my-2" />
+<p>
+  <strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || '0'}₫
+</p>
 
-                  <p className="text-lg font-semibold text-red-600">
-                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
-                  </p>
+<hr className="my-2" />
+
+<p className="text-lg font-semibold text-red-600">
+  Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+</p>
+
+
                 </div>
 
                 {order.status === 'pending' && (
                   <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                    {(order.paymentStatus === 'pending' || order.paymentStatus === 'failed') && order.paymentMethod !== 'cod' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleRetryPayment(order.orderCode)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Thanh toán lại qua ZaloPay
-                        </button>
-                        <button
-                          onClick={() => handleRetryVNPayPayment(order.orderCode)}
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                        >
-                          Thanh toán lại qua VNPay
-                        </button>
-                      </div>
+                    {order.paymentMethod === 'online_payment' && order.paymentStatus === 'pending' && (
+                      <button
+                        onClick={() => handleRetryPayment(order.orderCode)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Thanh toán lại qua ZaloPay
+                      </button>
                     )}
+
                     <select
                       value={cancelReasonsMap[order._id] || ''}
                       onChange={(e) =>
@@ -423,6 +355,7 @@ const OrderHistoryPage: React.FC = () => {
                         </option>
                       ))}
                     </select>
+
                     <button
                       onClick={() => handleCancelOrder(order._id)}
                       className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
@@ -438,6 +371,7 @@ const OrderHistoryPage: React.FC = () => {
                     </p>
                   </div>
                 )}
+
                 {order.status === 'shipping' && (
                   <div className="text-right mt-4">
                     <p className="text-sm text-gray-600 italic">
@@ -471,6 +405,7 @@ const OrderHistoryPage: React.FC = () => {
               >
                 Trước
               </button>
+
               {Array.from({ length: pagination.totalPages }, (_, index) => index + 1).map((p) => (
                 <button
                   key={p}
@@ -480,6 +415,7 @@ const OrderHistoryPage: React.FC = () => {
                   {p}
                 </button>
               ))}
+
               <button
                 onClick={() => handleChangePage(page + 1)}
                 disabled={page === pagination.totalPages}
@@ -489,6 +425,7 @@ const OrderHistoryPage: React.FC = () => {
               </button>
             </div>
           )}
+
         </div>
       )}
     </div>
