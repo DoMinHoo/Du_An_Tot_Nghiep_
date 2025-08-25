@@ -2,10 +2,12 @@ const express = require('express');
 const moment = require('moment');
 const querystring = require('qs');
 const crypto = require('crypto');
+const OrderModel = require('../models/order.model'); // Import schema OrderModel
 
 const router = express.Router();
 
-router.post('/create-payment', (req, res) => {
+// Tạo URL thanh toán VNPay
+router.post('/create-payment', async (req, res) => {
   const tmnCode = process.env.VNP_TMNCODE || 'WT03AIJT';
   const secretKey = process.env.VNP_HASH_SECRET || 'ZXUDCD0YK2YBN0AQH8RV7YMAZ0IU31VR';
   const vnpUrl = process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
@@ -13,13 +15,26 @@ router.post('/create-payment', (req, res) => {
 
   if (!tmnCode || !secretKey || !returnUrl) {
     console.error('Missing environment variables:', { tmnCode, secretKey, returnUrl });
-    return res.status(400).json({ error: 'Missing required environment variables (VNP_TMNCODE, VNP_HASH_SECRET, or VNP_RETURN_URL)' });
+    return res.status(400).json({ error: 'Missing required environment variables' });
   }
 
-  const amount = parseFloat(req.body.amount);
+  const { amount, orderCode } = req.body; // Nhận orderCode từ frontend
+
   if (isNaN(amount) || amount <= 0) {
-    console.error('Invalid amount:', req.body.amount);
+    console.error('Invalid amount:', amount);
     return res.status(400).json({ error: 'Invalid or missing amount' });
+  }
+
+  if (!orderCode) {
+    console.error('Missing orderCode');
+    return res.status(400).json({ error: 'Missing orderCode' });
+  }
+
+  // Kiểm tra xem đơn hàng có tồn tại không
+  const order = await OrderModel.findOne({ orderCode });
+  if (!order) {
+    console.error('Order not found:', orderCode);
+    return res.status(404).json({ error: 'Order not found' });
   }
 
   const ipAddr = req.ip === '::1' ? '127.0.0.1' : req.ip || '127.0.0.1';
@@ -27,10 +42,9 @@ router.post('/create-payment', (req, res) => {
 
   const date = moment();
   const createDate = date.format('YYYYMMDDHHmmss');
-  const orderId = date.format('HHmmss');
-  const vnpAmount = Math.round(amount * 100); 
+  const vnpAmount = Math.round(amount * 100);
 
-  const orderInfo = 'Thanh_toan_don_hang'; 
+  const orderInfo = `Thanh_toan_don_hang_${orderCode}`;
   const orderType = 'other';
   const locale = 'vn';
   const currCode = 'VND';
@@ -41,7 +55,7 @@ router.post('/create-payment', (req, res) => {
     vnp_TmnCode: tmnCode,
     vnp_Locale: locale,
     vnp_CurrCode: currCode,
-    vnp_TxnRef: orderId,
+    vnp_TxnRef: orderCode, // Sử dụng orderCode làm vnp_TxnRef
     vnp_OrderInfo: orderInfo,
     vnp_OrderType: orderType,
     vnp_Amount: vnpAmount,
@@ -57,21 +71,19 @@ router.post('/create-payment', (req, res) => {
   vnp_Params = sortObject(vnp_Params);
 
   const signData = querystring.stringify(vnp_Params, { encode: true });
-  console.log('signData:', signData); 
+  console.log('signData:', signData);
 
   const hmac = crypto.createHmac('sha512', secretKey);
   const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-  console.log('signed:', signed); 
-
   vnp_Params['vnp_SecureHash'] = signed;
 
-  // Tạo URL thanh toán
   const paymentUrl = `${vnpUrl}?${querystring.stringify(vnp_Params, { encode: true })}`;
   console.log('paymentUrl:', paymentUrl);
 
   res.json({ paymentUrl });
 });
 
+// Xử lý redirect từ VNPay
 router.get('/return-vnpay', async (req, res) => {
   let vnp_Params = { ...req.query };
   const secureHash = vnp_Params['vnp_SecureHash'];
@@ -81,25 +93,22 @@ router.get('/return-vnpay', async (req, res) => {
     return res.status(500).json({ error: 'VNP_HASH_SECRET not configured in .env' });
   }
 
-  // Bỏ các thông tin không cần khi hash
   delete vnp_Params['vnp_SecureHash'];
   delete vnp_Params['vnp_SecureHashType'];
 
-  // Sắp xếp và tạo chuỗi dữ liệu
   const sortedParams = sortObject(vnp_Params);
   const signData = querystring.stringify(sortedParams, { encode: false });
 
-  // Tạo chữ ký từ server
   const hmac = crypto.createHmac('sha512', secretKey);
   const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
   if (secureHash !== signed) {
+    console.error('Invalid secure hash:', { secureHash, signed });
     return res.redirect(
       `http://localhost:5173/vnpay/result?status=failed&message=Invalid secure hash`
     );
   }
 
-  // Trích xuất dữ liệu từ VNPAY
   const {
     vnp_ResponseCode,
     vnp_TransactionNo,
@@ -112,7 +121,6 @@ router.get('/return-vnpay', async (req, res) => {
 
   const amount = parseInt(vnp_Amount || '0') / 100;
 
-  // Chuyển đổi định dạng thời gian VNPAY → ISO (YYYY-MM-DDTHH:mm:ss)
   let paymentTime = '';
   if (vnp_PayDate && vnp_PayDate.length === 14) {
     const year = vnp_PayDate.slice(0, 4);
@@ -124,7 +132,72 @@ router.get('/return-vnpay', async (req, res) => {
     paymentTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`).toISOString();
   }
 
-  // Chuẩn bị redirect FE kèm theo dữ liệu
+  // Cập nhật trạng thái đơn hàng trong database
+  if (vnp_ResponseCode === '00') {
+    try {
+      const updatedOrder = await OrderModel.findOneAndUpdate(
+        { orderCode: vnp_TxnRef },
+        {
+          $set: {
+            paymentStatus: 'completed',
+            paymentTransactionId: vnp_TransactionNo,
+            paymentTime: paymentTime,
+            bankCode: vnp_BankCode,
+            amount: amount,
+            statusHistory: [
+              ...(await OrderModel.findOne({ orderCode: vnp_TxnRef }).then((order) => order?.statusHistory || [])),
+              {
+                status: 'confirmed',
+                changedAt: new Date(),
+                note: 'Payment confirmed via VNPay',
+              },
+            ],
+          },
+        },
+        { new: true }
+      );
+      if (!updatedOrder) {
+        console.error('Order not found for update:', vnp_TxnRef);
+        return res.redirect(
+          `http://localhost:5173/vnpay/result?status=failed&message=Order not found`
+        );
+      }
+      console.log('Order updated:', updatedOrder);
+    } catch (error) {
+      console.error('Error updating order:', error);
+      return res.redirect(
+        `http://localhost:5173/vnpay/result?status=failed&message=Error updating order`
+      );
+    }
+  } else {
+    // Cập nhật trạng thái thất bại nếu cần
+    try {
+      await OrderModel.findOneAndUpdate(
+        { orderCode: vnp_TxnRef },
+        {
+          $set: {
+            paymentStatus: 'failed',
+            paymentTransactionId: vnp_TransactionNo,
+            paymentTime: paymentTime,
+            bankCode: vnp_BankCode,
+            amount: amount,
+            statusHistory: [
+              ...(await OrderModel.findOne({ orderCode: vnp_TxnRef }).then((order) => order?.statusHistory || [])),
+              {
+                status: 'failed',
+                changedAt: new Date(),
+                note: `Payment failed: ${vnp_ResponseCode}`,
+              },
+            ],
+          },
+        },
+        { new: true }
+      );
+    } catch (error) {
+      console.error('Error updating order status to failed:', error);
+    }
+  }
+
   const queryString = new URLSearchParams({
     status: vnp_ResponseCode === '00' ? 'success' : 'failed',
     message: vnp_ResponseCode === '00' ? 'Transaction successful' : 'Transaction failed',
@@ -141,6 +214,41 @@ router.get('/return-vnpay', async (req, res) => {
   return res.redirect(frontendUrl);
 });
 
+// Endpoint để lấy thông tin đơn hàng
+router.get('/orders/:orderCode', async (req, res) => {
+  try {
+    const order = await OrderModel.findOne({ orderCode: req.params.orderCode })
+      .populate('items.variationId')
+      .lean();
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(order);
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Endpoint để lấy danh sách đơn hàng (tùy chọn, dùng cho OrderHistoryPage)
+router.get('/orders', async (req, res) => {
+  try {
+    const { guestId } = req.query;
+    const token = req.headers.authorization?.split(' ')[1];
+    let query = {};
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      query = { userId: payload.id };
+    } else if (guestId) {
+      query = { guestId };
+    }
+    const orders = await OrderModel.find(query).populate('items.variationId').lean();
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 function sortObject(obj) {
   const sorted = {};
