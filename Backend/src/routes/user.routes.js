@@ -20,7 +20,7 @@ router.patch("/:id/toggle-status", userController.toggleUserStatus);
 router.patch("/:id", protect(), userController.updateAdminUser);
 
 // Cập nhật thông tin tài khoản
-router.put('/update-profile', protect(), userController.updateAdminUser);
+router.put('/update-profile', protect(), userController.updateProfiles);
 
 
 

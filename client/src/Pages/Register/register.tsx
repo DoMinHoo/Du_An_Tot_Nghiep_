@@ -54,7 +54,7 @@ const Register: React.FC = () => {
         role: 'Khách hàng',
       };
       storedUsers.push(newUser);
-      localStorage.setItem('userData', JSON.stringify(storedUsers));
+      sessionStorage.setItem('userData', JSON.stringify(storedUsers));
 
       alert('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => navigate('/login'), 1200);
@@ -105,7 +105,7 @@ const Register: React.FC = () => {
         <button className="back-button" onClick={() => navigate('/')}>← Quay lại trang chủ</button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .register-container {
           display: flex;
           min-height: 100vh;
