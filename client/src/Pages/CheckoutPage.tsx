@@ -56,23 +56,23 @@ const CheckoutPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // const saved = sessionStorage.getItem('shippingInfo');
-    // if (saved) {
-    //   try {
-    //     const info = JSON.parse(saved);
-    //     setFullName(info.fullName || '');
-    //     setPhone(info.phone || '');
-    //     setEmail(info.email || '');
-    //     setProvince(info.province || '');
-    //     setDistrict(info.district || '');
-    //     setWard(info.ward || '');
-    //     setStreet(info.street || '');
-    //     setDetailAddress(info.detailAddress || '');
-    //     return; // Nếu đã có thì không cần gọi API nữa
-    //   } catch (error) {
-    //     console.warn('Không thể đọc dữ liệu shippingInfo:', error);
-    //   }
-    // }
+    const saved = sessionStorage.getItem('shippingInfo');
+    if (saved) {
+      try {
+        const info = JSON.parse(saved);
+        setFullName(info.fullName || '');
+        setPhone(info.phone || '');
+        setEmail(info.email || '');
+        setProvince(info.province || '');
+        setDistrict(info.district || '');
+        setWard(info.ward || '');
+        setStreet(info.street || '');
+        setDetailAddress(info.detailAddress || '');
+        return; // Nếu đã có thì không cần gọi API nữa
+      } catch (error) {
+        console.warn('Không thể đọc dữ liệu shippingInfo:', error);
+      }
+    }
     // Nếu có token, gọi API lấy thông tin user
     if (token) {
       fetchUserProfile(token)
@@ -312,22 +312,24 @@ const CheckoutPage: React.FC = () => {
       const orderRes = await orderMutation.mutateAsync(orderData);
 
       if (paymentMethod === 'bank_transfer') {
-  sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
-  const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      amount: finalAmountWithShipping,
-      orderCode: orderRes.orderCode, // Thêm orderCode từ orderRes
-    }),
-  });
+        sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
+        const res = await fetch(
+          'http://localhost:5000/api/vnpay/create-payment',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: finalAmountWithShipping,
+            }),
+          }
+        );
 
-  const data = await res.json();
-  if (res.ok && data.paymentUrl) {
-    window.location.href = data.paymentUrl;
-  } else {
-    toast.error(data.error || 'Không tạo được thanh toán VNPAY');
-  }
+        const data = await res.json();
+        if (res.ok && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          toast.error(data.error || 'Không tạo được thanh toán VNPAY');
+        }
       } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
         const res = await fetch(
           'http://localhost:5000/api/zalo-payment/create-payment',
