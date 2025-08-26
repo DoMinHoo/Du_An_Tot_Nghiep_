@@ -215,12 +215,7 @@ Chính sách bảo mật
               Tạo tài khoản
             </a>
           </p>
-          <p>
-            Quên mật khẩu?{' '}
-            <a href="/forgot" className="text-blue-600 hover:underline">
-              Khôi phục mật khẩu
-            </a>
-          </p>
+       
         </div>
       </div>
     </div>
