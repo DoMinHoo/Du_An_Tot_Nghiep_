@@ -69,7 +69,7 @@ const Register: React.FC = () => {
     <div className="register-container">
       <div className="left-panel">
         <h2>Tạo tài khoản</h2>
-        <p>Đăng ký tài khoản chỉ trong 1 phút để tích lũy điểm và nhận ưu đãi từ MOHO.</p>
+        <p>Đăng ký tài khoản chỉ trong 1 phút để tích lũy điểm và nhận ưu đãi từ LIVENTO.</p>
       </div>
       <div className="right-panel">
         <form onSubmit={onFinish}>
