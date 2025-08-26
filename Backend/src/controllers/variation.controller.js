@@ -24,7 +24,7 @@ exports.createVariation = async (req, res) => {
 
     // 3. Kiểm tra các trường bắt buộc
     const requiredFields = [
-      'name', 'sku', 'dimensions', 'basePrice', 'importPrice',
+      'name', 'sku', 'dimensions', 'basePrice',
       'stockQuantity', 'colorName', 'colorHexCode', 'material'
     ];
     for (const field of requiredFields) {
