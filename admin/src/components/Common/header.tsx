@@ -52,7 +52,6 @@ const AdminHeader: React.FC = () => {
       <div style={{ width: 300 }}></div>
      
       <div style={{ width: 300, display: "flex", justifyContent: "flex-end", gap: 24 }}>
-        <BellOutlined style={{ fontSize: 20, cursor: "pointer" }} />
         <Dropdown overlay={menu} placement="bottomRight">
           <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
             <Avatar style={{ backgroundColor: "#1890ff" }} icon={<UserOutlined />} />

@@ -57,7 +57,7 @@ const AdminSidebar: React.FC = () => {
       label: <Link to="promotions">Khuyến mãi</Link>,
     },
     {
-      key: 'comment-review',
+      key: 'comment&review',
       icon: <ProfileOutlined />,
       label: <Link to="comment&review">Đánh giá</Link>,
     },
@@ -69,7 +69,7 @@ const AdminSidebar: React.FC = () => {
     {
       key: 'materials',
       icon: <ProfileOutlined />,
-      label: <Link to="materials">Materials</Link>,
+      label: <Link to="materials">Chất liệu</Link>,
     },
     {
       key: 'posts',
