@@ -478,7 +478,7 @@ const ProductDetail: React.FC = () => {
                 : 'Không xác định'}
             </p>
             <p>
-              <strong>Mau sắc:</strong>{' '}
+              <strong>Màu sắc:</strong>{' '}
               {selectedVariation?.colorName || 'Không xác định'}
             </p>
           </div>

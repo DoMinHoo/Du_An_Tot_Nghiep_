@@ -29,8 +29,8 @@ const AdminHeader: React.FC = () => {
     <Menu
       onClick={handleMenuClick}
       items={[
-        { key: "1", icon: <UserOutlined />, label: "Thông tin cá nhân" },
-        { key: "2", icon: <SettingOutlined />, label: "Cài đặt" },
+    
+        
         { type: "divider" },
         { key: "3", icon: <LogoutOutlined />, label: "Đăng xuất" },
       ]}
@@ -50,13 +50,7 @@ const AdminHeader: React.FC = () => {
       }}
     >
       <div style={{ width: 300 }}></div>
-      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-        <Input.Search
-          placeholder="Tìm kiếm..."
-          style={{ width: 400 }}
-          allowClear
-        />
-      </div>
+     
       <div style={{ width: 300, display: "flex", justifyContent: "flex-end", gap: 24 }}>
         <BellOutlined style={{ fontSize: 20, cursor: "pointer" }} />
         <Dropdown overlay={menu} placement="bottomRight">

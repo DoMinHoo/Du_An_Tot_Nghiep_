@@ -343,24 +343,7 @@ const getProductsForCategoryPage = async (req, res) => {
       variationFilters.colorName = { $regex: new RegExp(color, "i") };
     }
 
-    if (size) {
-      if (size === "nhỏ") {
-        variationFilters.dimensions = {
-          $regex: /^((\d{1,2}|1\d{1,2}|200)x){2,2}\d{1,2} cm/i,
-        };
-      } else if (size === "vừa") {
-        variationFilters.dimensions = {
-          $regex: /^((\d{1,2}|1\d{1,2}|2\d{1,2}|300)x){2,2}\d{1,2} cm/i,
-        };
-      } else if (size === "lớn") {
-        variationFilters.dimensions = {
-          $regex:
-            /^((\d{1,2}|1\d{1,2}|2\d{1,2}|3\d{1,2}|4\d{1,2}|500)x){2,2}\d{1,2} cm/i,
-        };
-      } else {
-        variationFilters.dimensions = { $regex: new RegExp(size, "i") };
-      }
-    }
+    
 
     if (material) {
       if (mongoose.Types.ObjectId.isValid(material)) {

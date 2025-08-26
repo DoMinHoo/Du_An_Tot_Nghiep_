@@ -315,9 +315,7 @@ box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
             <p>
               Khách hàng mới? <a href="/signin">Tạo tài khoản</a>
             </p>
-            <p>
-Quên mật khẩu? <a href="/forgot">Khôi phục mật khẩu</a>
-            </p>
+           
           </div>
         </div>
       </div>
