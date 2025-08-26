@@ -222,7 +222,7 @@ const ProductList = () => {
             icon={<HistoryOutlined />}
             onClick={() => navigate("/admin/products/restore")}
           >
-            Khôi phục/Xóa vĩnh viễn
+            Khôi phục
           </Button>
         </Space>
       }
