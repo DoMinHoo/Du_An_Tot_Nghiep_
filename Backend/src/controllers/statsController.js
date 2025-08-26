@@ -28,44 +28,66 @@ static async getRevenueStats(req, res) {
 
         // Doanh thu hiện tại
         const currentRevenue = await Order.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed', totalAmount: { $exists: true } } },
+            { 
+                $match: { 
+                    createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, 
+                    status: 'completed', 
+                    totalAmount: { $exists: true } 
+                } 
+            },
             { $group: { _id: null, total: { $sum: '$totalAmount' } } }
         ]).catch(err => [{ total: 0 }]);
 
         // Doanh thu kỳ trước
         const previousRevenue = await Order.aggregate([
-            { $match: { createdAt: { $gte: previousStartDate, $lte: previousEndDate }, status: 'completed', totalAmount: { $exists: true } } },
+            { 
+                $match: { 
+                    createdAt: { $gte: moment(previousStartDate).utcOffset(+7).toDate(), $lte: moment(previousEndDate).utcOffset(+7).toDate() }, 
+                    status: 'completed', 
+                    totalAmount: { $exists: true } 
+                } 
+            },
             { $group: { _id: null, total: { $sum: '$totalAmount' } } }
         ]).catch(err => [{ total: 0 }]);
 
-        const currentTotal = currentRevenue[0]?.total || 0; // Tổng doanh thu hiện tại
-        const previousTotal = previousRevenue[0]?.total || 0; // Tổng doanh thu kỳ trước
-        const growthRate = previousTotal ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(2) : 0; // tinh kieu gi:   
+        const currentTotal = currentRevenue[0]?.total || 0;
+        const previousTotal = previousRevenue[0]?.total || 0;
+        const growthRate = previousTotal ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(2) : 0;
 
         // Tổng số đơn hàng theo trạng thái
         const orderStats = await Order.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end }, status: { $exists: true } } },
+            { $match: { createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, status: { $exists: true } } },
             { $group: { _id: '$status', count: { $sum: 1 } } }
         ]).catch(err => []);
         const orderStatus = { pending: 0, confirmed: 0, shipping: 0, completed: 0, canceled: 0 };
         orderStats.forEach(stat => { if (stat._id) orderStatus[stat._id] = stat.count || 0; });
 
         // Doanh thu trung bình
-        const completedOrders = await Order.countDocuments({ createdAt: { $gte: start, $lte: end }, status: 'completed' }).catch(err => 0);
+        const completedOrders = await Order.countDocuments({ 
+            createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, 
+            status: 'completed' 
+        }).catch(err => 0);
         const avgRevenuePerOrder = completedOrders ? (currentTotal / completedOrders).toFixed(2) : 0;
+
         // Thống kê số người thanh toán bằng COD và ZaloPay
         const paymentStats = await Order.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end }, status: 'completed', paymentMethod: { $in: ['cod', 'online_payment'] } } },
+            { 
+                $match: { 
+                    createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, 
+                    status: 'completed', 
+                    paymentMethod: { $in: ['cod', 'online_payment'] } 
+                } 
+            },
             {
                 $group: {
                     _id: '$paymentMethod',
-                    uniqueCustomers: { $addToSet: '$userId' } // Đếm số khách hàng duy nhất
+                    uniqueCustomers: { $addToSet: '$userId' }
                 }
             },
             {
                 $project: {
                     _id: 1,
-                    count: { $size: '$uniqueCustomers' } // Đếm số lượng khách hàng duy nhất
+                    count: { $size: '$uniqueCustomers' }
                 }
             }
         ]).catch(err => []);
@@ -73,45 +95,41 @@ static async getRevenueStats(req, res) {
         const paymentMethods = { cod: 0, zaloPay: 0 };
         paymentStats.forEach(stat => {
             if (stat._id === 'cod') paymentMethods.cod = stat.count || 0;
-            if (stat._id === 'online_payment') paymentMethods.zaloPay = stat.count || 0; // Giả sử ZaloPay nằm trong online_payment
+            if (stat._id === 'online_payment') paymentMethods.zaloPay = stat.count || 0;
         });
+
         // Dữ liệu biểu đồ
         let groupBy, labelFormat, maxIntervals;
         if (period === 'day' || (startDate && endDate && moment(end).diff(moment(start), 'days') <= 1)) {
-            groupBy = { $hour: '$createdAt' };
+            groupBy = { $hour: { date: '$createdAt', timezone: 'Asia/Ho_Chi_Minh' } };
             labelFormat = i => `${i}h`;
             maxIntervals = 24;
         } else if (period === 'month' || (startDate && endDate && moment(end).diff(moment(start), 'months') <= 1)) {
-            groupBy = { $dayOfMonth: '$createdAt' };
+            groupBy = { $dayOfMonth: { date: '$createdAt', timezone: 'Asia/Ho_Chi_Minh' } };
             labelFormat = i => `Ngày ${i}`;
             maxIntervals = moment(end).daysInMonth();
         } else {
-            groupBy = { $month: '$createdAt' };
+            groupBy = { $month: { date: '$createdAt', timezone: 'Asia/Ho_Chi_Minh' } };
             labelFormat = i => `Tháng ${i}`;
             maxIntervals = 12;
         }
 
         const chartData = await Order.aggregate([
-    { 
-        $match: { 
-            createdAt: { $gte: start, $lte: end }, 
-            status: 'completed', 
-            totalAmount: { $exists: true } 
-        } 
-    },
-    { 
-        $group: { 
-            _id: { 
-                $hour: { 
-                    date: '$createdAt', 
-                    timezone: 'Asia/Ho_Chi_Minh' // Chỉ định múi giờ +07
+            { 
+                $match: { 
+                    createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, 
+                    status: 'completed', 
+                    totalAmount: { $exists: true } 
                 } 
-            }, 
-            total: { $sum: '$totalAmount' } 
-        } 
-    },
-    { $sort: { '_id': 1 } }
-]).catch(err => []);
+            },
+            { 
+                $group: { 
+                    _id: groupBy, 
+                    total: { $sum: '$totalAmount' } 
+                } 
+            },
+            { $sort: { '_id': 1 } }
+        ]).catch(err => []);
 
         const labels = [];
         const data = [];
@@ -138,12 +156,12 @@ static async getRevenueStats(req, res) {
         };
 
         const result = {
-            currentRevenue: currentTotal, // Tổng doanh thu hiện tại
-            previousRevenue: previousTotal, // Tổng doanh thu kỳ trước
-            growthRate: parseFloat(growthRate),// Tỷ lệ tăng trưởng
+            currentRevenue: currentTotal,
+            previousRevenue: previousTotal,
+            growthRate: parseFloat(growthRate),
             orderStatus,
-            avgRevenuePerOrder: parseFloat(avgRevenuePerOrder),// Doanh thu trung bình trên mỗi đơn hàng
-            paymentMethods, // Số lượng khách hàng thanh toán bằng COD và ZaloPay
+            avgRevenuePerOrder: parseFloat(avgRevenuePerOrder),
+            paymentMethods,
             chart
         };
 
@@ -343,8 +361,8 @@ static async getProductStats(req, res) {
 }
 
     // Thống kê khách hàng
-    static async getCustomerStats(req, res) {
-        try {
+static async getCustomerStats(req, res) {
+    try {
         const { period = 'month', chartType = 'pie' } = req.query;
         if (!['day', 'month', 'year'].includes(period)) {
             return res.status(400).json({ message: 'Khoảng thời gian không hợp lệ. Chỉ chấp nhận: day, month, year.' });
@@ -392,6 +410,15 @@ static async getProductStats(req, res) {
             canceled: 'Đã hủy'
         };
 
+        // Cấu hình màu sắc cho từng trạng thái
+        const statusColors = {
+            pending: '#FF6384',     // Đỏ nhạt - Chờ xác nhận
+            confirmed: '#36A2EB',   // Xanh dương - Đã xác nhận
+            shipping: '#FFCE56',    // Vàng - Đang giao
+            completed: '#4BC0C0',   // Xanh ngọc - Hoàn thành
+            canceled: '#9966FF'     // Tím - Đã hủy
+        };
+
         const chart = {
             type: chartType,
             data: {
@@ -399,14 +426,30 @@ static async getProductStats(req, res) {
                 datasets: [{
                     label: 'Số lượng đơn hàng',
                     data: Object.values(statusStats),
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                    backgroundColor: Object.keys(statusStats).map(key => statusColors[key] || '#CCCCCC'),
                     borderColor: chartType === 'bar' ? '#000000' : undefined,
                     borderWidth: chartType === 'bar' ? 1 : undefined
                 }]
             },
             options: {
                 responsive: true,
-                scales: chartType === 'bar' ? { y: { beginAtZero: true } } : {}
+                scales: chartType === 'bar' ? { y: { beginAtZero: true } } : {},
+                plugins: {
+                    legend: {
+                        display: chartType === 'pie', // Hiển thị legend cho biểu đồ pie
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => ({
+                                    text: label,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    hidden: isNaN(data.datasets[0].data[i]) || data.datasets[0].data[i] === 0,
+                                    index: i
+                                }));
+                            }
+                        }
+                    }
+                }
             }
         };
 
@@ -419,11 +462,11 @@ static async getProductStats(req, res) {
         };
 
         return res.json(result);
-        } catch (error) {
+    } catch (error) {
         console.error('Lỗi khi lấy thống kê khách hàng:', error);
         return res.status(500).json({ message: 'Lỗi server', error: error.message });
-        }
     }
+}
 
     // Thống kê chi tiết sản phẩm
     static async getProductDetailStats(req, res) {

@@ -10,44 +10,15 @@ const RevenueStats: React.FC = () => {
 
   const [period, setPeriod] = useState<'day' | 'month' | 'year'>('month');
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [dateError, setDateError] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState<boolean>(true);
-  const currentDate = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
-
-  /** 🔎 Validate ngày */
-  const validateDates = useCallback(() => {
-    if (!startDate || !endDate) return true;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const now = new Date();
-
-    if (end < start) {
-      setDateError('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.');
-      return false;
-    }
-    if (end > now || start > now) {
-      setDateError('Ngày không thể lớn hơn ngày hiện tại.');
-      return false;
-    }
-    setDateError(null);
-    return true;
-  }, [startDate, endDate]);
 
   /** 📊 Fetch API */
   const fetchData = useCallback(async () => {
-    if (!validateDates()) return;
-
     setLoading(true);
     setError(null);
 
     try {
       const query = new URLSearchParams({ period, chartType });
-      if (startDate && endDate) {
-        query.append('startDate', startDate);
-        query.append('endDate', endDate);
-      }
 
       const response = await fetch(
         `${
@@ -71,7 +42,7 @@ const RevenueStats: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [period, chartType, startDate, endDate, validateDates]);
+  }, [period, chartType]);
 
   /** ⌨️ ESC để đóng filter */
   useEffect(() => {
@@ -142,37 +113,14 @@ const RevenueStats: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="filter-item">
-                    <label>Từ ngày:</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      max={currentDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="filter-item">
-                    <label>Đến ngày:</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      max={currentDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-
                   <div className="filter-actions">
                     <button onClick={fetchData} className="btn-apply">
                       Áp dụng
                     </button>
                     <button
                       onClick={() => {
-                        setStartDate('');
-                        setEndDate('');
                         setPeriod('month');
                         setChartType('line');
-                        setDateError(null);
                       }}
                       className="btn-reset"
                     >
@@ -180,7 +128,6 @@ const RevenueStats: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                {dateError && <p className="date-error">{dateError}</p>}
               </div>
             </div>
           </div>
@@ -265,6 +212,7 @@ const RevenueStats: React.FC = () => {
 
         {/* Biểu đồ */}
         <div className="chart-container1">
+          <h3 className="chart-title">Bieu đồ doanh thu</h3>
           {stats?.chart && (
             <ChartComponent
               chartData={{

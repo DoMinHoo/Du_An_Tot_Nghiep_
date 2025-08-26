@@ -5,51 +5,21 @@ import '../../ProductStats.css';
 
 const ProductStats: React.FC = () => {
   const [stats, setStats] = useState<ProductStatsType | null>(null);
-  const [isFetching, setIsFetching] = useState<boolean>(false); // Thay loading bằng isFetching
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const [period, setPeriod] = useState<'day' | 'month' | 'year'>('month');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [dateError, setDateError] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const currentDate = new Date().toISOString().split('T')[0];
-
-  /** 🔎 Validate ngày */
-  const validateDates = useCallback(() => {
-    if (!startDate || !endDate) return true;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const now = new Date();
-
-    if (end < start) {
-      setDateError('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.');
-      return false;
-    }
-    if (end > now || start > now) {
-      setDateError('Ngày không thể lớn hơn ngày hiện tại.');
-      return false;
-    }
-    setDateError(null);
-    return true;
-  }, [startDate, endDate]);
-
   /** 📊 Fetch API */
   const fetchData = useCallback(async () => {
-    if (!validateDates()) return;
-
-    setIsFetching(true); // Chỉ đánh dấu đang fetch, không làm mới toàn bộ UI
+    setIsFetching(true);
     setError(null);
 
     try {
       const query = new URLSearchParams({ chartType, period });
-      if (startDate && endDate) {
-        query.append('startDate', startDate);
-        query.append('endDate', endDate);
-      }
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
@@ -73,7 +43,7 @@ const ProductStats: React.FC = () => {
     } finally {
       setIsFetching(false);
     }
-  }, [chartType, period, startDate, endDate, validateDates]);
+  }, [chartType, period]);
 
   /** ⌨️ ESC để đóng filter */
   useEffect(() => {
@@ -152,37 +122,14 @@ const ProductStats: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="filter-item">
-                    <label>Từ ngày:</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      max={currentDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="filter-item">
-                    <label>Đến ngày:</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      max={currentDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-
                   <div className="filter-actions">
                     <button onClick={fetchData} className="btn-apply">
                       Áp dụng
                     </button>
                     <button
                       onClick={() => {
-                        setStartDate('');
-                        setEndDate('');
                         setPeriod('month');
                         setChartType('bar');
-                        setDateError(null);
                       }}
                       className="btn-reset"
                     >
@@ -190,7 +137,6 @@ const ProductStats: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                {dateError && <p className="date-error">{dateError}</p>}
               </div>
             </div>
           </div>
@@ -348,6 +294,7 @@ const ProductStats: React.FC = () => {
         </div>
 
         <div className="stats-chart">
+          <h3 className="chart-title">Biểu đồ số lượng sản phẩm đã bán</h3>
           {isFetching ? (
             <div className="chart-loading">
               <div className="stats-spinner"></div>

@@ -202,6 +202,7 @@ const CustomerStats: React.FC = () => {
         </div>
 
         <div className="chart-container1">
+          <h3 className="chart-title">Biểu đồ trạng thái đơn hàng</h3>
           {stats?.chart && (
             <ChartComponent
               chartData={{
