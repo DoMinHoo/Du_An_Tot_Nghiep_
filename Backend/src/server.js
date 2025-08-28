@@ -16,7 +16,7 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: ['http://localhost:5173', 'http://localhost:5174'], // Cho phép cả hai origin
         methods: ['GET', 'POST'],
     }
 });
