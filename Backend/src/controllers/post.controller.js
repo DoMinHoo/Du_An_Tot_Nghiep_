@@ -31,12 +31,53 @@ exports.createPost = async (req, res) => {
 // [GET] /api/posts
 exports.getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find().populate("authorId", "name email");
-    res.json(posts);
+    let { page = 1, limit = 9, search = "", authorId, categoryId } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    // Tạo filter linh hoạt
+    const filter = {};
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    if (authorId) {
+      filter.authorId = authorId;
+    }
+
+    if (categoryId) {
+      filter.categoryId = categoryId;
+    }
+
+    // Đếm tổng số bài viết thỏa mãn filter
+    const totalPosts = await Post.countDocuments(filter);
+
+    // Lấy danh sách bài viết theo filter + phân trang
+    const posts = await Post.find(filter)
+      .populate("authorId", "name email")
+      .sort({ createdAt: -1 }) // mới nhất trước
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      data: posts,
+      pagination: {
+        totalPosts,
+        totalPages: Math.ceil(totalPosts / limit),
+        currentPage: page,
+        pageSize: limit,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 // [GET] /api/posts/:slug
 exports.getPostBySlug = async (req, res) => {

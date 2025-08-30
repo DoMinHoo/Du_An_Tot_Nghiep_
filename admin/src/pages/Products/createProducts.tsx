@@ -352,7 +352,27 @@ const AddProductPage: React.FC = () => {
               >
                 <Upload
                   listType="picture-card"
-                  beforeUpload={() => false}
+                  beforeUpload={(file) => {
+                    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+                    const isImage = file.type.startsWith("image/")
+                    if (!isImage) {
+                      message.error("Chỉ chấp nhận file ảnh!")
+                      return Upload.LIST_IGNORE
+                    }
+                    if (!validTypes.includes(file.type)) {
+                      message.error("❌ Only images are allowed (jpeg, jpg, png, gif)!");
+                      return Upload.LIST_IGNORE;
+                    }
+
+                    const isLt5M = file.size / 1024 / 1024 < 5
+                    if (!isLt5M) {
+                      message.error("Ảnh phải nhỏ hơn 5MB!")
+                      return Upload.LIST_IGNORE
+                    }
+                    return false // để tránh upload tự động
+                  }
+
+                  }
                   accept="image/*"
                   multiple
                   maxCount={10}

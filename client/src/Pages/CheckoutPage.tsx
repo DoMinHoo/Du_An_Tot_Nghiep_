@@ -125,9 +125,9 @@ const CheckoutPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ tên';
-    if (!phone.trim() || !/^\d{9,11}$/.test(phone))
+    if (!phone.trim() || !/^(0|\+84)\d{9}$/.test(phone))
       newErrors.phone = 'Số điện thoại không hợp lệ';
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email))
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       newErrors.email = 'Email không hợp lệ';
     if (!province) newErrors.province = 'Vui lòng chọn tỉnh/thành';
     if (!district) newErrors.district = 'Vui lòng chọn quận/huyện';
@@ -354,19 +354,23 @@ const CheckoutPage: React.FC = () => {
           originalPrice: Number(totalPrice),
         }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         toast.error(data.message || 'Áp mã thất bại');
-        setFinalAmount(null);
+        setCouponCode("");      // 🔑 clear input
+        setFinalAmount(null);   // reset lại giá
+        setDiscountAmount(null);
         return;
       }
-      toast.success(data.message || 'Áp dụng mã thành công!');
 
-      // data trả về từ backend đã áp dụng maxDiscountPrice
+      toast.success(data.message || 'Áp dụng mã thành công!');
       setFinalAmount(data.finalPrice);
       setDiscountAmount(data.discountAmount);
     } catch {
       toast.error('Có lỗi khi áp dụng mã');
+      setCouponCode("");        // 🔑 clear input khi lỗi server
       setFinalAmount(null);
       setDiscountAmount(null);
     }
@@ -759,22 +763,22 @@ const CheckoutPage: React.FC = () => {
                 placeholder="Nhập mã giảm giá..."
                 className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                 value={couponCode}
-                onChange={(e) => {
-                  setCouponCode(e.target.value);
-                  // Khi setCouponCode, chỉ reset finalAmount khi thực sự xóa mã
-                  if (e.target.value.trim() === '') {
-                    setFinalAmount(null);
-                    setDiscountAmount(null); // Thêm dòng này để tránh render lại liên tục
-                    toast.info('Đã xóa mã giảm giá, giá gốc được áp dụng lại');
-                  }
-                }}
+                onChange={(e) => setCouponCode(e.target.value)}
               />
-              <button
-                className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-900 transition duration-200 active:scale-95"
-                onClick={() => applyCoupon(couponCode)}
-              >
-                Áp dụng
-              </button>
+
+              {couponCode && (
+                <button
+                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition duration-200 active:scale-95"
+                  onClick={() => {
+                    setCouponCode("");
+                    setFinalAmount(null);
+                    setDiscountAmount(null);
+                    toast.info("Đã xóa mã giảm giá, áp dụng lại giá gốc");
+                  }}
+                >
+                  Xóa
+                </button>
+              )}
             </div>
 
             {Array.isArray(promotionList) && promotionList.length > 0 && (
