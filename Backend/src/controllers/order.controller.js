@@ -7,6 +7,7 @@ const Product = require('../models/products.model');
 const User = require('../models/user.model');
 const { sendPaymentSuccessEmail, sendOrderSuccessEmail, sendOrderStatusUpdateEmail } = require('../untils/sendPaymentSuccessEmail');
 const Notification = require('../models/notification');
+const Wallet = require("../models/wallet.model");
 const generateAppTransId = () => `txn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
 // Tạo mã đơn hàng ngẫu nhiên
@@ -541,9 +542,28 @@ exports.updateOrder = async (req, res) => {
             updateData.status = status;
         }
 
-        if (paymentStatus) {
-            updateData.paymentStatus = paymentStatus;
-        }
+    if (paymentStatus) {
+  updateData.paymentStatus = paymentStatus;
+
+  // ✅ Nếu admin hoàn tiền thì cộng tiền vào ví user
+  if (paymentStatus === "refunded" && order?.userId) {
+    await Wallet.findOneAndUpdate(
+      { userId: order.userId._id },
+      {
+        $inc: { balance: order.totalAmount },
+        $push: {
+          transactions: {
+            type: "refund",
+            amount: order.totalAmount,
+            orderId: order._id,
+            date: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
+}
 
         const updatedOrder = await Order.findByIdAndUpdate(id, {
             $set: updateData,
@@ -776,4 +796,75 @@ exports.getOrderStatus = async (req, res) => {
         console.error("Error fetching order status:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
+};
+exports.getWallet = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const wallet = await Wallet.findOne({ userId })
+      .populate({
+        path: "transactions.orderId",
+        select: "orderCode totalAmount"
+      });
+
+    if (!wallet) {
+      return res.json({ balance: 0, transactions: [] });
+    }
+
+    res.json(wallet);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};
+
+exports.payWithWallet = async (req, res) => {
+  try {
+    const userId = req.user._id; // từ middleware protect()
+    const { orderId } = req.body;
+
+    // Lấy order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Đơn hàng không tồn tại" });
+    }
+
+    // Kiểm tra đã thanh toán chưa
+    if (order.paymentStatus === "completed") {
+      return res.status(400).json({ success: false, message: "Đơn hàng đã được thanh toán" });
+    }
+
+    // Lấy ví người dùng
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      return res.status(404).json({ success: false, message: "Ví không tồn tại" });
+    }
+
+    // Kiểm tra số dư
+    if (wallet.balance < order.totalAmount) {
+      return res.status(400).json({ success: false, message: "Số dư không đủ" });
+    }
+
+    // Trừ tiền ví
+    wallet.balance -= order.totalAmount;
+    wallet.transactions.push({
+      type: "payment",
+      amount: order.totalAmount,
+      orderId: order._id,
+    });
+    await wallet.save();
+
+    // Cập nhật order
+    order.paymentMethod = "wallet";
+    order.paymentStatus = "completed";
+    await order.save();
+
+    return res.json({
+      success: true,
+      message: "Thanh toán bằng ví thành công",
+      balance: wallet.balance,
+      order,
+    });
+  } catch (error) {
+    console.error("Lỗi thanh toán bằng ví:", error);
+    res.status(500).json({ success: false, message: "Có lỗi xảy ra" });
+  }
 };

@@ -39,7 +39,7 @@ const CheckoutPage: React.FC = () => {
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<
-    'cod' | 'bank_transfer' | 'online_payment'
+    'cod' | 'bank_transfer' | 'online_payment' | 'wallet'
   >('cod');
   const [couponCode, setCouponCode] = useState('');
 
@@ -85,10 +85,11 @@ const CheckoutPage: React.FC = () => {
 
   const paymentOptions: {
     label: string;
-    value: 'cod' | 'bank_transfer' | 'online_payment';
+    value: 'cod' | 'bank_transfer' | 'online_payment' | 'wallet';
   }[] = [
       { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
       { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+      {label: 'Thanh toán bằng ví', value: 'wallet'},
     ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
@@ -330,7 +331,29 @@ const CheckoutPage: React.FC = () => {
         } else {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
-      } else {
+      }
+      else if (paymentMethod === 'wallet' && orderRes?._id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/orders/${orderRes._id}/pay-with-wallet`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      toast.success('Thanh toán bằng ví thành công!');
+      setTimeout(() => navigate('/thank-you'), 1600);
+    } else {
+      toast.error(data.message || 'Thanh toán ví thất bại');
+    }
+  } catch (err) {
+    toast.error('Lỗi khi gọi API thanh toán ví');
+    console.error(err);
+  }
+}
+       else {
         setTimeout(() => { navigate('/thank-you'); window.location.reload(); }, 1600);
       }
     } catch (error) {
@@ -637,7 +660,7 @@ const CheckoutPage: React.FC = () => {
 
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-2">Phương thức thanh toán</h2>
-          <div className="space-y-3">
+          <div className="space-y-3">x
             {paymentOptions.map((option) => (
               <label key={option.value} className="block">
                 <input

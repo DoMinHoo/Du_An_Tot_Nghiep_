@@ -275,7 +275,9 @@ const OrderHistoryPage: React.FC = () => {
             const subtotal = calculateSubtotal(order);
 
             // Tính discountAmount dựa trên hàm getDiscountAmount
-            const discountAmount = getDiscountAmount(order, subtotal);
+         const discountAmount =
+  subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
 
             return (
               <div
@@ -356,10 +358,10 @@ const OrderHistoryPage: React.FC = () => {
                             </div>
                             <div className="text-right">
                               <p>
-                                {price.toLocaleString()}₫ x {v.quantity}
+                                {price.toLocaleString()}VND x {v.quantity}
                               </p>
                               <p className="font-semibold text-red-500">
-                                {(price * v.quantity).toLocaleString()}₫
+                                {(price * v.quantity).toLocaleString()}VNĐ
                               </p>
                             </div>
                           </div>
@@ -372,7 +374,7 @@ const OrderHistoryPage: React.FC = () => {
                 <div className="text-right mt-4 text-lg font-semibold">
                   <p>
                     <strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()}
-                    ₫
+                    VNĐ
                   </p>
                   <p>
                     <strong>Mã giảm giá:</strong>{' '}
@@ -387,18 +389,18 @@ const OrderHistoryPage: React.FC = () => {
 
                   <p>
                     <strong>Giá trị giảm:</strong>{' '}
-                    {Math.max(discountAmount, 0).toLocaleString()}₫
+                    {Math.max(discountAmount, 0).toLocaleString()}VNĐ
                   </p>
 
                   <p>
                     <strong>Phí vận chuyển:</strong>{' '}
-                    {order.shippingFee?.toLocaleString() || '0'}₫
+                    {order.shippingFee?.toLocaleString() || '0'}VNĐ
                   </p>
 
                   <hr className="my-2" />
 
                   <p className="text-lg font-semibold text-red-600">
-                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}VNĐ
                   </p>
                 </div>
 
