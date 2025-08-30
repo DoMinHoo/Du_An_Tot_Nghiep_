@@ -28,7 +28,6 @@ import SearchPage from './Pages/SearchPage';
 import ProductsPage from './Pages/ProductPage';
 import FavoriteProductsPage from './Pages/FavoriteProductsPage';
 import OrderDetailPage from './Pages/OrderDetailPage';
-import WalletPage from './Pages/WalletPage';
 
 
 
@@ -81,7 +80,7 @@ function App() {
         <Route path='/thank-you' element={<ThankYouPage />} />
         <Route path="/account" element={<UserAccount />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/wallet" element={<WalletPage />} />
+
         <Route path="/sales" element={<SalePage />} />
         <Route path="/favorites" element={<FavoriteProductsPage />} />
 
