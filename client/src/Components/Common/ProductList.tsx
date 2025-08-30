@@ -13,7 +13,7 @@ const ProductList: React.FC = () => {
     queryFn: () =>
       fetchProducts({
         page: 1,
-        limit: 12,
+        limit: 10,
         sort: 'created_at',
         status: 'active',
       }),

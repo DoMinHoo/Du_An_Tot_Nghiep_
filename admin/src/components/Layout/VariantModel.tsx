@@ -19,7 +19,6 @@ import type {
     ProductVariationFormData,
     VariationModalProps,
 } from "../../Types/productVariant.interface";
-import { toast } from "react-toastify";
 
 const { Option } = Select;
 const normFile = (e: any) => (Array.isArray(e) ? e : e?.fileList || []);
@@ -29,7 +28,6 @@ const VariationModal: React.FC<VariationModalProps> = ({
     onCancel,
     onSave,
     data,
-    existingSkus = [],
 }) => {
     const [form] = Form.useForm();
     const [materials, setMaterials] = useState<{ label: string; value: string }[]>(
@@ -186,39 +184,8 @@ const VariationModal: React.FC<VariationModalProps> = ({
                     </Col>
 
                     <Col span={12}>
-                        <Form.Item
-                            name="sku"
-                            label="SKU"
-                            rules={[
-                                { required: true, message: "Vui lòng nhập SKU" },
-                                ({ getFieldValue }) => ({
-                                    validator(_, value) {
-                                        if (!value) return Promise.resolve();
-
-                                        const normalized = value.trim().toLowerCase();
-                                        const existing = existingSkus.map(s => s.toLowerCase());
-
-                                        // SKU đang sửa thì bỏ qua
-                                        const currentSku = data?.sku?.toLowerCase();
-                                        if (normalized === currentSku) {
-                                            return Promise.resolve();
-                                        }
-
-                                        if (existing.includes(normalized)) {
-                                            // 🚨 Thêm Toast cảnh báo
-                                            toast.warning("⚠️ SKU đã tồn tại, vui lòng nhập SKU khác.");
-
-                                            return Promise.reject(
-                                                new Error("❌ SKU đã tồn tại, vui lòng nhập SKU khác.")
-                                            );
-                                        }
-
-                                        return Promise.resolve();
-                                    },
-                                }),
-                            ]}
-                        >
-                            <Input placeholder="Nhập SKU" />
+                        <Form.Item name="sku" label="SKU" rules={[{ required: true }]}>
+                            <Input />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -338,23 +305,11 @@ const VariationModal: React.FC<VariationModalProps> = ({
                         fileList={fileList}
                         onChange={({ fileList }) => setFileList(fileList)}
                         beforeUpload={(file) => {
-                            const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
-                            const isImage = file.type.startsWith("image/")
-                            if (!isImage) {
-                                message.error("Chỉ chấp nhận file ảnh!")
-                                return Upload.LIST_IGNORE
-                            }
-                            if (!validTypes.includes(file.type)) {
-                                message.error("Only images are allowed (jpeg, jpg, png, gif)!");
-                                return Upload.LIST_IGNORE;
-                            }
-
-                            const isLt5M = file.size / 1024 / 1024 < 5
-                            if (!isLt5M) {
-                                message.error("Ảnh phải nhỏ hơn 5MB!")
-                                return Upload.LIST_IGNORE
-                            }
-                            return false // để tránh upload tự động
+                            const isImage = file.type.startsWith("image/");
+                            if (!isImage) { message.error("Chỉ chấp nhận ảnh"); return Upload.LIST_IGNORE; }
+                            const isLt5 = file.size / 1024 / 1024 < 5;
+                            if (!isLt5) { message.error("Ảnh phải < 5MB"); return Upload.LIST_IGNORE; }
+                            return false; // prevent auto upload
                         }}
                         listType="picture"
                         maxCount={1}

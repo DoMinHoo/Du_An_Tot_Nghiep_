@@ -54,7 +54,7 @@ exports.getProducts = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 12,
+      limit = 10,
       sort = "created_at",
       category,
       color,
