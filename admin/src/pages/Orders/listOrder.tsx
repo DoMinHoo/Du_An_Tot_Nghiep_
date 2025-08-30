@@ -130,10 +130,10 @@ const OrderManager: React.FC = () => {
         const updatedOrders = prevOrders.map((order) =>
           order._id === data.orderId
             ? {
-              ...order,
-              status: data.status,
-              paymentStatus: data.paymentStatus,
-            }
+                ...order,
+                status: data.status,
+                paymentStatus: data.paymentStatus,
+              }
             : order
         );
         // Nếu không tìm thấy order trong danh sách hiện tại, fetch lại để đảm bảo
@@ -284,13 +284,13 @@ const OrderManager: React.FC = () => {
       render: (items: OrderItem[] = []) =>
         items.length > 0
           ? items.map((item, i) => (
-            <div key={i}>
-              {item.name} x{item.quantity}
-              {item.price && item.price > 0
-                ? ` – ${item.price.toLocaleString('vi-VN')}₫`
-                : ''}
-            </div>
-          ))
+              <div key={i}>
+                {item.name} x{item.quantity}
+                {item.price && item.price > 0
+                  ? ` – ${item.price.toLocaleString('vi-VN')}₫`
+                  : ''}
+              </div>
+            ))
           : 'Không có sản phẩm',
     },
     {
@@ -300,14 +300,14 @@ const OrderManager: React.FC = () => {
       render: (history: StatusEntry[] = []) =>
         history.length > 0
           ? history.map((item, i) => (
-            <div key={i}>
-              {statusText[item.status] || item.status} (
-              {item.changedAt
-                ? new Date(item.changedAt).toLocaleString('vi-VN')
-                : 'N/A'}
-              )
-            </div>
-          ))
+              <div key={i}>
+                {statusText[item.status] || item.status} (
+                {item.changedAt
+                  ? new Date(item.changedAt).toLocaleString('vi-VN')
+                  : 'N/A'}
+                )
+              </div>
+            ))
           : 'Chưa có lịch sử',
     },
     {
@@ -325,6 +325,7 @@ const OrderManager: React.FC = () => {
               okText="Có"
               cancelText="Không"
             >
+              <Button type="danger">Xóa</Button>
             </Popconfirm>
           )}
         </Space>
