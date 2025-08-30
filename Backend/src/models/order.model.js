@@ -101,7 +101,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "bank_transfer", "online_payment", "wallet"],
+      enum: ["cod", "bank_transfer", "online_payment"],
       required: true,
     },
     cancellationReason: {
