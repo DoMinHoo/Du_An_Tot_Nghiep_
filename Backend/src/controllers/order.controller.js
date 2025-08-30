@@ -272,49 +272,40 @@ exports.createOrder = async (req, res) => {
 
         // Áp dụng mã giảm giá
         let promotionInfo = null;
+        const promotion = await Promotion.findOne({ code: couponCode.trim(), isActive: true });
 
-        if (couponCode && couponCode.trim() !== "") {
-            const promotion = await Promotion.findOne({
-                code: couponCode.trim(),
-                isActive: true,
-            });
-
-            if (!promotion) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Mã giảm giá không hợp lệ hoặc không tồn tại",
-                });
-            }
-
-            // 2️⃣ Kiểm tra hạn sử dụng
-            if (promotion.expiryDate && new Date() > new Date(promotion.expiryDate)) {
-                return res.status(400).json({ success: false, message: "Mã giảm giá đã hết hạn" });
-            }
-
-            // 3️⃣ Kiểm tra số lần sử dụng
-            if (promotion.maxUsage && promotion.usedCount >= promotion.maxUsage) {
-                return res.status(400).json({ success: false, message: "Mã giảm giá đã đạt giới hạn sử dụng" });
-            }
-
-            // 4️⃣ Tính giảm giá
-            const discountAmount =
-                promotion.discountType === "percentage"
-                    ? Math.min((totalAmount * promotion.discountValue) / 100, promotion.maxDiscountPrice || Infinity)
-                    : Math.min(promotion.discountValue, promotion.maxDiscountPrice || promotion.discountValue);
-
-            totalAmount = Math.max(totalAmount - discountAmount, 0);
-
-            promotionInfo = {
-                code: promotion.code,
-                discountType: promotion.discountType,
-                discountValue: promotion.discountValue,
-                maxDiscountPrice: promotion.maxDiscountPrice,
-                discountAmount,
-            };
-
-            // 5️⃣ Cập nhật usedCount sau khi dùng
-            await Promotion.findByIdAndUpdate(promotion._id, { $inc: { usedCount: 1 } });
+        if (!promotion) {
+            return res.status(400).json({ success: false, message: "Mã giảm giá không hợp lệ hoặc không tồn tại" });
         }
+
+        // 2️⃣ Kiểm tra hạn sử dụng
+        if (promotion.expiryDate && new Date() > new Date(promotion.expiryDate)) {
+            return res.status(400).json({ success: false, message: "Mã giảm giá đã hết hạn" });
+        }
+
+        // 3️⃣ Kiểm tra số lần sử dụng
+        if (promotion.maxUsage && promotion.usedCount >= promotion.maxUsage) {
+            return res.status(400).json({ success: false, message: "Mã giảm giá đã đạt giới hạn sử dụng" });
+        }
+
+        // 4️⃣ Tính giảm giá
+        const discountAmount =
+            promotion.discountType === "percentage"
+                ? Math.min((totalAmount * promotion.discountValue) / 100, promotion.maxDiscountPrice || Infinity)
+                : Math.min(promotion.discountValue, promotion.maxDiscountPrice || promotion.discountValue);
+
+        totalAmount = Math.max(totalAmount - discountAmount, 0);
+
+        promotionInfo = {
+            code: promotion.code,
+            discountType: promotion.discountType,
+            discountValue: promotion.discountValue,
+            maxDiscountPrice: promotion.maxDiscountPrice,
+            discountAmount,
+        };
+
+        // 5️⃣ Cập nhật usedCount sau khi dùng
+        await Promotion.findByIdAndUpdate(promotion._id, { $inc: { usedCount: 1 } });
 
         // Cộng phí ship
         totalAmount += Number(shippingFee) || 0;
@@ -555,28 +546,28 @@ exports.updateOrder = async (req, res) => {
             updateData.status = status;
         }
 
-        if (paymentStatus) {
-            updateData.paymentStatus = paymentStatus;
+    if (paymentStatus) {
+  updateData.paymentStatus = paymentStatus;
 
-            // ✅ Nếu admin hoàn tiền thì cộng tiền vào ví user
-            if (paymentStatus === "refunded" && order?.userId) {
-                await Wallet.findOneAndUpdate(
-                    { userId: order.userId._id },
-                    {
-                        $inc: { balance: order.totalAmount },
-                        $push: {
-                            transactions: {
-                                type: "refund",
-                                amount: order.totalAmount,
-                                orderId: order._id,
-                                date: new Date(),
-                            },
-                        },
-                    },
-                    { upsert: true, new: true }
-                );
-            }
-        }
+  // ✅ Nếu admin hoàn tiền thì cộng tiền vào ví user
+  if (paymentStatus === "refunded" && order?.userId) {
+    await Wallet.findOneAndUpdate(
+      { userId: order.userId._id },
+      {
+        $inc: { balance: order.totalAmount },
+        $push: {
+          transactions: {
+            type: "refund",
+            amount: order.totalAmount,
+            orderId: order._id,
+            date: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
+}
 
         const updatedOrder = await Order.findByIdAndUpdate(id, {
             $set: updateData,
@@ -811,73 +802,73 @@ exports.getOrderStatus = async (req, res) => {
     }
 };
 exports.getWallet = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const wallet = await Wallet.findOne({ userId })
-            .populate({
-                path: "transactions.orderId",
-                select: "orderCode totalAmount"
-            });
+  try {
+    const { userId } = req.params;
+    const wallet = await Wallet.findOne({ userId })
+      .populate({
+        path: "transactions.orderId",
+        select: "orderCode totalAmount"
+      });
 
-        if (!wallet) {
-            return res.json({ balance: 0, transactions: [] });
-        }
-
-        res.json(wallet);
-    } catch (err) {
-        res.status(500).json({ message: "Lỗi server", error: err.message });
+    if (!wallet) {
+      return res.json({ balance: 0, transactions: [] });
     }
+
+    res.json(wallet);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
 };
 
 exports.payWithWallet = async (req, res) => {
-    try {
-        const userId = req.user._id; // từ middleware protect()
-        const { orderId } = req.body;
+  try {
+    const userId = req.user._id; // từ middleware protect()
+    const { orderId } = req.body;
 
-        // Lấy order
-        const order = await Order.findById(orderId);
-        if (!order) {
-            return res.status(404).json({ success: false, message: "Đơn hàng không tồn tại" });
-        }
-
-        // Kiểm tra đã thanh toán chưa
-        if (order.paymentStatus === "completed") {
-            return res.status(400).json({ success: false, message: "Đơn hàng đã được thanh toán" });
-        }
-
-        // Lấy ví người dùng
-        const wallet = await Wallet.findOne({ userId });
-        if (!wallet) {
-            return res.status(404).json({ success: false, message: "Ví không tồn tại" });
-        }
-
-        // Kiểm tra số dư
-        if (wallet.balance < order.totalAmount) {
-            return res.status(400).json({ success: false, message: "Số dư không đủ" });
-        }
-
-        // Trừ tiền ví
-        wallet.balance -= order.totalAmount;
-        wallet.transactions.push({
-            type: "payment",
-            amount: order.totalAmount,
-            orderId: order._id,
-        });
-        await wallet.save();
-
-        // Cập nhật order
-        order.paymentMethod = "wallet";
-        order.paymentStatus = "completed";
-        await order.save();
-
-        return res.json({
-            success: true,
-            message: "Thanh toán bằng ví thành công",
-            balance: wallet.balance,
-            order,
-        });
-    } catch (error) {
-        console.error("Lỗi thanh toán bằng ví:", error);
-        res.status(500).json({ success: false, message: "Có lỗi xảy ra" });
+    // Lấy order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Đơn hàng không tồn tại" });
     }
+
+    // Kiểm tra đã thanh toán chưa
+    if (order.paymentStatus === "completed") {
+      return res.status(400).json({ success: false, message: "Đơn hàng đã được thanh toán" });
+    }
+
+    // Lấy ví người dùng
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      return res.status(404).json({ success: false, message: "Ví không tồn tại" });
+    }
+
+    // Kiểm tra số dư
+    if (wallet.balance < order.totalAmount) {
+      return res.status(400).json({ success: false, message: "Số dư không đủ" });
+    }
+
+    // Trừ tiền ví
+    wallet.balance -= order.totalAmount;
+    wallet.transactions.push({
+      type: "payment",
+      amount: order.totalAmount,
+      orderId: order._id,
+    });
+    await wallet.save();
+
+    // Cập nhật order
+    order.paymentMethod = "wallet";
+    order.paymentStatus = "completed";
+    await order.save();
+
+    return res.json({
+      success: true,
+      message: "Thanh toán bằng ví thành công",
+      balance: wallet.balance,
+      order,
+    });
+  } catch (error) {
+    console.error("Lỗi thanh toán bằng ví:", error);
+    res.status(500).json({ success: false, message: "Có lỗi xảy ra" });
+  }
 };
