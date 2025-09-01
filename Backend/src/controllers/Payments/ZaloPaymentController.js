@@ -277,7 +277,7 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
     if (!apptransid) return res.status(400).json({ success: false, message: "Missing apptransid" });
 
     try {
-        const order = await Order.findOne({ app_trans_id: apptransid });
+        const order = await Order.findOne({ app_trans_id: apptransid }).populate('userId');
         if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
         if (status === "1") {
@@ -288,12 +288,38 @@ async function handleReturnFromZalo(req, res) { // Xử lý trả về từ Zalo
             if (!emailResult.success) {
                 console.error('Failed to send payment success email:', emailResult.message);
             }
+
+            // 9️⃣ Emit socket cho client và admin
+            const io = req.app.get("io");
+            const user = order.userId;
+            const displayName = user?.name || order.fullName || "Khách hàng";
+
+            if (io) {
+                if (user?._id) {
+                    io.to(user._id.toString()).emit(`new-order-${user._id}`, {
+                        message: `Đơn hàng mới từ ${displayName}`,
+                        orderId: order._id,
+                        userId: user._id,
+                        isRead: false,
+                        createdAt: new Date(),
+                    });
+                }
+
+                io.emit("admin-new-order", {
+                    orderId: order._id,
+                    orderCode: order.orderCode,
+                    status: order.status,
+                    paymentStatus: order.paymentStatus,
+                    message: `Đơn hàng mới từ ${displayName}`,
+                    createdAt: new Date(),
+                });
+            }
         } else {
             order.paymentStatus = "pending";
             order.status = "pending";
+            await order.save();
         }
 
-        await order.save();
         res.json({ success: true });
     } catch (err) {
         console.error("Error handling return:", err);

@@ -217,7 +217,7 @@ const sendOrderStatusUpdateEmail = async (orderId, newStatus, note = '') => {
                     <h3 style="color: #1a73e8; margin-bottom: 15px;">Thông tin đơn hàng:</h3>
                     <ul style="list-style: none; padding-left: 0; margin-bottom: 20px;">
                         <li style="margin-bottom: 10px;"><strong>Mã đơn hàng:</strong> ${order.orderCode}</li>
-                        <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán bằng ZaloPay' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản'}</li>
+                        <li style="margin-bottom: 10px;"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod === 'online_payment' ? 'Thanh toán bằng ZaloPay' : order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :  order.paymentMethod ==='wallet' ? 'Thanh toán bằng ví' : 'Chuyển khoản'  } </li>
                         <li style="margin-bottom: 10px;"><strong>Trạng thái:</strong> ${statusTranslations[newStatus] || newStatus}</li>
                         <li style="margin-bottom: 10px;"><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province},${order.shippingAddress.addressLine}</li>
                         <li style="margin-bottom: 10px;"><strong>Số đieện thoại:</strong> ${order.shippingAddress.phone}</li>
