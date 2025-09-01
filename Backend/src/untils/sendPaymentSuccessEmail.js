@@ -20,7 +20,9 @@ const statusTranslations = {
   confirmed: 'Đã xác nhận',
   shipping: 'Đang giao hàng',
   completed: 'Hoàn tất',
-  canceled: 'Đã hủy',
+    canceled: 'Đã hủy',
+    refund_pending: 'Chờ hoàn tiền',
+    refunded: 'Đã hoàn tiền',
 };
 
 const transporter = nodemailer.createTransport({
@@ -179,6 +181,12 @@ const sendOrderStatusUpdateEmail = async (orderId, newStatus, note = '') => {
                 break;
             case 'canceled':
                 statusMessage = `Đơn hàng của bạn đã bị hủy. ${note ? 'Lý do: ' + note : ''}`;
+                break;
+            case 'refund_pending':
+                statusMessage = `Yêu cầu hoàn tiền của bạn đang được xử lý. ${note ? 'Lý do: ' + note : ''}`;
+                break;
+            case 'refunded':
+                statusMessage = 'Đơn hàng của bạn đã được hoàn tiền thành công.';
                 break;
             default:
                 statusMessage = `Đơn hàng của bạn đã được cập nhật trạng thái thành ${newStatus}.`;
