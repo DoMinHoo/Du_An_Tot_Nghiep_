@@ -37,9 +37,9 @@ const paymentStatusText: Record<string, string> = {
   pending: 'Chưa thanh toán',
   completed: 'Đã thanh toán',
   failed: 'Thanh toán thất bại',
-   refund_pending: "Chờ hoàn tiền",
+  refund_pending: "Chờ hoàn tiền",
   refunded: 'Đã hoàn tiền',
-    expired: "Thanh toán hết hạn",
+  expired: "Thanh toán hết hạn",
 };
 
 
@@ -101,40 +101,40 @@ const OrderDetail: React.FC = () => {
     }
   };
 
- const handleUpdateStatus = async () => {
-  if (!status) return;
+  const handleUpdateStatus = async () => {
+    if (!status) return;
 
-  // ✅ fetch lại đơn hàng để lấy trạng thái mới nhất
-  const latestOrder = await getOrderById(id!);
-  if (!latestOrder) {
-    message.error('Không tìm thấy đơn hàng');
-    return;
-  }
+    // ✅ fetch lại đơn hàng để lấy trạng thái mới nhất
+    const latestOrder = await getOrderById(id!);
+    if (!latestOrder) {
+      message.error('Không tìm thấy đơn hàng');
+      return;
+    }
 
-  if (latestOrder.status === 'canceled' || latestOrder.status === 'completed') {
-    message.warning('Khách hàng đã hủy đơn, không thể xác nhận');
-    return;
-  }
+    if (latestOrder.status === 'canceled' || latestOrder.status === 'completed') {
+      message.warning('Khách hàng đã hủy đơn, không thể xác nhận');
+      return;
+    }
 
-  const allowedStatuses = getNextAvailableStatuses(latestOrder.status);
-  if (!allowedStatuses.includes(status.value)) {
-    message.warning('Trạng thái không hợp lệ. Không thể cập nhật.');
-    return;
-  }
+    const allowedStatuses = getNextAvailableStatuses(latestOrder.status);
+    if (!allowedStatuses.includes(status.value)) {
+      message.warning('Trạng thái không hợp lệ. Không thể cập nhật.');
+      return;
+    }
 
-  if (status.value === 'canceled' && !note.trim()) {
-    message.warning('Vui lòng nhập lý do huỷ đơn hàng');
-    return;
-  }
+    if (status.value === 'canceled' && !note.trim()) {
+      message.warning('Vui lòng nhập lý do huỷ đơn hàng');
+      return;
+    }
 
-  try {
-    await updateOrder(id!, { status: status.value, note });
-    message.success('Cập nhật trạng thái thành công');
-    navigate('/admin/orders', { state: { shouldRefresh: true } });
-  } catch (error) {
-    message.error('Cập nhật trạng thái thất bại');
-  }
-};
+    try {
+      await updateOrder(id!, { status: status.value, note });
+      message.success('Cập nhật trạng thái thành công');
+      navigate('/admin/orders', { state: { shouldRefresh: true } });
+    } catch (error) {
+      message.error('Cập nhật trạng thái thất bại');
+    }
+  };
 
   if (loading || !order) {
     return (
@@ -193,9 +193,8 @@ const OrderDetail: React.FC = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Địa chỉ giao hàng">
-          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${
-            shipping.ward || ''
-          }, ${shipping.district || ''}, ${shipping.province || ''}`}
+          {`${shipping.addressLine || ''}, ${shipping.street || ''}, ${shipping.ward || ''
+            }, ${shipping.district || ''}, ${shipping.province || ''}`}
         </Descriptions.Item>
         {/* Thêm phí vận chuyển */}
         <Descriptions.Item label="Phí vận chuyển">
@@ -207,96 +206,96 @@ const OrderDetail: React.FC = () => {
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Phương thức thanh toán">
-  {order.paymentMethod === 'cod'
-    ? 'Thanh toán khi nhận hàng'
-    : order.paymentMethod === 'online_payment'
-    ? 'Thanh toán qua ZaloPay'
-    : 'Chuyển khoản ngân hàng'}
-</Descriptions.Item>
+          {order.paymentMethod === 'cod'
+            ? 'Thanh toán khi nhận hàng'
+            : order.paymentMethod === 'online_payment'
+              ? 'Thanh toán qua ZaloPay'
+              : 'Chuyển khoản ngân hàng'}
+        </Descriptions.Item>
 
 
-<Descriptions.Item label="Trạng thái thanh toán">
-  {paymentStatusText[order.paymentStatus] || order.paymentStatus}
-  {order.paymentStatus === 'refund_pending' && (
-    <Button
-      type="primary"
-      style={{ marginLeft: 12 }}
-      onClick={async () => {
-        try {
-          await updateOrder(id!, { paymentStatus: 'refunded' });
-          message.success('Đã xác nhận hoàn tiền');
-          fetchOrder();
-        } catch {
-          message.error('Xác nhận hoàn tiền thất bại');
-        }
-      }}
-    >
-      Đã hoàn tiền
-    </Button>
-  )}
-</Descriptions.Item>
+        <Descriptions.Item label="Trạng thái thanh toán">
+          {paymentStatusText[order.paymentStatus] || order.paymentStatus}
+          {order.paymentStatus === 'refund_pending' && (
+            <Button
+              type="primary"
+              style={{ marginLeft: 12 }}
+              onClick={async () => {
+                try {
+                  await updateOrder(id!, { paymentStatus: 'refunded' });
+                  message.success('Đã xác nhận hoàn tiền');
+                  fetchOrder();
+                } catch {
+                  message.error('Xác nhận hoàn tiền thất bại');
+                }
+              }}
+            >
+              Đã hoàn tiền
+            </Button>
+          )}
+        </Descriptions.Item>
 
         {order.status === 'canceled' && note && (
           <Descriptions.Item label="Lý do huỷ đơn hàng">
             <Text type="danger">{note}</Text>
           </Descriptions.Item>
         )}
-       <Descriptions.Item label="Cập nhật trạng thái">
-  {order.status === 'canceled' || order.status === 'completed' ? (
-    <Text type="secondary">Đơn hàng đã kết thúc, không thể cập nhật</Text>
-  ) : availableStatuses.length === 0 ? (
-    <Text type="secondary">Không thể cập nhật trạng thái</Text>
-  ) : (
-    <>
-      <Select
-        labelInValue
-        value={status}
-        onChange={handleStatusChange}
-        style={{ width: 250 }}
-        placeholder="Chọn trạng thái mới"
-      >
-        {availableStatuses.map((s) => (
-          <Option key={s} value={s}>
-            {statusText[s] || s}
-          </Option>
-        ))}
-      </Select>
+        <Descriptions.Item label="Cập nhật trạng thái">
+          {order.status === 'canceled' || order.status === 'completed' ? (
+            <Text type="secondary">Đơn hàng đã kết thúc, không thể cập nhật</Text>
+          ) : availableStatuses.length === 0 ? (
+            <Text type="secondary">Không thể cập nhật trạng thái</Text>
+          ) : (
+            <>
+              <Select
+                labelInValue
+                value={status}
+                onChange={handleStatusChange}
+                style={{ width: 250 }}
+                placeholder="Chọn trạng thái mới"
+              >
+                {availableStatuses.map((s) => (
+                  <Option key={s} value={s}>
+                    {statusText[s] || s}
+                  </Option>
+                ))}
+              </Select>
 
-      {status?.value === 'canceled' && (
-        <Select
-          value={note}
-          onChange={(value) => setNote(value)}
-          placeholder="Chọn lý do huỷ đơn hàng"
-          style={{ marginTop: 8, width: 400 }}
-        >
-          <Option value="Khách hàng không xác nhận đơn">
-            Khách hàng không xác nhận đơn
-          </Option>
-          <Option value="Thông tin giao hàng không hợp lệ">
-            Thông tin giao hàng không hợp lệ
-          </Option>
-          <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
-            Sản phẩm hết hàng hoặc ngừng kinh doanh
-          </Option>
-          <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
-            Nghi ngờ gian lận hoặc giao dịch bất thường
-          </Option>
-          <Option value="Khách hàng yêu cầu huỷ đơn">
-            Khách hàng yêu cầu huỷ đơn
-          </Option>
-        </Select>
-      )}
+              {status?.value === 'canceled' && (
+                <Select
+                  value={note}
+                  onChange={(value) => setNote(value)}
+                  placeholder="Chọn lý do huỷ đơn hàng"
+                  style={{ marginTop: 8, width: 400 }}
+                >
+                  <Option value="Khách hàng không xác nhận đơn">
+                    Khách hàng không xác nhận đơn
+                  </Option>
+                  <Option value="Thông tin giao hàng không hợp lệ">
+                    Thông tin giao hàng không hợp lệ
+                  </Option>
+                  <Option value="Sản phẩm hết hàng hoặc ngừng kinh doanh">
+                    Sản phẩm hết hàng hoặc ngừng kinh doanh
+                  </Option>
+                  <Option value="Nghi ngờ gian lận hoặc giao dịch bất thường">
+                    Nghi ngờ gian lận hoặc giao dịch bất thường
+                  </Option>
+                  <Option value="Khách hàng yêu cầu huỷ đơn">
+                    Khách hàng yêu cầu huỷ đơn
+                  </Option>
+                </Select>
+              )}
 
-      <Button
-        type="primary"
-        onClick={handleUpdateStatus}
-        style={{ marginLeft: 12 }}
-      >
-        Cập nhật
-      </Button>
-    </>
-  )}
-</Descriptions.Item>
+              <Button
+                type="primary"
+                onClick={handleUpdateStatus}
+                style={{ marginLeft: 12 }}
+              >
+                Cập nhật
+              </Button>
+            </>
+          )}
+        </Descriptions.Item>
       </Descriptions>
 
       <Divider />
@@ -311,7 +310,7 @@ const OrderDetail: React.FC = () => {
               : '/default-image.png';
           return (
             <List.Item style={{ padding: 16 }}>
-                <div
+              <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -330,35 +329,35 @@ const OrderDetail: React.FC = () => {
                       backgroundColor: '#f5f5f5',
                     }}
                   />
-                <div>
-  <div>
-    <strong>{item.name}</strong>
-  </div>
-  <div>SKU: {item.sku || 'Không có'}</div>
-  <div>Kích thước: {item.dimensions || 'Không xác định'}</div>
-  <div>Chất liệu: {item.material || 'Không xác định'}</div>
-  <div>
-    Màu sắc: {item.colorName || 'Không xác định'}{' '}
-    {item.colorImageUrl && (
-      <img
-        src={`http://localhost:5000${item.colorImageUrl}`}
-        alt={item.colorName}
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: '50%',
-          marginLeft: 8,
-          verticalAlign: 'middle',
-          border: '1px solid #ddd',
-        }}
-      />
-    )}
-  </div>
-  <div>Số lượng: {item.quantity}</div>
-  <div>
-    Đơn giá: {item.salePrice?.toLocaleString('vi-VN')}₫
-  </div>
-</div>
+                  <div>
+                    <div>
+                      <strong>{item.name}</strong>
+                    </div>
+                    <div>SKU: {item.sku || 'Không có'}</div>
+                    <div>Kích thước: {item.dimensions || 'Không xác định'}</div>
+                    <div>Chất liệu: {item.material || 'Không xác định'}</div>
+                    <div>
+                      Màu sắc: {item.colorName || 'Không xác định'}{' '}
+                      {item.colorImageUrl && (
+                        <img
+                          src={`http://localhost:5000${item.colorImageUrl}`}
+                          alt={item.colorName}
+                          style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            marginLeft: 8,
+                            verticalAlign: 'middle',
+                            border: '1px solid #ddd',
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div>Số lượng: {item.quantity}</div>
+                    <div>
+                      Đơn giá: {item.salePrice?.toLocaleString('vi-VN')}₫
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -367,10 +366,42 @@ const OrderDetail: React.FC = () => {
         }}
       />
       <div style={{ marginTop: 16, textAlign: 'right' }}>
+        {/* Tính giá gốc (subtotal) */}
+        <Text style={{ display: "block", fontSize: 16, marginBottom: 8 }}>
+          Giá gốc:{" "}
+          <span style={{ color: "#555" }}>
+            {order?.items
+              ?.reduce(
+                (sum: number, item: any) => sum + item.salePrice * item.quantity,
+                0
+              )
+              .toLocaleString("vi-VN")}₫
+          </span>
+        </Text>
+
+        {/* Giảm giá nếu có */}
+        {order?.promotion?.discountValue > 0 && (
+          <Text style={{ display: "block", fontSize: 16, marginBottom: 8 }}>
+            Giảm giá ({order?.promotion?.code}):{" "}
+            <span style={{ color: "green" }}>
+              -{order.promotion.discountValue.toLocaleString("vi-VN")}₫
+            </span>
+          </Text>
+        )}
+
+        {/* Phí vận chuyển */}
+        <Text style={{ display: "block", fontSize: 16, marginBottom: 8 }}>
+          Phí vận chuyển:{" "}
+          <span style={{ color: "#555" }}>
+            {order?.shippingFee?.toLocaleString("vi-VN") || 0}₫
+          </span>
+        </Text>
+
+        {/* Tổng cuối */}
         <Text strong style={{ fontSize: 18 }}>
-          Tổng giá tiền:{' '}
-          <span style={{ color: 'red' }}>
-            {order.totalAmount.toLocaleString('vi-VN')}₫
+          Tổng cuối:{" "}
+          <span style={{ color: "red" }}>
+            {(order?.totalAmount ?? 0).toLocaleString("vi-VN")}₫
           </span>
         </Text>
       </div>

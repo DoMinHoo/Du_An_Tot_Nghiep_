@@ -43,4 +43,5 @@ export interface VariationModalProps {
   onCancel: () => void;
   onSave: (variation: ProductVariationFormData) => void;
   data?: ProductVariationFormData;
+  existingSkus?: string[]; // thêm props này
 }
