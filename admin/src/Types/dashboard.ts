@@ -22,7 +22,10 @@
         previousRevenue: number;
         paymentMethods: {
             cod: number;
-            zaloPay: number;}
+            zaloPay: number;
+            wallet: number
+        }
+            
     growthRate: number;
     orderStatus: {
         pending: number;

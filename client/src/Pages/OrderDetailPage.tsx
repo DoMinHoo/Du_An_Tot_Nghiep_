@@ -95,8 +95,9 @@ const discountAmount =
             ? "Thanh toán khi nhận hàng"
             : order.paymentMethod === "online_payment"
               ? "Thanh toán qua ZaloPay"
-              : "Chuyển khoản"
-        }</p>
+     : order.paymentMethod === 'wallet'
+    ? 'Thanh toán bằng Ví'
+    : 'Không xác định'}</p>
       </div>
 
       {/* Người nhận */}

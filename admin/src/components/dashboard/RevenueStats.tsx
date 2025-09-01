@@ -178,6 +178,10 @@ const RevenueStats: React.FC = () => {
               Thanh toán ZaloPay:{' '}
               <strong>{stats?.paymentMethods?.zaloPay || 0} người</strong>
             </p>
+              <p className="total-revenue">
+              Thanh toán Ví:{' '}
+              <strong>{stats?.paymentMethods?.wallet || 0} người</strong>
+            </p>
           </div>
 
           {/* Trạng thái đơn */}

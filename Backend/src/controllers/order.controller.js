@@ -9,7 +9,7 @@ const { sendPaymentSuccessEmail, sendOrderSuccessEmail, sendOrderStatusUpdateEma
 const Notification = require('../models/notification');
 
 const generateAppTransId = () => `txn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-
+const Wallet = require("../models/wallet.model");
 // Tạo mã đơn hàng ngẫu nhiên
 const generateOrderCode = () => {
     return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -140,6 +140,17 @@ exports.createOrder = async (req, res) => {
             items,
         } = req.body;
 
+
+    // 2️⃣ Validate phương thức thanh toán
+    if (!["cod", "bank_transfer", "online_payment","wallet"].includes(paymentMethod)) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Phương thức thanh toán không hợp lệ",
+        });
+    }
+
         const {
             fullName,
             phone,
@@ -166,6 +177,7 @@ exports.createOrder = async (req, res) => {
                 .status(400)
                 .json({ success: false, message: "Địa chỉ giao hàng chưa đầy đủ" });
         }
+
 
         // 2️⃣ Validate phương thức thanh toán
         if (!["cod", "bank_transfer", "online_payment"].includes(paymentMethod)) {
@@ -329,6 +341,72 @@ exports.createOrder = async (req, res) => {
             phone: phone,
         };
 
+
+    const newOrder = new Order({
+      userId: user?.userId || null,
+      guestId: user?.guestId || null,
+      cartId: cartId || null,
+      orderCode: generateOrderCode(),
+      app_trans_id: generateAppTransId(),
+      customerName: customerData.name,
+      customerEmail: customerData.email,
+      customerPhone: customerData.phone,
+      totalAmount,
+      shippingFee: Number(shippingFee) || 0,
+      shippingAddress,
+      paymentMethod,
+      items: orderItems,
+      status: "pending",
+      paymentStatus: "pending",
+      promotion: promotionInfo,
+      statusHistory: [{ status: "pending", changedAt: new Date(), note: cartId ? "Đơn hàng được tạo từ giỏ hàng" : "Đơn hàng được tạo trực tiếp" }],
+    });
+// Sau khi tạo const newOrder = new Order({...})
+
+if (paymentMethod === "wallet" && user?.userId) {
+  const wallet = await Wallet.findOne({ userId: user.userId });
+
+  if (!wallet || wallet.balance < totalAmount) {
+    return res.status(400).json({
+      success: false,
+      message: "Số dư ví không đủ để thanh toán"
+    });
+  }
+
+  // Trừ tiền trong ví
+  wallet.balance -= totalAmount;
+  wallet.transactions.push({
+    type: "payment",
+    amount: -totalAmount,
+    orderId: newOrder._id,
+    date: new Date(),
+  });
+  await wallet.save();
+
+  // Cập nhật trạng thái thanh toán của đơn hàng
+  newOrder.paymentStatus = "completed";
+  await newOrder.save();
+}
+
+    // Giảm tồn kho song song
+    const updateStockPromises = orderItems.map((item) =>
+      ProductVariation.findByIdAndUpdate(item.variationId, { $inc: { stockQuantity: -item.quantity } })
+    );
+    await Promise.all(updateStockPromises);
+
+    const savedOrder = await newOrder.save();
+
+    // 8️⃣ Tạo Notification nếu có user
+    if (user?.userId) {
+      await Notification.create({
+        userId: user.userId,
+        message: `🛒 Tạo đơn hàng thành công - Mã đơn hàng: ${newOrder.orderCode}`,
+        link: `/order-history`,
+        isRead: false,
+        createdAt: new Date(),
+      });
+    }
+
         if (user && user.userId) {
             const registeredUser = await User.findById(user.userId).select("name email phone");
             if (registeredUser) {
@@ -339,6 +417,7 @@ exports.createOrder = async (req, res) => {
                 };
             }
         }
+
 
         const newOrder = new Order({
             userId: user?.userId || null,
@@ -530,7 +609,7 @@ exports.updateOrder = async (req, res) => {
                     }
                 }
 
-                if (order.paymentMethod === 'online_payment' && order.paymentStatus === 'completed') {
+                if ((order.paymentMethod === 'online_payment' || order.paymentMethod === 'wallet')  && order.paymentStatus === 'completed') {
                     updateData.paymentStatus = 'refund_pending';
                 }
 
@@ -555,9 +634,28 @@ exports.updateOrder = async (req, res) => {
             updateData.status = status;
         }
 
-        if (paymentStatus) {
-            updateData.paymentStatus = paymentStatus;
-        }
+    if (paymentStatus) {
+  updateData.paymentStatus = paymentStatus;
+
+  // ✅ Nếu admin hoàn tiền thì cộng tiền vào ví user
+  if (paymentStatus === "refunded" && order?.userId) {
+    await Wallet.findOneAndUpdate(
+      { userId: order.userId._id },
+      {
+        $inc: { balance: order.totalAmount },
+        $push: {
+          transactions: {
+            type: "refund",
+            amount: order.totalAmount,
+            orderId: order._id,
+            date: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
+}
 
         const updatedOrder = await Order.findByIdAndUpdate(id, {
             $set: updateData,
@@ -791,3 +889,22 @@ exports.getOrderStatus = async (req, res) => {
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+exports.getWallet = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const wallet = await Wallet.findOne({ userId })
+      .populate({
+        path: "transactions.orderId",
+        select: "orderCode totalAmount"
+      });
+
+    if (!wallet) {
+      return res.json({ balance: 0, transactions: [] });
+    }
+
+    res.json(wallet);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};
+

@@ -275,8 +275,9 @@ const OrderHistoryPage: React.FC = () => {
             const subtotal = calculateSubtotal(order);
 
             // Tính discountAmount dựa trên hàm getDiscountAmount
-            const discountAmount =
-              subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
+        const discountAmount =
+  subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
 
 
             return (
@@ -317,8 +318,12 @@ const OrderHistoryPage: React.FC = () => {
                   <p>
                     <strong>Phương thức thanh toán:</strong>{' '}
                     {order.paymentMethod === 'cod'
-                      ? 'Thanh toán khi nhận hàng'
-                      : 'Thanh toán online'}
+    ? 'Thanh toán khi nhận hàng'
+    : order.paymentMethod === 'online_payment'
+    ? 'Thanh toán qua ZaloPay'
+   : order.paymentMethod === 'wallet'
+    ? 'Thanh toán bằng Ví'
+    : 'Không xác định'}
                   </p>
                   <p>
                     <strong>Trạng thái thanh toán:</strong>{' '}

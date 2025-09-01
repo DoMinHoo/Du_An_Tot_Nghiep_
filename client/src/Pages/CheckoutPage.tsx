@@ -39,7 +39,9 @@ const CheckoutPage: React.FC = () => {
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<
+
     'cod' | 'bank_transfer' | 'online_payment' | 'wallet'
+
   >('cod');
   const [couponCode, setCouponCode] = useState('');
 
@@ -85,10 +87,11 @@ const CheckoutPage: React.FC = () => {
 
   const paymentOptions: {
     label: string;
-    value: 'cod' | 'bank_transfer' | 'online_payment';
+    value: 'cod' | 'bank_transfer' | 'online_payment' | 'wallet';
   }[] = [
       { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
       { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+      { label: 'Thanh toán bằng Ví của tôi', value: 'wallet' },
     ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
@@ -330,8 +333,22 @@ const CheckoutPage: React.FC = () => {
         } else {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
-      }
+
+            } else if (paymentMethod === 'wallet') {
+        // ✅ Thanh toán bằng ví
+        if (orderRes?.orderCode) {
+          // toast.success("Thanh toán bằng ví thành công!");
+          setTimeout(() => navigate('/thank-you'), 1600);
+        } else {
+          toast.error("Thanh toán bằng ví thất bại!");
+        }
+
+      
+      } 
+
+      
       else {
+
         setTimeout(() => { navigate('/thank-you'); window.location.reload(); }, 1600);
       }
     } catch (error) {
@@ -340,6 +357,7 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  
   const applyCoupon = async (code: string) => {
     if (!code.trim()) {
       toast.error('Vui lòng nhập mã giảm giá');
