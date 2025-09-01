@@ -71,17 +71,61 @@ exports.applyPromotion = async (req, res) => {
 // Tạo mã khuyến mãi
 exports.createPromotion = async (req, res) => {
   try {
-    const data = req.body;
-    data.code = data.code?.toUpperCase();
-    const newPromo = await Promotion.create(data);
-    res.status(201).json(newPromo);
+    // DEBUG: log payload để kiểm tra client gửi gì
+    console.log('[createPromotion] body:', req.body);
+
+    // clone và sanitize input
+    const raw = { ...(req.body || {}) };
+
+    // chuẩn hoá code
+    if (raw.code) raw.code = String(raw.code).trim().toUpperCase();
+
+    // ép kiểu và gán default nếu thiếu
+    const promotionData = {
+      code: raw.code,
+      discountType: raw.discountType ? String(raw.discountType).trim() : undefined,
+      discountValue: raw.discountValue !== undefined ? Number(raw.discountValue) : undefined,
+      maxDiscountPrice: raw.maxDiscountPrice !== undefined ? Number(raw.maxDiscountPrice) : 0,
+      expiryDate: raw.expiryDate ? new Date(raw.expiryDate) : undefined,
+      isActive: raw.isActive !== undefined ? Boolean(raw.isActive) : true,
+      minOrderValue: raw.minOrderValue !== undefined ? Number(raw.minOrderValue) : 0,
+      usageLimit: raw.usageLimit !== undefined ? Number(raw.usageLimit) : 0,
+      // never allow client to set usedCount directly on create (force 0)
+      usedCount: 0,
+      isDeleted: false,
+      deletedAt: null,
+    };
+
+    // Basic validation before create (so we return clear messages)
+    if (!promotionData.code) return res.status(400).json({ error: 'code là bắt buộc' });
+    if (!promotionData.discountType) return res.status(400).json({ error: 'discountType là bắt buộc' });
+    if (!['percentage', 'fixed'].includes(promotionData.discountType))
+      return res.status(400).json({ error: 'discountType phải là "percentage" hoặc "fixed"' });
+    if (promotionData.discountValue === undefined || Number.isNaN(promotionData.discountValue))
+      return res.status(400).json({ error: 'discountValue không hợp lệ' });
+
+    // Tạo
+    const newPromo = await Promotion.create(promotionData);
+
+    // Trả về toàn bộ document tạo xong
+    return res.status(201).json({ success: true, data: newPromo });
   } catch (err) {
+    console.error('[createPromotion] error:', err);
+
     if (err.code === 11000 && err.keyPattern?.code) {
       return res.status(400).json({ error: "Mã khuyến mãi đã tồn tại" });
     }
-    res.status(400).json({ error: err.message || "Tạo mã thất bại" });
+
+    // Nếu Mongoose validation error, trả chi tiết
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({ error: messages.join('; ') });
+    }
+
+    return res.status(400).json({ error: err.message || "Tạo mã thất bại" });
   }
 };
+
 
 // Cập nhật mã khuyến mãi
 exports.updatePromotion = async (req, res) => {

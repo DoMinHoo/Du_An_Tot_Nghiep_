@@ -15,7 +15,7 @@ const itemSchema = new mongoose.Schema(
     salePrice: {
       type: Number,
       required: true,
-      
+
     },
   },
   { _id: false }
@@ -113,17 +113,12 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "completed", "failed",'refunded', 'expired', "refund_pending"],
+      enum: ["pending", "completed", "failed", 'refunded', 'expired', "refund_pending"],
       default: "pending",
     },
     promotion: {
-      code: { type: String },
-      discountType: {
-        type: String,
-        enum: ["percentage", "fixed"],
-        default: null,
-      },
-      discountValue: { type: Number, default: 0 },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Promotion"
     },
     items: [itemSchema],
     statusHistory: [statusHistorySchema],

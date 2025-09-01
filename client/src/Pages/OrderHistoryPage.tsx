@@ -103,10 +103,10 @@ const OrderHistoryPage: React.FC = () => {
           prevOrders.map((order) =>
             order._id === data.orderId
               ? {
-                  ...order,
-                  status: data.status,
-                  paymentStatus: data.paymentStatus,
-                }
+                ...order,
+                status: data.status,
+                paymentStatus: data.paymentStatus,
+              }
               : order
           )
         );
@@ -275,8 +275,10 @@ const OrderHistoryPage: React.FC = () => {
             const subtotal = calculateSubtotal(order);
 
             // Tính discountAmount dựa trên hàm getDiscountAmount
+
         const discountAmount =
   subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
+
 
             return (
               <div
@@ -361,10 +363,10 @@ const OrderHistoryPage: React.FC = () => {
                             </div>
                             <div className="text-right">
                               <p>
-                                {price.toLocaleString()}₫ x {v.quantity}
+                                {price.toLocaleString()}VND x {v.quantity}
                               </p>
                               <p className="font-semibold text-red-500">
-                                {(price * v.quantity).toLocaleString()}₫
+                                {(price * v.quantity).toLocaleString()}VND
                               </p>
                             </div>
                           </div>
@@ -377,33 +379,32 @@ const OrderHistoryPage: React.FC = () => {
                 <div className="text-right mt-4 text-lg font-semibold">
                   <p>
                     <strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()}
-                    ₫
+                    VND
                   </p>
                   <p>
                     <strong>Mã giảm giá:</strong>{' '}
                     {order.promotion?.code
-                      ? `${order.promotion.code} (${
-                          order.promotion.discountType === 'percentage'
-                            ? `${order.promotion.discountValue}%`
-                            : `${order.promotion.discountValue.toLocaleString()}₫`
-                        })`
+                      ? `${order.promotion.code} (${order.promotion.discountType === 'percentage'
+                        ? `${order.promotion.discountValue}%`
+                        : `${order.promotion.discountValue.toLocaleString()}₫`
+                      })`
                       : 'Không áp dụng'}
                   </p>
 
                   <p>
                     <strong>Giá trị giảm:</strong>{' '}
-                    {Math.max(discountAmount, 0).toLocaleString()}₫
+                    {Math.max(discountAmount, 0).toLocaleString()}VND
                   </p>
 
                   <p>
                     <strong>Phí vận chuyển:</strong>{' '}
-                    {order.shippingFee?.toLocaleString() || '0'}₫
+                    {order.shippingFee?.toLocaleString() || '0'}VND
                   </p>
 
                   <hr className="my-2" />
 
                   <p className="text-lg font-semibold text-red-600">
-                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}₫
+                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}VND
                   </p>
                 </div>
 
@@ -485,11 +486,10 @@ const OrderHistoryPage: React.FC = () => {
               <button
                 onClick={() => handleChangePage(page - 1)}
                 disabled={page === 1}
-                className={`px-3 py-1 border rounded ${
-                  page === 1
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-100'
-                }`}
+                className={`px-3 py-1 border rounded ${page === 1
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-gray-100'
+                  }`}
               >
                 Trước
               </button>
@@ -501,9 +501,8 @@ const OrderHistoryPage: React.FC = () => {
                 <button
                   key={p}
                   onClick={() => handleChangePage(p)}
-                  className={`px-3 py-1 border rounded ${
-                    page === p ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
-                  }`}
+                  className={`px-3 py-1 border rounded ${page === p ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
+                    }`}
                 >
                   {p}
                 </button>
@@ -512,11 +511,10 @@ const OrderHistoryPage: React.FC = () => {
               <button
                 onClick={() => handleChangePage(page + 1)}
                 disabled={page === pagination.totalPages}
-                className={`px-3 py-1 border rounded ${
-                  page === pagination.totalPages
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-100'
-                }`}
+                className={`px-3 py-1 border rounded ${page === pagination.totalPages
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-gray-100'
+                  }`}
               >
                 Sau
               </button>

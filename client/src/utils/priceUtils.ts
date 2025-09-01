@@ -6,7 +6,7 @@ export const isValidPrice = (price: unknown): boolean => {
 
 export const formatPrice = (price: number | null, currency = 'vi-VN'): string => {
     if (price == null) return 'Liên hệ';
-    return price.toLocaleString(currency) + 'VNĐ';
+    return price.toLocaleString(currency) + 'VND';
 };
 
 export const calculateDiscount = (salePrice: number | null, finalPrice: number | null): number => {
