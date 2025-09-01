@@ -75,7 +75,7 @@ static async getRevenueStats(req, res) {
                 $match: { 
                     createdAt: { $gte: moment(start).utcOffset(+7).toDate(), $lte: moment(end).utcOffset(+7).toDate() }, 
                     status: 'completed', 
-                    paymentMethod: { $in: ['cod', 'online_payment'] } 
+                    paymentMethod: { $in: ['cod', 'online_payment', 'wallet'] } 
                 } 
             },
             {
@@ -92,10 +92,11 @@ static async getRevenueStats(req, res) {
             }
         ]).catch(err => []);
 
-        const paymentMethods = { cod: 0, zaloPay: 0 };
+        const paymentMethods = { cod: 0, zaloPay: 0, wallet: 0 };
         paymentStats.forEach(stat => {
             if (stat._id === 'cod') paymentMethods.cod = stat.count || 0;
             if (stat._id === 'online_payment') paymentMethods.zaloPay = stat.count || 0;
+            if (stat._id === 'wallet') paymentMethods.wallet = stat.count || 0;
         });
 
         // Dữ liệu biểu đồ
