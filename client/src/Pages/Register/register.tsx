@@ -3,6 +3,8 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 
+import Hero from "../../public/HeroRegister.jpg"
+
 interface RegisterFormValues {
   name: string;
   address: string;
@@ -46,9 +48,9 @@ const Register: React.FC = () => {
 
       const storedUsers = JSON.parse(localStorage.getItem('userData') || '[]');
       const newId = storedUsers.length > 0 ? storedUsers[storedUsers.length - 1].id + 1 : 1;
-     const { password, ...safePayload } = payload; //
+      const { password, ...safePayload } = payload; //
       const newUser = {
-       ...safePayload,
+        ...safePayload,
         id: newId,
         key: newId.toString(),
         status: 'active',
@@ -67,9 +69,9 @@ const Register: React.FC = () => {
 
   return (
     <div className="register-container">
-      <div className="left-panel">
-        <h2>Tạo tài khoản</h2>
-        <p>Đăng ký tài khoản chỉ trong 1 phút để tích lũy điểm và nhận ưu đãi từ LIVENTO.</p>
+      <div className="left-panel" style={{ backgroundImage: `url(${Hero})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <h2 className='text-white'>Tạo tài khoản</h2>
+        <h3 className='text-white'>Đăng ký tài khoản chỉ trong 1 phút để tích lũy điểm và nhận ưu đãi từ LIVENTO.</h3>
       </div>
       <div className="right-panel">
         <form onSubmit={onFinish}>
