@@ -116,10 +116,7 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed", 'refunded', 'expired', "refund_pending"],
       default: "pending",
     },
-    promotion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Promotion"
-    },
+    promotion: { type: mongoose.Schema.Types.ObjectId, ref: "Promotion", default: null },
     items: [itemSchema],
     statusHistory: [statusHistorySchema],
   },
