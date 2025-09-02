@@ -1,6 +1,14 @@
 import React from "react";
 import BenefitAccordion from "../Components/BenefitAccordion"; // nhớ tạo file này theo phần trước
 
+import contactHero from "../public/1Contact.jpg"
+import Bao1 from "../public/Contact.Bao1.png"
+import Bao2 from "../public/Contact.Bao2.png"
+import vinhome from "../public/vinhome.png"
+import ecopark from "../public/ecopark.png"
+import phudong from "../public/phudong.png"
+import vinpearl from "../public/vinpearl.png"
+
 const ContactPage: React.FC = () => {
   return (
     <div className="bg-white text-gray-800 font-sans">
@@ -21,7 +29,7 @@ const ContactPage: React.FC = () => {
             </a>
             <p className="mt-2 text-sm text-gray-500">Email: https://caodang.fpt.edu.vn</p>
           </div>
-          <img src="/banner-moho.jpg" alt="Moho Banner" className="w-full rounded-lg shadow-md" />
+          <img src={contactHero} alt="Moho Banner" className="w-full rounded-lg shadow-md" />
         </div>
       </section>
 
@@ -70,8 +78,8 @@ const ContactPage: React.FC = () => {
               BÁO CHÍ NÓI VỀ LIVENTO
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <img src="/news1.jpg" alt="Báo chí 1" className="rounded shadow-md" />
-              <img src="/news2.jpg" alt="Báo chí 2" className="rounded shadow-md" />
+              <img src={Bao1} alt="Báo chí 1" className="rounded shadow-md" />
+              <img src={Bao2} alt="Báo chí 2" className="rounded shadow-md" />
             </div>
           </div>
         </div>
@@ -82,10 +90,10 @@ const ContactPage: React.FC = () => {
         <div className="max-w-5xl mx-auto text-center">
           <h3 className="text-2xl font-bold mb-6">KHÁCH HÀNG CỦA LIVENTO</h3>
           <div className="flex flex-wrap justify-center items-center gap-6">
-            <img src="/logos/phu-dong.png" className="h-12" />
-            <img src="/logos/vinhomes.png" className="h-12" />
-            <img src="/logos/vinpearl.png" className="h-12" />
-            <img src="/logos/ecopark.png" className="h-12" />
+            <img src={phudong} className="h-12" />
+            <img src={vinhome} className="h-12" />
+            <img src={vinpearl} className="h-12" />
+            <img src={ecopark} className="h-12" />
           </div>
         </div>
       </section>
