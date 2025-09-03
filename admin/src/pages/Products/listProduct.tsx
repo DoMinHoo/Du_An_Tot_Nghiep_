@@ -8,6 +8,7 @@ import {
   Card,
   Tooltip,
   message,
+  Input,
 } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -33,16 +34,24 @@ const ProductList = () => {
   const [materialsMap, setMaterialsMap] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [searchValue, setSearchValue] = useState("");
 
-  // Lấy danh sách sản phẩm (server-side pagination)
+  // Lấy danh sách sản phẩm (server-side pagination + search)
   const { data, isLoading } = useQuery<{
     data: Product[];
     pagination: { page: number; limit: number; total: number; totalPages: number };
   }>({
-    queryKey: ["products", page, pageSize],
+    queryKey: ["products", page, pageSize, search],
     queryFn: async () => {
+      const params = new URLSearchParams({
+        isDeleted: "false",
+        page: String(page),
+        limit: String(pageSize),
+      });
+      if (search) params.append("search", search);
       const response = await fetch(
-        `http://localhost:5000/api/products?isDeleted=false&page=${page}&limit=${pageSize}`
+        `http://localhost:5000/api/products?${params.toString()}`
       );
       const resData = await response.json();
       return {
@@ -210,6 +219,18 @@ const ProductList = () => {
       title="🛍️ Danh sách sản phẩm"
       extra={
         <Space>
+          {/* Ô tìm kiếm sản phẩm và biến thể */}
+          <Input.Search
+            allowClear
+            placeholder="Tìm kiếm sản phẩm hoặc biến thể..."
+            style={{ width: 280 }}
+            value={searchValue}
+            onChange={e => setSearchValue(e.target.value)}
+            onSearch={val => {
+              setPage(1);
+              setSearch(val.trim());
+            }}
+          />
           <Button
             type="primary"
             icon={<PlusOutlined />}
