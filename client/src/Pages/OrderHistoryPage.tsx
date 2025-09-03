@@ -249,7 +249,8 @@ const OrderHistoryPage: React.FC = () => {
     return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+  <div className="bg-gray-10 min-h-screen py-10">
+    <div className="container mx-auto px-4">
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -264,110 +265,103 @@ const OrderHistoryPage: React.FC = () => {
         transition={Slide}
       />
 
-      <h2 className="text-2xl font-semibold mb-6">Lịch sử đơn hàng</h2>
+      <h2 className="text-3xl font-bold mb-10 text-gray-900">Lịch sử đơn hàng</h2>
 
       {orders.length === 0 ? (
-        <p>Chưa có đơn hàng nào.</p>
+        <p className="text-gray-500 text-center py-20">Chưa có đơn hàng nào.</p>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-12">
           {orders.map((order) => {
-            // Tính subtotal cho mỗi đơn hàng
             const subtotal = calculateSubtotal(order);
+            const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
 
-            // Tính discountAmount dựa trên hàm getDiscountAmount
-
-        const discountAmount =
-  subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
-
+            const progressSteps = ["pending", "confirmed", "shipping", "completed"];
+            const currentStepIndex = progressSteps.indexOf(order.status);
 
             return (
               <div
                 key={order._id}
-                className="border p-4 rounded-md shadow-sm bg-white"
+                className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
               >
-                <div className="flex justify-between items-center mb-2">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
                   <div>
-                    <p className="text-lg font-medium">
-                      Mã đơn: {order.orderCode}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Ngày đặt:{' '}
-                      {new Date(order.createdAt).toLocaleString('vi-VN')}
+                    <p className="text-lg font-semibold text-gray-900">Mã đơn: {order.orderCode}</p>
+                    <p className="text-sm text-gray-500">
+                      Ngày đặt: {new Date(order.createdAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
-                  <div className="text-sm px-3 py-1 rounded bg-gray-100 text-gray-800">
-                    <strong>{statusText[order.status] || order.status}</strong>
+                  <div
+                    className={`px-3 py-1 text-sm font-medium rounded-full ${
+                      order.status === "pending"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : order.status === "confirmed"
+                        ? "bg-blue-100 text-blue-800"
+                        : order.status === "shipping"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {statusText[order.status] || order.status}
                   </div>
                 </div>
 
-                <div className="text-sm mb-4 space-y-1">
-                  <p>
-                    <strong>Người nhận:</strong>{' '}
-                    {order.shippingAddress.fullName}
-                  </p>
-                  <p>
-                    <strong>SĐT:</strong> {order.shippingAddress.phone}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {order.shippingAddress.email}
-                  </p>
-                  <p>
-                    <strong>Địa chỉ:</strong>{' '}
-                    {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}
-                  </p>
-                  <p>
-                    <strong>Phương thức thanh toán:</strong>{' '}
-                    {order.paymentMethod === 'cod'
-    ? 'Thanh toán khi nhận hàng'
-    : order.paymentMethod === 'online_payment'
-    ? 'Thanh toán qua ZaloPay'
-   : order.paymentMethod === 'wallet'
-    ? 'Thanh toán bằng Ví'
-    : 'Không xác định'}
-                  </p>
-                  <p>
-                    <strong>Trạng thái thanh toán:</strong>{' '}
-                    {getPaymentStatusText(order)}
-                  </p>
+                {/* Progress Bar */}
+                <div className="flex items-center mb-6">
+                  {progressSteps.map((step, idx) => (
+                    <div key={step} className="flex-1">
+                      <div
+                        className={`w-4 h-4 mx-auto rounded-full ${
+                          idx <= currentStepIndex ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                      />
+                      {idx < progressSteps.length - 1 && (
+                        <div
+                          className={`h-1 w-full mt-1 ${
+                            idx < currentStepIndex ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                      )}
+                      <p className="text-xs text-center mt-2 capitalize">{step}</p>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="space-y-4">
+                {/* Shipping Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
+                  <div>
+                    <p><strong>Người nhận:</strong> {order.shippingAddress.fullName}</p>
+                    <p><strong>SĐT:</strong> {order.shippingAddress.phone}</p>
+                    <p><strong>Email:</strong> {order.shippingAddress.email}</p>
+                  </div>
+                  <div>
+                    <p><strong>Địa chỉ:</strong> {`${order.shippingAddress.addressLine}, ${order.shippingAddress.street}, ${order.shippingAddress.ward}, ${order.shippingAddress.district}, ${order.shippingAddress.province}`}</p>
+                    <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng" : order.paymentMethod === "online_payment" ? "Thanh toán qua ZaloPay" : order.paymentMethod === "wallet" ? "Thanh toán bằng Ví" : "Không xác định"}</p>
+                    <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order)}</p>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="space-y-6 mb-6">
                   {order.items.map((group: any) => (
-                    <div
-                      key={group.productId}
-                      className="border rounded-md p-3 bg-gray-50"
-                    >
+                    <div key={group.productId} className="bg-gray-50 rounded-md p-5 flex flex-col md:flex-row gap-4 items-center">
                       {group.variations.map((v: any) => {
-                        const price = getEffectivePrice(
-                          v.salePrice,
-                          v.finalPrice
-                        );
+                        const price = getEffectivePrice(v.salePrice, v.finalPrice);
                         return (
-                          <div
-                            key={v.variationId}
-                            className="flex gap-4 items-center pt-2 mt-2"
-                          >
+                          <div key={v.variationId} className="flex items-center gap-4 w-full">
                             <img
                               src={getImageUrl(v.colorImageUrl || group.image)}
                               alt={v.name}
-                              className="w-16 h-16 object-cover rounded"
+                              className="w-24 h-24 object-cover rounded-lg hover:scale-105 transition-transform"
                             />
                             <div className="flex-1">
-                              <p className="font-medium">{v.name}</p>
-                              <p className="text-gray-500 text-sm">
-                                Màu: {v.colorName}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                SKU: {v.sku}
-                              </p>
+                              <p className="font-semibold text-gray-800">{v.name}</p>
+                              <p className="text-gray-500 text-sm">Màu: {v.colorName}</p>
+                              <p className="text-gray-400 text-xs">SKU: {v.sku}</p>
                             </div>
-                            <div className="text-right">
-                              <p>
-                                {price.toLocaleString()}VND x {v.quantity}
-                              </p>
-                              <p className="font-semibold text-red-500">
-                                {(price * v.quantity).toLocaleString()}VND
-                              </p>
+                            <div className="text-right min-w-[100px]">
+                              <p className="text-gray-700">{price.toLocaleString()} VND x {v.quantity}</p>
+                              <p className="font-bold text-red-600">{(price * v.quantity).toLocaleString()} VND</p>
                             </div>
                           </div>
                         );
@@ -376,154 +370,43 @@ const OrderHistoryPage: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="text-right mt-4 text-lg font-semibold">
-                  <p>
-                    <strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()}
-                    VND
-                  </p>
-                  <p>
-                    <strong>Mã giảm giá:</strong>{' '}
-                    {order.promotion?.code
-                      ? `${order.promotion.code} (${order.promotion.discountType === 'percentage'
-                        ? `${order.promotion.discountValue}%`
-                        : `${order.promotion.discountValue.toLocaleString()}₫`
-                      })`
-                      : 'Không áp dụng'}
-                  </p>
-
-                  <p>
-                    <strong>Giá trị giảm:</strong>{' '}
-                    {Math.max(discountAmount, 0).toLocaleString()}VND
-                  </p>
-
-                  <p>
-                    <strong>Phí vận chuyển:</strong>{' '}
-                    {order.shippingFee?.toLocaleString() || '0'}VND
-                  </p>
-
-                  <hr className="my-2" />
-
-                  <p className="text-lg font-semibold text-red-600">
-                    Tổng cộng: {order.totalAmount?.toLocaleString() || '0'}VND
-                  </p>
+                {/* Order Summary */}
+                <div className="text-right pt-4 border-t border-gray-200 space-y-2 text-gray-700">
+                  <p><strong>Tổng tiền hàng:</strong> {subtotal.toLocaleString()} VND</p>
+                  <p><strong>Mã giảm giá:</strong> {order.promotion?.code ? `${order.promotion.code} (${order.promotion.discountType === "percentage" ? `${order.promotion.discountValue}%` : `${order.promotion.discountValue.toLocaleString()}₫`})` : "Không áp dụng"}</p>
+                  <p><strong>Giá trị giảm:</strong> {Math.max(discountAmount, 0).toLocaleString()} VND</p>
+                  <p><strong>Phí vận chuyển:</strong> {order.shippingFee?.toLocaleString() || 0} VND</p>
+                  <p className="text-2xl font-bold text-red-600">Tổng cộng: {order.totalAmount?.toLocaleString() || 0} VND</p>
                 </div>
 
-                {order.status === 'pending' && (
-                  <div className="text-right mt-4 flex flex-wrap items-center justify-end gap-4">
-                    {order.paymentMethod === 'online_payment' &&
-                      order.paymentStatus === 'pending' && (
-                        <button
-                          onClick={() => handleRetryPayment(order.orderCode)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Thanh toán lại qua ZaloPay
-                        </button>
-                      )}
-
-                    <select
-                      value={cancelReasonsMap[order._id] || ''}
-                      onChange={(e) =>
-                        setCancelReasonsMap((prev) => ({
-                          ...prev,
-                          [order._id]: e.target.value,
-                        }))
-                      }
-                      className="border px-3 py-1 rounded text-sm"
-                      style={{ minWidth: 250 }}
-                    >
-                      <option value="">Chọn lý do hủy đơn</option>
-                      {cancelReasons.map((reason) => (
-                        <option key={reason} value={reason}>
-                          {reason}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={() => handleCancelOrder(order._id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Hủy đơn hàng
-                    </button>
-                  </div>
-                )}
-                {order.status === 'confirmed' && (
-                  <div className="text-right mt-4">
-                    <p className="text-sm text-gray-600 italic">
-                      Đơn hàng đã được xác nhận, không thể hủy.
-                    </p>
-                  </div>
-                )}
-
-                {order.status === 'shipping' && (
-                  <div className="text-right mt-4">
-                    <p className="text-sm text-gray-600 italic">
-                      Đơn hàng đang giao, không thể hủy.
-                    </p>
-                    <button
-                      onClick={() => handleConfirmReceived(order._id)}
-                      className="px-4 py-2 mt-2 bg-green-600 text-white rounded hover:bg-green-700"
-                    >
-                      Xác nhận đã nhận hàng
-                    </button>
-                  </div>
-                )}
-                <div className="text-right mt-4">
-                  <button
-                    onClick={() =>
-                      (window.location.href = `/order-detail/${order._id}`)
-                    }
-                    className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
-                  >
-                    Xem chi tiết
-                  </button>
+                {/* Action Buttons */}
+                <div className="mt-4 flex flex-wrap gap-3 justify-end">
+                  {order.status === "pending" && order.paymentMethod === "online_payment" && order.paymentStatus === "pending" && (
+                    <button onClick={() => handleRetryPayment(order.orderCode)} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Thanh toán lại</button>
+                  )}
+                  {order.status === "pending" && (
+                    <>
+                      <select value={cancelReasonsMap[order._id] || ""} onChange={(e) => setCancelReasonsMap(prev => ({...prev, [order._id]: e.target.value}))} className="border px-3 py-1 rounded-lg text-sm" style={{ minWidth: 220 }}>
+                        <option value="">Chọn lý do hủy đơn</option>
+                        {cancelReasons.map(reason => <option key={reason} value={reason}>{reason}</option>)}
+                      </select>
+                      <button onClick={() => handleCancelOrder(order._id)} className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">Hủy đơn hàng</button>
+                    </>
+                  )}
+                  {order.status === "shipping" && (
+                    <button onClick={() => handleConfirmReceived(order._id)} className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Xác nhận đã nhận hàng</button>
+                  )}
+                  <button onClick={() => (window.location.href = `/order-detail/${order._id}`)} className="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition">Xem chi tiết</button>
                 </div>
               </div>
             );
           })}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-center mt-6 space-x-2">
-              <button
-                onClick={() => handleChangePage(page - 1)}
-                disabled={page === 1}
-                className={`px-3 py-1 border rounded ${page === 1
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-gray-100'
-                  }`}
-              >
-                Trước
-              </button>
-
-              {Array.from(
-                { length: pagination.totalPages },
-                (_, index) => index + 1
-              ).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => handleChangePage(p)}
-                  className={`px-3 py-1 border rounded ${page === p ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
-                    }`}
-                >
-                  {p}
-                </button>
-              ))}
-
-              <button
-                onClick={() => handleChangePage(page + 1)}
-                disabled={page === pagination.totalPages}
-                className={`px-3 py-1 border rounded ${page === pagination.totalPages
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-gray-100'
-                  }`}
-              >
-                Sau
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
-  );
+  </div>
+);
+
 };
 
 export default OrderHistoryPage;
