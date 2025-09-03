@@ -249,7 +249,7 @@ const OrderHistoryPage: React.FC = () => {
     return <p className="text-center py-8">Đang tải lịch sử đơn hàng...</p>;
 
   return (
-  <div className="bg-gray-10 min-h-screen py-10">
+  <div className="bg-gray-30 min-h-screen py-10">
     <div className="container mx-auto px-4">
       <ToastContainer
         position="top-right"
@@ -274,9 +274,6 @@ const OrderHistoryPage: React.FC = () => {
           {orders.map((order) => {
             const subtotal = calculateSubtotal(order);
             const discountAmount = subtotal + (order.shippingFee || 0) - (order.totalAmount || 0);
-
-            const progressSteps = ["pending", "confirmed", "shipping", "completed"];
-            const currentStepIndex = progressSteps.indexOf(order.status);
 
             return (
               <div
@@ -306,27 +303,6 @@ const OrderHistoryPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="flex items-center mb-6">
-                  {progressSteps.map((step, idx) => (
-                    <div key={step} className="flex-1">
-                      <div
-                        className={`w-4 h-4 mx-auto rounded-full ${
-                          idx <= currentStepIndex ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      {idx < progressSteps.length - 1 && (
-                        <div
-                          className={`h-1 w-full mt-1 ${
-                            idx < currentStepIndex ? "bg-green-500" : "bg-gray-300"
-                          }`}
-                        />
-                      )}
-                      <p className="text-xs text-center mt-2 capitalize">{step}</p>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Shipping Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
                   <div>
@@ -343,9 +319,9 @@ const OrderHistoryPage: React.FC = () => {
 
                 {/* Order Items */}
                 <div className="space-y-6 mb-6">
-                  {order.items.map((group: any) => (
+                  {order.items.map((group) => (
                     <div key={group.productId} className="bg-gray-50 rounded-md p-5 flex flex-col md:flex-row gap-4 items-center">
-                      {group.variations.map((v: any) => {
+                      {group.variations.map((v) => {
                         const price = getEffectivePrice(v.salePrice, v.finalPrice);
                         return (
                           <div key={v.variationId} className="flex items-center gap-4 w-full">

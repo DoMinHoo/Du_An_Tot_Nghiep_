@@ -210,7 +210,7 @@ const ProductVariationList = () => {
         <div>
           <div style={{ marginBottom: '4px' }}>
             <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
-              {record.finalPrice.toLocaleString()} ₫
+              {record.finalPrice.toLocaleString()} VND
             </Text>
             <Text
               type="secondary"
@@ -222,7 +222,7 @@ const ProductVariationList = () => {
           {record.salePrice && record.salePrice > 0 && (
             <div>
               <Tag color="red" style={{ fontSize: '10px', padding: '0 4px' }}>
-                KM: {record.salePrice.toLocaleString()} ₫
+                KM: {record.salePrice.toLocaleString()} VND
               </Tag>
             </div>
           )}
@@ -399,7 +399,7 @@ const ProductVariationList = () => {
                 title="Giá trung bình"
                 value={averagePrice}
                 prefix={<DollarOutlined style={{ color: '#faad14' }} />}
-                suffix="₫"
+                suffix="VND"
                 valueStyle={{
                   color: '#faad14',
                   fontSize: '20px',

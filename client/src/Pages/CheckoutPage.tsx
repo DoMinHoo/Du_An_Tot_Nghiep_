@@ -111,7 +111,7 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
       { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
   {
   label: walletBalance !== null
-    ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()}₫)`
+    ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()} VND)`
     : 'Thanh toán bằng Ví của tôi',
   value: 'wallet'
 }
@@ -779,12 +779,12 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                         item.variationId.salePrice <
                         item.variationId.finalPrice ? (
                         <p className="font-semibold">
-                          {item.variationId.salePrice.toLocaleString()}₫ ×{' '}
+                          {item.variationId.salePrice.toLocaleString()} VND ×{' '}
                           {item.quantity}
                         </p>
                       ) : (
                         <p className="font-semibold">
-                          {item.variationId.finalPrice.toLocaleString()}₫ ×{' '}
+                          {item.variationId.finalPrice.toLocaleString()} VND ×{' '}
                           {item.quantity}
                         </p>
                       )}
@@ -858,16 +858,16 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                           Giảm giá:{' '}
                           {promo.discountType === 'percentage'
                             ? `${promo.discountValue}%`
-                            : `${promo.discountValue.toLocaleString()}₫`}
+                            : `${promo.discountValue.toLocaleString()} VND`}
                           {promo.maxDiscountPrice
-                            ? ` (Tối đa ${promo.maxDiscountPrice.toLocaleString()}₫)`
+                            ? ` (Tối đa ${promo.maxDiscountPrice.toLocaleString()} VND)`
                             : ''}
                         </p>
 
                         {promo.minimumOrderValue && (
                           <p className="text-gray-600 text-xs">
                             Đơn tối thiểu:{' '}
-                            {promo.minimumOrderValue.toLocaleString()}₫
+                            {promo.minimumOrderValue.toLocaleString()} VND
                           </p>
                         )}
                         {promo.expiryDate && (
@@ -894,7 +894,7 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                         {notMeetMinOrder && !isExpired && (
                           <p className="text-orange-500 text-xs">
                             Cần tối thiểu{' '}
-                            {promo.minimumOrderValue.toLocaleString()}₫
+                            {promo.minimumOrderValue.toLocaleString()} VND
                           </p>
                         )}
                       </div>
@@ -919,14 +919,14 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
           <hr />
           <div className="flex justify-between">
             <span>Tạm tính:</span>
-            <span>{totalPrice.toLocaleString()}₫</span>
+            <span>{totalPrice.toLocaleString()} VND</span>
           </div>
           <div className="flex justify-between">
             <span>Phí vận chuyển:</span>
             <span>
               {provinceId && districtId && wardCode
                 ? shippingFee > 0
-                  ? `${shippingFee.toLocaleString()}₫`
+                  ? `${shippingFee.toLocaleString()} VND`
                   : 'Đang tính phí...'
                 : 'Vui lòng chọn đủ địa chỉ'}
             </span>
@@ -935,12 +935,12 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
           {discountAmount !== null && discountAmount > 0 && (
             <div className="flex justify-between text-green-600 font-medium">
               <span>Tiết kiệm:</span>
-              <span>-{discountAmount.toLocaleString()}₫</span>
+              <span>-{discountAmount.toLocaleString()} VND</span>
             </div>
           )}
           <div className="flex justify-between font-semibold text-red-500 text-lg">
             <span>Tổng cộng:</span>
-            <span>{finalAmountWithShipping.toLocaleString()}₫</span>
+            <span>{finalAmountWithShipping.toLocaleString()} VND</span>
           </div>
         </div>
       </div>

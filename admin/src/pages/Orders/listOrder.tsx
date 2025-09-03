@@ -228,7 +228,7 @@ const OrderManager: React.FC = () => {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       render: (amount: number) =>
-        amount ? amount.toLocaleString('vi-VN') + '₫' : 'N/A',
+        amount ? amount.toLocaleString('vi-VN') + ' VND' : 'N/A',
     },
     {
       title: 'Trạng thái',
@@ -287,7 +287,7 @@ const OrderManager: React.FC = () => {
             <div key={i}>
               {item.name} x{item.quantity}
               {item.price && item.price > 0
-                ? ` – ${item.price.toLocaleString('vi-VN')}₫`
+                ? ` – ${item.price.toLocaleString('vi-VN')}VND`
                 : ''}
             </div>
           ))
