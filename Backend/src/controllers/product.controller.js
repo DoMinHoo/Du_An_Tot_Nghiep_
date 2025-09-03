@@ -64,6 +64,7 @@ exports.getProducts = async (req, res) => {
       flashSaleOnly = false,
       filter,
       isDeleted,
+      search,
     } = req.query;
 
     // Ép kiểu an toàn
@@ -98,6 +99,23 @@ exports.getProducts = async (req, res) => {
       query.flashSale_discountedPrice = { $gt: 0 };
       query.flashSale_start = { $lte: now };
       query.flashSale_end = { $gte: now };
+    }
+
+    let productIdsBySku = [];
+    if (search) {
+      // Tìm theo SKU ở ProductVariation
+      const variations = await ProductVariation.find({
+        sku: { $regex: search, $options: "i" }
+      }).select("productId");
+      productIdsBySku = variations.map(v => v.productId);
+
+      // Tìm theo tên sản phẩm hoặc tên biến thể (nếu có trường variants trong Product)
+      // Nếu có productIdsBySku, thêm vào điều kiện $or
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        ...(productIdsBySku.length > 0 ? [{ _id: { $in: productIdsBySku } }] : []),
+        { "variants.name": { $regex: search, $options: "i" } }
+      ];
     }
 
     // Xử lý sắp xếp
@@ -810,5 +828,45 @@ exports.searchProducts = async (req, res) => {
   } catch (err) {
     console.error("Lỗi tìm kiếm:", err);
     res.status(500).json({ message: "Lỗi server khi tìm kiếm sản phẩm" });
+  }
+};
+
+// Lấy tất cả sản phẩm (có phân trang, tìm kiếm, xóa mềm)
+exports.getAllProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, isDeleted = false, search = "" } = req.query;
+    const query = { isDeleted: isDeleted === "true" };
+
+    // Thêm điều kiện tìm kiếm nếu có search
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { "variants.name": { $regex: search, $options: "i" } }, // tìm theo tên biến thể
+        { "variants.sku": { $regex: search, $options: "i" } },  // tìm theo mã SKU biến thể
+      ];
+    }
+
+    // Phân trang
+    const skip = (Number(page) - 1) * Number(limit);
+    const [data, total] = await Promise.all([
+      Product.find(query)
+        .skip(skip)
+        .limit(Number(limit))
+        .populate("categoryId")
+        .lean(),
+      Product.countDocuments(query),
+    ]);
+
+    res.json({
+      data,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi lấy danh sách sản phẩm", error: err.message });
   }
 };
