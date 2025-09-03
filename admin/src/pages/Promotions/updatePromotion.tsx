@@ -128,7 +128,7 @@ const UpdatePromotion: React.FC = () => {
                     </Option>
                     <Option value="fixed">
                       <Space>
-                        <span>₫</span>
+                        <span> VND</span>
                         Cố định (VNĐ)
                       </Space>
                     </Option>

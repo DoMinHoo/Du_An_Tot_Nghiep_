@@ -245,18 +245,78 @@ const UpdateProductVariationPage = () => {
             </Card>
           </Col>
 
-          <Col span={24}>
-            <Card title={<span>💰 Thông tin giá & khuyến mãi</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+         <Col span={24}>
+            <Card
+              title={<span>💰 Thông tin giá & khuyến mãi</span>}
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+            >
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}><Form.Item label="Giá gốc (VNĐ)" name="basePrice" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={12}><Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={12}><Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice"><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
-                <Col xs={24} md={12}><Form.Item label="Tồn kho" name="stockQuantity" rules={[{ required: true }]}><InputNumber min={0} style={{ width: "100%" }} size="large" /></Form.Item></Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Giá gốc (VNĐ)"
+                    name="basePrice"
+                    rules={[{ required: true }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      style={{ width: "100%" }}
+                      size="large"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Form.Item label="Điều chỉnh giá (VNĐ)" name="priceAdjustment">
+                    <InputNumber
+                      min={0}
+                      style={{ width: "100%" }}
+                      size="large"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Form.Item label="Giá khuyến mãi (VNĐ)" name="salePrice">
+                    <InputNumber
+                      min={0}
+                      style={{ width: "100%" }}
+                      size="large"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Tồn kho"
+                    name="stockQuantity"
+                    rules={[{ required: true }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      style={{ width: "100%" }}
+                      size="large"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                    />
+                  </Form.Item>
+                </Col>
               </Row>
             </Card>
           </Col>
-
-
 
           <Col span={24}>
             <Card title={<span>🎨 Màu sắc & Hình ảnh</span>} style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>

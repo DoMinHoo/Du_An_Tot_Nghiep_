@@ -59,7 +59,7 @@ const WalletPage: React.FC = () => {
       <div className="bg-white p-6 rounded shadow mb-6 text-center">
         <p className="text-lg text-gray-600">Số dư hiện tại</p>
         <p className="text-4xl font-bold text-green-600 mt-2">
-          {balance.toLocaleString()}₫
+          {balance.toLocaleString()} VND
         </p>
       </div>
 
@@ -95,7 +95,7 @@ const WalletPage: React.FC = () => {
                   }`}
                 >
                   {t.amount > 0 ? '+' : ''}
-                  {t.amount.toLocaleString()}₫
+                  {t.amount.toLocaleString()} VND
                 </p>
                 <p className="text-sm text-gray-500">
                   {new Date(t.date).toLocaleString('vi-VN')}
