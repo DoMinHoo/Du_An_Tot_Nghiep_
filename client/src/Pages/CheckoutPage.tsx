@@ -15,7 +15,7 @@ import {
   calculateShippingFee,
 } from '../services/ghnService';
 import { fetchUserProfile } from '@/services/userService';
-
+import axios from "axios";
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -44,7 +44,7 @@ const CheckoutPage: React.FC = () => {
 
   >('cod');
   const [couponCode, setCouponCode] = useState('');
-
+const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const token = sessionStorage.getItem('token') || undefined;
@@ -78,6 +78,24 @@ const CheckoutPage: React.FC = () => {
         });
     }
   }, [token]);
+  useEffect(() => {
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const token = sessionStorage.getItem("token");
+
+  if (!currentUser?._id || !token) return;
+
+  axios
+    .get(`http://localhost:5000/api/orders/wallet/${currentUser._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      setWalletBalance(res.data.balance || 0);
+    })
+    .catch((err) => {
+      console.error("❌ Lấy số dư ví thất bại:", err.response?.data || err.message);
+      setWalletBalance(0);
+    });
+}, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['cart'],
@@ -91,7 +109,12 @@ const CheckoutPage: React.FC = () => {
   }[] = [
       { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
       { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-      { label: 'Thanh toán bằng Ví của tôi', value: 'wallet' },
+  {
+  label: walletBalance !== null
+    ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()}₫)`
+    : 'Thanh toán bằng Ví của tôi',
+  value: 'wallet'
+}
     ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
@@ -119,9 +142,10 @@ const CheckoutPage: React.FC = () => {
       sessionStorage.removeItem('pendingOrderInfo');
       setTimeout(() => navigate('/thank-you'), 1600);
     },
-    onError: () => {
-      toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
-    },
+   onError: (error: any) => {
+  const message = error?.message || 'Đặt hàng thất bại!';
+  toast.error(message, { autoClose: 2000 });
+},
   });
 
   const validate = () => {
@@ -351,10 +375,11 @@ const CheckoutPage: React.FC = () => {
 
         setTimeout(() => { navigate('/thank-you'); window.location.reload(); }, 1600);
       }
-    } catch (error) {
-      toast.error('Đặt hàng thất bại!', { autoClose: 1500 });
-      console.error('Lỗi handleSubmitOrder:', error);
-    }
+   } catch (error: any) {
+  const message = error?.message || 'Đặt hàng thất bại!';
+  // toast.error(message, { autoClose: 2000 });
+  console.error('Lỗi handleSubmitOrder:', error);
+}
   };
 
   
