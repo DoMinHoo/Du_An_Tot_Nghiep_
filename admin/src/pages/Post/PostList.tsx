@@ -20,8 +20,14 @@ const PostList = () => {
     setLoading(true);
     try {
       const res = await axios.get('http://localhost:5000/api/posts');
-      setPosts(res.data);
-      setFilteredPosts(res.data);
+
+      // Đảm bảo luôn là mảng
+      const postsArray = Array.isArray(res.data)
+        ? res.data
+        : (res.data.data || []);
+
+      setPosts(postsArray);
+      setFilteredPosts(postsArray);
     } catch (err) {
       console.error(err);
       message.error('Lỗi khi lấy danh sách bài viết');
@@ -69,7 +75,7 @@ const PostList = () => {
         ) : (
           'Không có'
         ),
-      
+
     },
     {
       title: 'Tiêu đề',

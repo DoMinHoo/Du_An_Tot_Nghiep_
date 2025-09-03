@@ -2,6 +2,11 @@ import React, { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
+import heroAbout from '../public/about-hero.jpg'
+import space1 from '../public/1.jpg'
+import space2 from '../public/2.jpg'
+import space3 from '../public/3.jpg'
+
 const AboutPage: React.FC = () => {
   useEffect(() => {
     AOS.init({ duration: 1000 });
@@ -21,9 +26,9 @@ const AboutPage: React.FC = () => {
           </div>
           <img
             data-aos="fade-left"
-            src="/about-hero.jpg"
+            src={heroAbout}
             alt="About LIVENTO"
-            className="w-full rounded shadow-lg"
+            className="rounded shadow-lg w-full object-cover"
           />
         </div>
       </section>
@@ -64,8 +69,8 @@ const AboutPage: React.FC = () => {
                 {value === "Chất lượng"
                   ? "Sản phẩm đạt chuẩn quốc tế, kiểm định nghiêm ngặt từ nguyên liệu đến hoàn thiện."
                   : value === "Sáng tạo"
-                  ? "Thiết kế hiện đại, phù hợp xu hướng nội thất toàn cầu."
-                  : "Cam kết phát triển bền vững, thân thiện với môi trường và cộng đồng."}
+                    ? "Thiết kế hiện đại, phù hợp xu hướng nội thất toàn cầu."
+                    : "Cam kết phát triển bền vững, thân thiện với môi trường và cộng đồng."}
               </p>
             </div>
           ))}
@@ -102,16 +107,24 @@ const AboutPage: React.FC = () => {
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-8" data-aos="fade-up">Không gian LIVENTO</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {["showroom1.jpg", "showroom2.jpg", "factory.jpg"].map((src, i) => (
-              <img
-                key={i}
-                src={`/${src}`}
-                alt="livento space"
-                className="rounded shadow"
-                data-aos="zoom-in"
-                data-aos-delay={i * 150}
-              />
-            ))}
+            <img
+              src={space1}
+              alt="livento space"
+              className="rounded shadow"
+              data-aos="zoom-in"
+            />
+            <img
+              src={space2}
+              alt="livento space"
+              className="rounded shadow"
+              data-aos="zoom-in"
+            />
+            <img
+              src={space3}
+              alt="livento space"
+              className="rounded shadow"
+              data-aos="zoom-in"
+            />
           </div>
         </div>
       </section>
