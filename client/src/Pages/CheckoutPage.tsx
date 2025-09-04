@@ -109,16 +109,16 @@ const CheckoutPage: React.FC = () => {
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment' | 'wallet';
   }[] = [
-    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-    {
-      label:
-        walletBalance !== null
-          ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()} VND)`
-          : 'Thanh toán bằng Ví của tôi',
-      value: 'wallet',
-    },
-  ];
+      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+      {
+        label:
+          walletBalance !== null
+            ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()} VND)`
+            : 'Thanh toán bằng Ví của tôi',
+        value: 'wallet',
+      },
+    ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
   const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
@@ -282,6 +282,14 @@ const CheckoutPage: React.FC = () => {
     if (!finalEmail) finalEmail = 'guest@example.com';
 
     try {
+      // ✅ Kiểm tra đăng nhập trước khi tạo đơn
+      const isLoggedIn = Boolean(token);
+      if (!isLoggedIn && paymentMethod !== 'cod') {
+        toast.error('Vui lòng đăng nhập để sử dụng phương thức thanh toán này!', { autoClose: 2500 });
+        navigate('/login');
+        return; // ⛔ Dừng lại, không tạo order
+      }
+
       const items = cartItems.map((item: any) => ({
         variationId: item.variationId._id,
         quantity: item.quantity,
@@ -300,11 +308,11 @@ const CheckoutPage: React.FC = () => {
           ward,
         },
         paymentMethod,
-        cartId: isDirectPurchase ? null : fallbackCart?._id, // Gửi null nếu là mua trực tiếp
+        cartId: isDirectPurchase ? null : fallbackCart?._id,
         couponCode: couponCode || undefined,
         finalAmount: finalAmountWithShipping,
         shippingFee,
-        selectedItems: isDirectPurchase ? selectedItems : selectedItems, // Đảm bảo gửi đúng selectedItems
+        selectedItems: isDirectPurchase ? selectedItems : selectedItems,
         items,
       };
 
@@ -322,38 +330,38 @@ const CheckoutPage: React.FC = () => {
         })
       );
 
+      // ✅ Tới đây mới tạo đơn hàng nếu đủ điều kiện
       const orderRes = await orderMutation.mutateAsync(orderData);
 
       if (paymentMethod === 'bank_transfer') {
         sessionStorage.setItem('pendingOrder', JSON.stringify(orderRes));
-        const res = await fetch(
-          'http://localhost:5000/api/vnpay/create-payment',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              amount: finalAmountWithShipping,
-            }),
-          }
-        );
+        const res = await fetch('http://localhost:5000/api/vnpay/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: finalAmountWithShipping,
+          }),
+        });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
           toast.error(data.error || 'Không tạo được thanh toán VNPAY');
         }
-      } else if (paymentMethod === 'online_payment' && orderRes?.orderCode) {
-        const res = await fetch(
-          'http://localhost:5000/api/zalo-payment/create-payment',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderCode: orderRes.orderCode }),
-          }
-        );
+      } else if (paymentMethod === 'online_payment') {
+        if (!orderRes?.orderCode) {
+          toast.error('Không có orderCode để thanh toán');
+          return;
+        }
 
-        const data = await res.json();
+        const res = await fetch('http://localhost:5000/api/zalo-payment/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderCode: orderRes.orderCode }),
+        });
+
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.order_url) {
           localStorage.setItem('currentOrderCode', orderRes.orderCode);
           window.location.href = data.order_url;
@@ -361,9 +369,7 @@ const CheckoutPage: React.FC = () => {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
       } else if (paymentMethod === 'wallet') {
-        // ✅ Thanh toán bằng ví
         if (orderRes?.orderCode) {
-          // toast.success("Thanh toán bằng ví thành công!");
           setTimeout(() => navigate('/thank-you'), 1600);
         } else {
           toast.error('Thanh toán bằng ví thất bại!');
@@ -377,9 +383,10 @@ const CheckoutPage: React.FC = () => {
     } catch (error: any) {
       const message = error?.message || 'Đặt hàng thất bại!';
       toast.error(message, { autoClose: 2000 });
-      // console.error('Lỗi handleSubmitOrder:', error);
+      console.error('Lỗi handleSubmitOrder:', error);
     }
   };
+
 
   const applyCoupon = async (code: string) => {
     if (!code.trim()) {
@@ -771,8 +778,8 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <div className="flex justify-end items-center">
                       {item.variationId.finalPrice !== 0 &&
-                      item.variationId.salePrice !== 0 &&
-                      item.variationId.salePrice <
+                        item.variationId.salePrice !== 0 &&
+                        item.variationId.salePrice <
                         item.variationId.finalPrice ? (
                         <p className="font-semibold">
                           {item.variationId.salePrice.toLocaleString()} VNĐ ×{' '}
@@ -837,11 +844,10 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
-                        disabled
-                          ? 'opacity-50 bg-gray-100'
-                          : 'hover:bg-blue-50 hover:border-blue-300'
-                      }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
+                        ? 'opacity-50 bg-gray-100'
+                        : 'hover:bg-blue-50 hover:border-blue-300'
+                        }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -869,9 +875,8 @@ const CheckoutPage: React.FC = () => {
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${
-                              isExpired ? 'text-red-500' : 'text-gray-600'
-                            }`}
+                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
+                              }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(
