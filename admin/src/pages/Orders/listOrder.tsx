@@ -129,10 +129,10 @@ const OrderManager: React.FC = () => {
         const updatedOrders = prevOrders.map((order) =>
           order._id === data.orderId
             ? {
-                ...order,
-                status: data.status,
-                paymentStatus: data.paymentStatus,
-              }
+              ...order,
+              status: data.status,
+              paymentStatus: data.paymentStatus,
+            }
             : order
         );
         if (!updatedOrders.find((o) => o._id === data.orderId)) {
@@ -278,13 +278,13 @@ const OrderManager: React.FC = () => {
       render: (items: OrderItem[] = []) =>
         items.length > 0
           ? items.map((item, i) => (
-              <div key={i}>
-                {item.name} x{item.quantity}
-                {item.price && item.price > 0
-                  ? ` – ${item.price.toLocaleString('vi-VN')}VND`
-                  : ''}
-              </div>
-            ))
+            <div key={i}>
+              {item.name} x{item.quantity}
+              {item.price && item.price > 0
+                ? ` – ${item.price.toLocaleString('vi-VN')}VND`
+                : ''}
+            </div>
+          ))
           : 'Không có sản phẩm',
     },
     {
@@ -294,14 +294,14 @@ const OrderManager: React.FC = () => {
       render: (history: StatusEntry[] = []) =>
         history.length > 0
           ? history.map((item, i) => (
-              <div key={i}>
-                {statusText[item.status] || item.status} (
-                {item.changedAt
-                  ? new Date(item.changedAt).toLocaleString('vi-VN')
-                  : 'N/A'}
-                )
-              </div>
-            ))
+            <div key={i}>
+              {statusText[item.status] || item.status} (
+              {item.changedAt
+                ? new Date(item.changedAt).toLocaleString('vi-VN')
+                : 'N/A'}
+              )
+            </div>
+          ))
           : 'Chưa có lịch sử',
     },
     {
@@ -312,7 +312,7 @@ const OrderManager: React.FC = () => {
           <Button type="primary" onClick={() => handleViewDetail(record._id)}>
             Chi tiết
           </Button>
-          {record.status !== 'completed' && (
+          {/* {record.status !== 'completed' && (
             <Popconfirm
               title="Bạn có chắc muốn xóa đơn hàng này?"
               onConfirm={() => handleDeleteOrder(record._id)}
@@ -321,7 +321,7 @@ const OrderManager: React.FC = () => {
             >
               <Button danger>Xóa</Button>
             </Popconfirm>
-          )}
+          )} */}
         </Space>
       ),
     },
@@ -334,32 +334,32 @@ const OrderManager: React.FC = () => {
           placeholder="Tìm kiếm đơn hàng (mã, tên, email...)"
           value={searchTerm}
           onChange={(e) => {
-        setSearchTerm(e.target.value);
-        setPage(1); // Reset về trang 1 khi tìm kiếm
+            setSearchTerm(e.target.value);
+            setPage(1); // Reset về trang 1 khi tìm kiếm
           }}
           style={{ width: 300 }}
         />
         <Space>
           {Object.entries(statusText).map(([key, label]) => (
-        <Button
-          key={key}
-          type={status === key ? 'primary' : 'default'}
-          onClick={() => {
-            setStatus(key);
-            setPage(1);
-          }}
-        >
-          {label}
-        </Button>
+            <Button
+              key={key}
+              type={status === key ? 'primary' : 'default'}
+              onClick={() => {
+                setStatus(key);
+                setPage(1);
+              }}
+            >
+              {label}
+            </Button>
           ))}
           <Button
-        type={status === null ? 'primary' : 'default'}
-        onClick={() => {
-          setStatus(null);
-          setPage(1);
-        }}
+            type={status === null ? 'primary' : 'default'}
+            onClick={() => {
+              setStatus(null);
+              setPage(1);
+            }}
           >
-        Tất cả
+            Tất cả
           </Button>
         </Space>
       </div>
