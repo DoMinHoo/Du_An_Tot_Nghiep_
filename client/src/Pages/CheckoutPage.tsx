@@ -376,8 +376,8 @@ const CheckoutPage: React.FC = () => {
       }
     } catch (error: any) {
       const message = error?.message || 'Đặt hàng thất bại!';
-      // toast.error(message, { autoClose: 2000 });
-      console.error('Lỗi handleSubmitOrder:', error);
+      toast.error(message, { autoClose: 2000 });
+      // console.error('Lỗi handleSubmitOrder:', error);
     }
   };
 
