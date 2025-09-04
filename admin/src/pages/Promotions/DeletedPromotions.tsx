@@ -154,7 +154,7 @@ const DeletedPromotions: React.FC = () => {
                             <Button type="text" icon={<UndoOutlined />} />
                         </Popconfirm>
                     </Tooltip>
-                    <Tooltip title="Xóa vĩnh viễn">
+                    {/* <Tooltip title="Xóa vĩnh viễn">
                         <Popconfirm
                             title="Bạn chắc chắn muốn xóa vĩnh viễn mã này? Hành động này không thể hoàn tác!"
                             onConfirm={() => handlePermanentDelete(record._id)}
@@ -164,7 +164,7 @@ const DeletedPromotions: React.FC = () => {
                         >
                             <Button type="text" danger icon={<DeleteOutlined />} />
                         </Popconfirm>
-                    </Tooltip>
+                    </Tooltip> */}
                 </Space>
             ),
         },
