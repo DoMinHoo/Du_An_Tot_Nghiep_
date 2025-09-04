@@ -94,10 +94,9 @@ const OrderManager: React.FC = () => {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [socket, setSocket] = useState<any>(null); // Lưu socket instance
-
-  // State cho phân trang
+  const [searchTerm, setSearchTerm] = useState(''); // Tìm kiếm văn bản
+  const [status, setStatus] = useState<string | null>(null); // Bộ lọc trạng thái
+  const [socket, setSocket] = useState<any>(null);
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
   const [pagination, setPagination] = useState({
@@ -109,7 +108,7 @@ const OrderManager: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, limit, searchTerm]);
+  }, [page, limit, searchTerm, status]); // Thêm status vào dependencies
 
   useEffect(() => {
     if (location.state?.shouldRefresh) {
@@ -120,38 +119,32 @@ const OrderManager: React.FC = () => {
   // Khởi tạo và quản lý WebSocket
   useEffect(() => {
     const newSocket = io('http://localhost:5000', {
-      reconnection: true, // Bật tự động kết nối lại
-      reconnectionAttempts: 5, // Số lần thử kết nối lại
-      reconnectionDelay: 1000, // Thời gian chờ giữa các lần thử (ms)
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
     newSocket.on('admin-order-updated', (data: any) => {
-      console.log('Received admin-order-updated:', data); // Debug
+      console.log('Received admin-order-updated:', data);
       setOrders((prevOrders) => {
         const updatedOrders = prevOrders.map((order) =>
           order._id === data.orderId
             ? {
-              ...order,
-              status: data.status,
-              paymentStatus: data.paymentStatus,
-            }
+                ...order,
+                status: data.status,
+                paymentStatus: data.paymentStatus,
+              }
             : order
         );
-        // Nếu không tìm thấy order trong danh sách hiện tại, fetch lại để đảm bảo
         if (!updatedOrders.find((o) => o._id === data.orderId)) {
           fetchOrders();
         }
         return updatedOrders;
       });
-      // message.info(
-      //   `Đơn hàng ${data.orderCode} đã được cập nhật: ${
-      //     statusText[data.status] || data.status
-      //   }`
-      // );
     });
 
     newSocket.on('admin-new-order', (data: any) => {
-      console.log('Received admin-new-order:', data); // Debug
-      fetchOrders(); // Tải lại danh sách để thêm đơn mới
+      console.log('Received admin-new-order:', data);
+      fetchOrders();
       message.success(`Đơn hàng mới từ ${data.message}`);
     });
 
@@ -172,7 +165,8 @@ const OrderManager: React.FC = () => {
       const params = {
         page,
         limit,
-        search: searchTerm,
+        search: searchTerm || undefined, // Chỉ gửi search nếu có giá trị
+        status: status || undefined, // Chỉ gửi status nếu có giá trị
       };
 
       const res = await getOrders(params);
@@ -284,13 +278,13 @@ const OrderManager: React.FC = () => {
       render: (items: OrderItem[] = []) =>
         items.length > 0
           ? items.map((item, i) => (
-            <div key={i}>
-              {item.name} x{item.quantity}
-              {item.price && item.price > 0
-                ? ` – ${item.price.toLocaleString('vi-VN')}VND`
-                : ''}
-            </div>
-          ))
+              <div key={i}>
+                {item.name} x{item.quantity}
+                {item.price && item.price > 0
+                  ? ` – ${item.price.toLocaleString('vi-VN')}VND`
+                  : ''}
+              </div>
+            ))
           : 'Không có sản phẩm',
     },
     {
@@ -300,14 +294,14 @@ const OrderManager: React.FC = () => {
       render: (history: StatusEntry[] = []) =>
         history.length > 0
           ? history.map((item, i) => (
-            <div key={i}>
-              {statusText[item.status] || item.status} (
-              {item.changedAt
-                ? new Date(item.changedAt).toLocaleString('vi-VN')
-                : 'N/A'}
-              )
-            </div>
-          ))
+              <div key={i}>
+                {statusText[item.status] || item.status} (
+                {item.changedAt
+                  ? new Date(item.changedAt).toLocaleString('vi-VN')
+                  : 'N/A'}
+                )
+              </div>
+            ))
           : 'Chưa có lịch sử',
     },
     {
@@ -325,6 +319,7 @@ const OrderManager: React.FC = () => {
               okText="Có"
               cancelText="Không"
             >
+              <Button danger>Xóa</Button>
             </Popconfirm>
           )}
         </Space>
@@ -333,16 +328,41 @@ const OrderManager: React.FC = () => {
   ];
 
   return (
-    <Content style={{ margin: '24px', background: '#fff', padding: 24 }}>
-      <Input
-        placeholder="Tìm kiếm đơn hàng..."
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setPage(1); // reset về trang 1 khi search
+    <Content style={{ margin: '0px', background: '#fff', padding: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+        <Input
+          placeholder="Tìm kiếm đơn hàng (mã, tên, email...)"
+          value={searchTerm}
+          onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setPage(1); // Reset về trang 1 khi tìm kiếm
+          }}
+          style={{ width: 300 }}
+        />
+        <Space>
+          {Object.entries(statusText).map(([key, label]) => (
+        <Button
+          key={key}
+          type={status === key ? 'primary' : 'default'}
+          onClick={() => {
+            setStatus(key);
+            setPage(1);
+          }}
+        >
+          {label}
+        </Button>
+          ))}
+          <Button
+        type={status === null ? 'primary' : 'default'}
+        onClick={() => {
+          setStatus(null);
+          setPage(1);
         }}
-        style={{ width: 300, marginBottom: 16 }}
-      />
+          >
+        Tất cả
+          </Button>
+        </Space>
+      </div>
       <div>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '50px 0' }}>

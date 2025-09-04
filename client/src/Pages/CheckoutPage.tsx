@@ -15,7 +15,7 @@ import {
   calculateShippingFee,
 } from '../services/ghnService';
 import { fetchUserProfile } from '@/services/userService';
-import axios from "axios";
+import axios from 'axios';
 const CheckoutPage: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -39,12 +39,10 @@ const CheckoutPage: React.FC = () => {
   const [street, setStreet] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<
-
     'cod' | 'bank_transfer' | 'online_payment' | 'wallet'
-
   >('cod');
   const [couponCode, setCouponCode] = useState('');
-const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const token = sessionStorage.getItem('token') || undefined;
@@ -58,7 +56,6 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
   };
 
   useEffect(() => {
-
     // Nếu có token, gọi API lấy thông tin user
     if (token) {
       fetchUserProfile(token)
@@ -79,23 +76,28 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
     }
   }, [token]);
   useEffect(() => {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
-  const token = sessionStorage.getItem("token");
+    const currentUser = JSON.parse(
+      sessionStorage.getItem('currentUser') || '{}'
+    );
+    const token = sessionStorage.getItem('token');
 
-  if (!currentUser?._id || !token) return;
+    if (!currentUser?._id || !token) return;
 
-  axios
-    .get(`http://localhost:5000/api/orders/wallet/${currentUser._id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => {
-      setWalletBalance(res.data.balance || 0);
-    })
-    .catch((err) => {
-      console.error("❌ Lấy số dư ví thất bại:", err.response?.data || err.message);
-      setWalletBalance(0);
-    });
-}, []);
+    axios
+      .get(`http://localhost:5000/api/orders/wallet/${currentUser._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setWalletBalance(res.data.balance || 0);
+      })
+      .catch((err) => {
+        console.error(
+          '❌ Lấy số dư ví thất bại:',
+          err.response?.data || err.message
+        );
+        setWalletBalance(0);
+      });
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['cart'],
@@ -107,15 +109,16 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
     label: string;
     value: 'cod' | 'bank_transfer' | 'online_payment' | 'wallet';
   }[] = [
-      { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
-      { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
-  {
-  label: walletBalance !== null
-    ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()} VND)`
-    : 'Thanh toán bằng Ví của tôi',
-  value: 'wallet'
-}
-    ];
+    { label: 'Thanh toán khi nhận hàng (COD)', value: 'cod' },
+    { label: 'Thanh toán qua ZaloPay', value: 'online_payment' },
+    {
+      label:
+        walletBalance !== null
+          ? `Thanh toán bằng Ví của tôi (Số dư: ${walletBalance.toLocaleString()} VND)`
+          : 'Thanh toán bằng Ví của tôi',
+      value: 'wallet',
+    },
+  ];
 
   // Lấy giá trị từ location.state chỉ 1 lần khi mount
   const [initSelectedItems] = useState(() => passedState?.selectedItems || []);
@@ -142,10 +145,10 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
       sessionStorage.removeItem('pendingOrderInfo');
       setTimeout(() => navigate('/thank-you'), 1600);
     },
-   onError: (error: any) => {
-  const message = error?.message || 'Đặt hàng thất bại!';
-  toast.error(message, { autoClose: 2000 });
-},
+    onError: (error: any) => {
+      const message = error?.message || 'Đặt hàng thất bại!';
+      toast.error(message, { autoClose: 2000 });
+    },
   });
 
   const validate = () => {
@@ -357,32 +360,27 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
         } else {
           toast.error(data.message || 'Không lấy được link thanh toán ZaloPay');
         }
-
-            } else if (paymentMethod === 'wallet') {
+      } else if (paymentMethod === 'wallet') {
         // ✅ Thanh toán bằng ví
         if (orderRes?.orderCode) {
           // toast.success("Thanh toán bằng ví thành công!");
           setTimeout(() => navigate('/thank-you'), 1600);
         } else {
-          toast.error("Thanh toán bằng ví thất bại!");
+          toast.error('Thanh toán bằng ví thất bại!');
         }
-
-      
-      } 
-
-      
-      else {
-
-        setTimeout(() => { navigate('/thank-you'); window.location.reload(); }, 1600);
+      } else {
+        setTimeout(() => {
+          navigate('/thank-you');
+          window.location.reload();
+        }, 1600);
       }
-   } catch (error: any) {
-  const message = error?.message || 'Đặt hàng thất bại!';
-  // toast.error(message, { autoClose: 2000 });
-  console.error('Lỗi handleSubmitOrder:', error);
-}
+    } catch (error: any) {
+      const message = error?.message || 'Đặt hàng thất bại!';
+      // toast.error(message, { autoClose: 2000 });
+      console.error('Lỗi handleSubmitOrder:', error);
+    }
   };
 
-  
   const applyCoupon = async (code: string) => {
     if (!code.trim()) {
       toast.error('Vui lòng nhập mã giảm giá');
@@ -403,8 +401,8 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
       if (!res.ok) {
         toast.error(data.message || 'Áp mã thất bại');
-        setCouponCode("");      // 🔑 clear input
-        setFinalAmount(null);   // reset lại giá
+        setCouponCode(''); // 🔑 clear input
+        setFinalAmount(null); // reset lại giá
         setDiscountAmount(null);
         return;
       }
@@ -414,12 +412,11 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
       setDiscountAmount(data.discountAmount);
     } catch {
       toast.error('Có lỗi khi áp dụng mã');
-      setCouponCode("");        // 🔑 clear input khi lỗi server
+      setCouponCode(''); // 🔑 clear input khi lỗi server
       setFinalAmount(null);
       setDiscountAmount(null);
     }
   };
-
 
   // State cho địa chỉ động
 
@@ -694,11 +691,7 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                   value={option.value}
                   checked={paymentMethod === option.value}
                   onChange={(e) =>
-                    setPaymentMethod(
-                      e.target.value as
-                      | 'cod'
-                      | 'online_payment'
-                    )
+                    setPaymentMethod(e.target.value as 'cod' | 'online_payment')
                   }
                   className="mr-2"
                 />
@@ -764,7 +757,10 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                   />
                   <div className="  grid grid-cols-2  flex-11/12 jcontent-between items-center">
                     <div>
-                      <p className="font-medium">{item.variationId.name}</p>
+                      <p className="font-medium ">
+                        {item.variationId.productId?.name ||
+                          item.variationId.name}
+                      </p>
                       <p className="text-gray-500 text-sm">
                         {item.variationId.material.name}
                       </p>
@@ -775,16 +771,16 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                     </div>
                     <div className="flex justify-end items-center">
                       {item.variationId.finalPrice !== 0 &&
-                        item.variationId.salePrice !== 0 &&
-                        item.variationId.salePrice <
+                      item.variationId.salePrice !== 0 &&
+                      item.variationId.salePrice <
                         item.variationId.finalPrice ? (
                         <p className="font-semibold">
-                          {item.variationId.salePrice.toLocaleString()} VND ×{' '}
+                          {item.variationId.salePrice.toLocaleString()} VNĐ ×{' '}
                           {item.quantity}
                         </p>
                       ) : (
                         <p className="font-semibold">
-                          {item.variationId.finalPrice.toLocaleString()} VND ×{' '}
+                          {item.variationId.finalPrice.toLocaleString()} VNĐ ×{' '}
                           {item.quantity}
                         </p>
                       )}
@@ -814,10 +810,10 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                 <button
                   className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition duration-200 active:scale-95"
                   onClick={() => {
-                    setCouponCode("");
+                    setCouponCode('');
                     setFinalAmount(null);
                     setDiscountAmount(null);
-                    toast.info("Đã xóa mã giảm giá, áp dụng lại giá gốc");
+                    toast.info('Đã xóa mã giảm giá, áp dụng lại giá gốc');
                   }}
                 >
                   Xóa
@@ -841,10 +837,11 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                   return (
                     <div
                       key={promo._id}
-                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${disabled
-                        ? 'opacity-50 bg-gray-100'
-                        : 'hover:bg-blue-50 hover:border-blue-300'
-                        }`}
+                      className={`border border-gray-200 rounded-lg p-3 text-sm flex justify-between items-start cursor-pointer transition duration-200 ${
+                        disabled
+                          ? 'opacity-50 bg-gray-100'
+                          : 'hover:bg-blue-50 hover:border-blue-300'
+                      }`}
                       onClick={() => {
                         if (disabled) return;
                         setCouponCode(promo.code);
@@ -872,8 +869,9 @@ const [walletBalance, setWalletBalance] = useState<number | null>(null);
                         )}
                         {promo.expiryDate && (
                           <p
-                            className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-600'
-                              }`}
+                            className={`text-xs ${
+                              isExpired ? 'text-red-500' : 'text-gray-600'
+                            }`}
                           >
                             HSD:{' '}
                             {new Date(promo.expiryDate).toLocaleDateString(

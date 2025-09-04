@@ -700,7 +700,7 @@ exports.getOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const userIdFromToken = req.user.userId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, status } = req.query; // Lấy status từ query
 
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ success: false, message: 'ID người dùng không hợp lệ' });
@@ -712,8 +712,14 @@ exports.getOrdersByUser = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Thêm điều kiện lọc theo status nếu có
+    const query = { userId };
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
     const [orders, total] = await Promise.all([
-      Order.find({ userId })
+      Order.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -733,9 +739,7 @@ exports.getOrdersByUser = async (req, res) => {
           path: "promotion",
           select: "code discountType discountValue maxDiscountPrice"
         }),
-
-
-      Order.countDocuments({ userId })
+      Order.countDocuments(query)
     ]);
 
     const groupedOrders = orders.map(order => {

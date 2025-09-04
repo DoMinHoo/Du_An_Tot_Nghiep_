@@ -298,10 +298,6 @@ const ProductDetail: React.FC = () => {
       const checkedItem = {
         variationId: {
           ...selectedVariation,
-          material:
-            typeof selectedVariation.material === 'object'
-              ? selectedVariation.material.name
-              : selectedVariation.material,
           colorImageUrl: imageUrl,
         },
         quantity: parsedQty,

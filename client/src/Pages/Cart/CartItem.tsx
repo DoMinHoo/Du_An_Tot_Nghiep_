@@ -19,7 +19,10 @@ const CartItemComponent: React.FC<CartItemProps> = ({
   onUpdateQuantity,
   onRemove,
 }) => {
+  const productId =
+    item.variationId?.productId?.name || 'Sản phẩm không xác định';
   const name = item.variationId?.name || 'Sản phẩm không xác định';
+  const corlor = item.variationId?.colorName || 'N/A';
   const dimensions = item.variationId?.dimensions || 'N/A';
   const materialVariation =
     item.variationId?.material &&
@@ -133,17 +136,35 @@ const CartItemComponent: React.FC<CartItemProps> = ({
         }}
       />
       <div className="flex-1 space-y-1">
-        <h3 className="font-medium text-gray-800 text-sm">{name}</h3>
-        <p className="text-xs text-gray-500">Kích thước: {dimensions}</p>
-        <p className="text-xs text-gray-500">Chất liệu: {materialVariation}</p>
-        <div className="text-red-500 font-medium text-sm mt-1">
-          {formatPrice(displayPrice)}
-        </div>
-        {salePrice !== 0 && (
-          <div className="line-through text-xs text-gray-400">
-            {formatPrice(finalPrice)}
+        <div className="space-y-1">
+          <h3 className="font-medium text-gray-800 text-sm">{productId}</h3>
+          <p className="text-xs text-gray-500">Màu sắc: {corlor}</p>
+          <p className="text-xs text-gray-500">Kích thước: {dimensions}</p>
+          <p className="text-xs text-gray-500">
+            Chất liệu: {materialVariation}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-red-500 font-medium text-sm">
+              {formatPrice(displayPrice)}
+            </span>
+            {salePrice !== 0 && (
+              <span className="line-through text-xs text-gray-400">
+                {formatPrice(finalPrice)}
+              </span>
+            )}
           </div>
-        )}
+        </div>
+      </div>
+      <div className="text-right space-y-2">
+        <button
+          onClick={onRemove}
+          className="text-lg text-gray-400 hover:text-red-500 transition-colors"
+        >
+          ×
+        </button>
+        <div className="font-medium text-sm">
+          {formatPrice(displayPrice * item.quantity)}
+        </div>
         <div className="flex items-center mt-2 w-max border rounded-md overflow-hidden">
           <button
             onClick={handleDecrease}
@@ -170,17 +191,6 @@ const CartItemComponent: React.FC<CartItemProps> = ({
           >
             +
           </button>
-        </div>
-      </div>
-      <div className="text-right space-y-2">
-        <button
-          onClick={onRemove}
-          className="text-lg text-gray-400 hover:text-red-500 transition-colors"
-        >
-          ×
-        </button>
-        <div className="font-medium text-sm">
-          {formatPrice(displayPrice * item.quantity)}
         </div>
       </div>
     </div>
